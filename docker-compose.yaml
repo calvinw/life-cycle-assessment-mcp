@@ -1,7 +1,8 @@
 services:
   gdt-server:
-    image: gdt-server:latest
-    pull_policy: never
+    build:
+      context: .
+      dockerfile: Dockerfile.gdt
     volumes:
       - ~/olca-data:/app/data
     command: -db lca_methods

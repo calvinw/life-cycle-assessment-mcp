@@ -1,0 +1,19 @@
+FROM ghcr.io/greendelta/gdt-server-app AS app
+FROM ghcr.io/greendelta/gdt-server-lib AS lib
+FROM ghcr.io/greendelta/gdt-server-native AS native
+FROM eclipse-temurin:21-jre
+
+ENV JAVA_MAX_RAM_PERCENTAGE=80
+
+COPY --from=app /app /app
+COPY --from=lib /app/lib /app/lib
+COPY --from=native /app/native /app/native
+
+RUN chmod +x /app/run.sh
+
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
+
+COPY gdt_entrypoint.sh /gdt_entrypoint.sh
+RUN chmod +x /gdt_entrypoint.sh
+
+ENTRYPOINT ["/gdt_entrypoint.sh"]
