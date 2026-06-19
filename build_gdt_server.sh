@@ -18,6 +18,18 @@ echo "[gdt-server] Patching JRE version (21 -> 17)..."
 sed 's|eclipse-temurin:21-jre|eclipse-temurin:17-jre|' \
     "$BUILD_DIR/Dockerfile.upstream" > "$BUILD_DIR/Dockerfile"
 
+echo "[gdt-server] Adding bootstrap entrypoint..."
+curl -fsSL "https://raw.githubusercontent.com/calvinw/life-cycle-assessment-mcp/main/gdt_entrypoint.sh" \
+    -o "$BUILD_DIR/gdt_entrypoint.sh"
+
+cat >> "$BUILD_DIR/Dockerfile" << 'EOF'
+
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
+COPY gdt_entrypoint.sh /gdt_entrypoint.sh
+RUN chmod +x /gdt_entrypoint.sh
+ENTRYPOINT ["/gdt_entrypoint.sh"]
+EOF
+
 echo "[gdt-server] Building image $IMAGE..."
 docker build -t "$IMAGE" "$BUILD_DIR"
 
