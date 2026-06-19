@@ -1,6 +1,7 @@
 services:
   gdt-server:
     image: gdt-server:latest
+    pull_policy: never
     volumes:
       - ~/olca-data:/app/data
     command: -db lca_methods
