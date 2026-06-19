@@ -17,11 +17,14 @@ Run via SSE (remote):
     python3 sse_server.py
 """
 
+import os
 import pathlib
 import requests
 from fastmcp import FastMCP
 from lca_engine import run_analysis
 from lca_svg_engine import generate_svg, generate_unit_process_svg
+
+_DEFAULT_SERVER_URL = os.environ.get("GDT_SERVER_URL", "http://localhost:8080")
 
 mcp = FastMCP("Life Cycle Assessment MCP")
 
@@ -32,7 +35,7 @@ _CASE_STUDIES_DIR = pathlib.Path(__file__).parent / "case_studies"
 
 @mcp.tool()
 def run_lca(recipe_card: str,
-            server_url: str = "http://localhost:8080") -> dict:
+            server_url: str = _DEFAULT_SERVER_URL) -> dict:
     """
     Run a full LCA from a recipe card YAML string.
 
@@ -115,7 +118,7 @@ def get_case_study(name: str) -> dict:
 # ── Server / methods ──────────────────────────────────────────────────────────
 
 @mcp.tool()
-def list_impact_methods(server_url: str = "http://localhost:8080") -> list:
+def list_impact_methods(server_url: str = _DEFAULT_SERVER_URL) -> list:
     """
     List all LCIA methods available in the connected database.
     Examples: TRACI 2.2, ReCiPe 2016, EF 3.1, CML, ImpactWorld+.
@@ -126,7 +129,7 @@ def list_impact_methods(server_url: str = "http://localhost:8080") -> list:
 
 
 @mcp.tool()
-def check_server(server_url: str = "http://localhost:8080") -> dict:
+def check_server(server_url: str = _DEFAULT_SERVER_URL) -> dict:
     """Check if the openLCA gdt-server is running and ready."""
     try:
         r = requests.get(f"{server_url}/api/version", timeout=5)

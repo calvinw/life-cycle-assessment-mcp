@@ -17,22 +17,33 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from lca_server import mcp
 
-http_app = mcp.http_app(transport="sse", path="/sse")
+# Create the ASGI app (streamable-http is the modern MCP transport)
+http_app = mcp.http_app(transport="streamable-http", path="/mcp")
 
-
+# Minimal OAuth endpoint
 async def oauth_metadata(request: Request):
-    return JSONResponse({"issuer": str(request.base_url).rstrip("/")})
+    base_url = str(request.base_url).rstrip("/")
+    return JSONResponse({"issuer": base_url})
 
-
+# Create a FastAPI app and mount the MCP server
 app = FastAPI(lifespan=http_app.lifespan)
+
+# Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization", "x-api-key"],
+    expose_headers=["Content-Type", "Authorization", "x-api-key"],
+    max_age=86400,
 )
-app.add_api_route("/.well-known/oauth-authorization-server", oauth_metadata)
+
+# Add the OAuth metadata route before mounting
+app.add_api_route("/.well-known/oauth-authorization-server", oauth_metadata, methods=["GET"])
+
+# Mount the MCP server
 app.mount("/", http_app)
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 9000)))
+    port = int(os.environ.get("PORT", 9000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
