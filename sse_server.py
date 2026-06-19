@@ -17,8 +17,8 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from lca_server import mcp
 
-# Create the ASGI app (streamable-http is the modern MCP transport)
-http_app = mcp.http_app(transport="streamable-http", path="/mcp")
+# Create the ASGI app
+http_app = mcp.http_app(transport="sse", path="/sse")
 
 # Minimal OAuth endpoint
 async def oauth_metadata(request: Request):

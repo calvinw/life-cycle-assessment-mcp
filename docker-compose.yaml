@@ -32,3 +32,5 @@ services:
       - "traefik.http.routers.lca-mcp.tls=true"
       - "traefik.http.routers.lca-mcp.tls.certresolver=letsencrypt"
       - "traefik.http.services.lca-mcp.loadbalancer.server.port=9000"
+      - "traefik.http.routers.lca-mcp.middlewares=lca-mcp-headers"
+      - "traefik.http.middlewares.lca-mcp-headers.headers.customrequestheaders.X-Forwarded-Proto=https"
