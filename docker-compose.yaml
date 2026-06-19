@@ -3,7 +3,7 @@ services:
     image: gdt-server:latest
     pull_policy: never
     volumes:
-      - ~/olca-data:/app/data
+      - ${HOME}/olca-data:/app/data
     command: -db lca_methods
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/api/version"]
