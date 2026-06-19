@@ -16,10 +16,6 @@ LCA_COMMONS_DB="$DATA_DIR/databases/lca_methods"
 
 mkdir -p "$DATA_DIR/databases"
 
-echo "[olca] Installing required Python packages..."
-pip install olca-ipc olca-schema pyyaml numpy matplotlib --break-system-packages -q
-echo "[olca] Python packages ready."
-
 # Download and unzip the pre-built lca_methods database if not already present.
 # This database includes all 45 LCIA methods (TRACI 2.2, ReCiPe 2016, EF 3.1, etc.)
 # already imported — no slow import step needed.
@@ -47,34 +43,5 @@ if ! docker image inspect "$IMAGE" > /dev/null 2>&1; then
     rm -rf "$BUILD_DIR"
 fi
 
-# Stop and remove any existing container with the same name
-if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER}$"; then
-    echo "[olca] Removing existing container: $CONTAINER"
-    docker rm -f "$CONTAINER"
-fi
-
-echo "[olca] Starting gdt-server on port 8080..."
-docker run \
-    --name "$CONTAINER" \
-    --network host \
-    -v "$DATA_DIR:/app/data" \
-    -d \
-    "$IMAGE" \
-    -db lca_methods
-
-echo "[olca] Waiting for server to start..."
-for i in $(seq 1 30); do
-    if curl -s http://localhost:8080/api/version > /dev/null 2>&1; then
-        echo "[olca] Server ready at http://localhost:8080"
-        curl -s http://localhost:8080/api/version
-        echo ""
-
-        exit 0
-    fi
-    sleep 2
-    echo "  ...waiting ($i/30)"
-done
-
-echo "ERROR: Server did not start in time. Check Docker logs:"
-echo "  docker logs $CONTAINER"
-exit 1
+echo "[olca] Setup complete. gdt-server image and database are ready."
+echo "[olca] Deploy via Coolify docker-compose to start the server."
