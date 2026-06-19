@@ -11,7 +11,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Install Graphviz for SVG generation
-RUN apt-get update && apt-get install -y --no-install-recommends graphviz && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends graphviz curl && rm -rf /var/lib/apt/lists/*
 
 # Copy server code
 COPY sse_server.py .
