@@ -25,3 +25,10 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.lca-mcp.rule=Host(`lca-mcp.mathplosion.com`)"
+      - "traefik.http.routers.lca-mcp.entrypoints=https"
+      - "traefik.http.routers.lca-mcp.tls=true"
+      - "traefik.http.routers.lca-mcp.tls.certresolver=letsencrypt"
+      - "traefik.http.services.lca-mcp.loadbalancer.server.port=9000"
