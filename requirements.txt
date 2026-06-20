@@ -1,8 +1,10 @@
 fastmcp
 fastapi
 uvicorn[standard]
-requests
-olca-ipc
-olca-schema
+pydantic
 pyyaml
 numpy
+brightway25>=1.0
+bw2io>=0.9
+bw2calc>=2.0
+bw2data>=4.0

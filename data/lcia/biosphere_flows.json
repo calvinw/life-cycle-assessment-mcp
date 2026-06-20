@@ -1,0 +1,18 @@
+[
+  { "key": "Carbon dioxide|air",       "name": "Carbon dioxide",       "categories": ["air"],   "unit": "kg", "type": "emission" },
+  { "key": "Methane|air",              "name": "Methane",              "categories": ["air"],   "unit": "kg", "type": "emission" },
+  { "key": "Nitrous oxide|air",        "name": "Nitrous oxide",        "categories": ["air"],   "unit": "kg", "type": "emission" },
+  { "key": "Ammonia|air",              "name": "Ammonia",              "categories": ["air"],   "unit": "kg", "type": "emission" },
+  { "key": "Sulfur dioxide|air",       "name": "Sulfur dioxide",       "categories": ["air"],   "unit": "kg", "type": "emission" },
+  { "key": "Nitrogen oxides|air",      "name": "Nitrogen oxides",      "categories": ["air"],   "unit": "kg", "type": "emission" },
+  { "key": "Carbon monoxide|air",      "name": "Carbon monoxide",      "categories": ["air"],   "unit": "kg", "type": "emission" },
+  { "key": "Hydrogen chloride|air",    "name": "Hydrogen chloride",    "categories": ["air"],   "unit": "kg", "type": "emission" },
+  { "key": "Particulate matter|air",   "name": "Particulate matter",   "categories": ["air"],   "unit": "kg", "type": "emission" },
+  { "key": "VOC|air",                  "name": "VOC",                  "categories": ["air"],   "unit": "kg", "type": "emission" },
+  { "key": "Water|air",               "name": "Water",                "categories": ["air"],   "unit": "L",  "type": "emission" },
+  { "key": "Water|water",             "name": "Water",                "categories": ["water"], "unit": "L",  "type": "resource" },
+  { "key": "Water|ground",            "name": "Water",                "categories": ["ground"],"unit": "L",  "type": "resource" },
+  { "key": "Nitrogen|water",          "name": "Nitrogen",             "categories": ["water"], "unit": "kg", "type": "emission" },
+  { "key": "Phosphorus|water",        "name": "Phosphorus",           "categories": ["water"], "unit": "kg", "type": "emission" },
+  { "key": "Nitrate|water",           "name": "Nitrate",              "categories": ["water"], "unit": "kg", "type": "emission" }
+]

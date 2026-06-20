@@ -1,31 +1,27 @@
-# Use Python 3.11 slim image
 FROM python:3.11-slim
 
-# Set working directory
 WORKDIR /app
 
-# Copy requirements file
-COPY requirements.txt .
+# System deps: graphviz for SVG layout
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends graphviz curl \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install dependencies
+# Python deps (brightway25 is the heaviest — install first for layer caching)
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Install Graphviz for SVG generation
-RUN apt-get update && apt-get install -y --no-install-recommends graphviz curl && rm -rf /var/lib/apt/lists/*
-
-# Copy server code
-COPY sse_server.py .
-COPY lca_server.py .
-COPY lca_engine.py .
-COPY lca_svg_engine.py .
-COPY lca_svg.py .
+# Application code
+COPY sse_server.py lca_server.py lca_engine.py lca_svg_engine.py lca_svg.py ./
 COPY case_studies/ ./case_studies/
+COPY data/ ./data/
+COPY scripts/ ./scripts/
 
-# Expose port 9000
 EXPOSE 9000
-
-# Set environment variable for port
 ENV PORT=9000
+ENV BRIGHTWAY_PROJECT=lca_server
 
-# Run the server
-CMD ["python", "sse_server.py"]
+# Run setup (idempotent) then start server.
+# Brightway data persists in /app/brightway_data via a Docker volume.
+ENV BRIGHTWAY_DIR=/app/brightway_data
+CMD ["sh", "-c", "python scripts/setup_databases.py && python sse_server.py"]

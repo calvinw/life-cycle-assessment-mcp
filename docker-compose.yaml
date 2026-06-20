@@ -1,31 +1,20 @@
 services:
-  gdt-server:
-    build:
-      context: .
-      dockerfile: Dockerfile.gdt
-    volumes:
-      - ~/olca-data:/app/data
-    command: -db lca_methods
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/api/version"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   lca-mcp:
     build: .
     ports:
       - "9000:9000"
-    depends_on:
-      gdt-server:
-        condition: service_healthy
+    volumes:
+      - brightway_data:/app/brightway_data
     environment:
-      - GDT_SERVER_URL=http://gdt-server:8080
+      - PORT=9000
+      - BRIGHTWAY_PROJECT=lca_server
+      - BRIGHTWAY_DIR=/app/brightway_data
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/.well-known/oauth-authorization-server"]
-      interval: 10s
+      test: ["CMD", "curl", "-f", "http://localhost:9000/api/health"]
+      interval: 15s
       timeout: 5s
       retries: 5
+      start_period: 60s
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.lca-mcp.rule=Host(`lca-mcp.mathplosion.com`)"
@@ -35,3 +24,6 @@ services:
       - "traefik.http.services.lca-mcp.loadbalancer.server.port=9000"
       - "traefik.http.routers.lca-mcp.middlewares=lca-mcp-headers"
       - "traefik.http.middlewares.lca-mcp-headers.headers.customrequestheaders.X-Forwarded-Proto=https"
+
+volumes:
+  brightway_data:

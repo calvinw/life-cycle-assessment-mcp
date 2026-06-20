@@ -1,14 +1,14 @@
 """
-lca_server.py — Life Cycle Assessment MCP server.
+lca_server.py — Life Cycle Assessment MCP server (Brightway 2.5 engine).
 
 Tools:
-    run_lca                — full LCA from a recipe card YAML string
-    get_lca_svg            — supply chain diagram (scaled or structure)
-    get_unit_process_svg   — single-process card SVG
-    list_impact_methods    — list all LCIA methods in the connected database
-    check_server           — health check for the gdt-server
-    list_case_studies      — list bundled teaching case studies
-    get_case_study         — return the recipe card for a named case study
+    run_lca              — full LCA from a recipe card YAML string
+    get_lca_svg          — supply chain diagram (scaled or structure)
+    get_unit_process_svg — single-process card SVG
+    list_impact_methods  — list all LCIA methods loaded in Brightway
+    check_server         — Brightway engine health check
+    list_case_studies    — list bundled teaching case studies
+    get_case_study       — return the recipe card for a named case study
 
 Run in stdio mode:
     python3 lca_server.py
@@ -17,14 +17,10 @@ Run via SSE (remote):
     python3 sse_server.py
 """
 
-import os
 import pathlib
-import requests
 from fastmcp import FastMCP
-from lca_engine import run_analysis
+from lca_engine import run_analysis, list_methods, check_brightway
 from lca_svg_engine import generate_svg, generate_unit_process_svg
-
-_DEFAULT_SERVER_URL = os.environ.get("GDT_SERVER_URL", "http://localhost:8080")
 
 mcp = FastMCP("Life Cycle Assessment MCP")
 
@@ -34,8 +30,7 @@ _CASE_STUDIES_DIR = pathlib.Path(__file__).parent / "case_studies"
 # ── LCA calculation ───────────────────────────────────────────────────────────
 
 @mcp.tool()
-def run_lca(recipe_card: str,
-            server_url: str = _DEFAULT_SERVER_URL) -> dict:
+def run_lca(recipe_card: str) -> dict:
     """
     Run a full LCA from a recipe card YAML string.
 
@@ -44,7 +39,7 @@ def run_lca(recipe_card: str,
     is the YAML frontmatter from a recipe_card.md file (with or without
     the --- fence markers).
     """
-    result = run_analysis(recipe_card, server_url)
+    result = run_analysis(recipe_card)
     result["svg_scaled"]    = generate_svg(recipe_card, "scaled")
     result["svg_structure"] = generate_svg(recipe_card, "structure")
     return result
@@ -53,14 +48,13 @@ def run_lca(recipe_card: str,
 # ── SVG diagrams ──────────────────────────────────────────────────────────────
 
 @mcp.tool()
-def get_lca_svg(recipe_card: str,
-                graph_type: str = "scaled") -> str:
+def get_lca_svg(recipe_card: str, graph_type: str = "scaled") -> str:
     """
     Generate a supply chain SVG diagram from a recipe card YAML string.
 
     graph_type: "scaled"    — shows flow amounts and scaling factors
                 "structure" — shows flow names only
-    Returns SVG as a string. Does not require the gdt-server to be running.
+    Returns SVG as a string.
     """
     return generate_svg(recipe_card, graph_type)
 
@@ -72,7 +66,7 @@ def get_unit_process_svg(recipe_card: str, process_name: str) -> str:
 
     process_name must match a process name in the recipe card exactly,
     e.g. "P1 — Sheep farming" or "P2 — Wool yarn production".
-    Returns SVG as a string. Does not require the gdt-server to be running.
+    Returns SVG as a string.
     """
     return generate_unit_process_svg(recipe_card, process_name)
 
@@ -83,7 +77,7 @@ def get_unit_process_svg(recipe_card: str, process_name: str) -> str:
 def list_case_studies() -> list:
     """
     List the bundled teaching case studies available on this server.
-    Each name can be passed to get_case_study() to retrieve the recipe card.
+    Each name can be passed to get_case_study() to retrieve the full bundle.
     """
     return [p.stem for p in sorted(_CASE_STUDIES_DIR.glob("*.md"))]
 
@@ -107,7 +101,6 @@ def get_case_study(name: str) -> dict:
     if bundle_path.exists():
         import json
         return json.loads(bundle_path.read_text())
-    # fallback: return just the recipe card if no bundle has been generated yet
     md_path = _CASE_STUDIES_DIR / f"{name}.md"
     if md_path.exists():
         return {"recipe_card": md_path.read_text()}
@@ -118,24 +111,18 @@ def get_case_study(name: str) -> dict:
 # ── Server / methods ──────────────────────────────────────────────────────────
 
 @mcp.tool()
-def list_impact_methods(server_url: str = _DEFAULT_SERVER_URL) -> list:
+def list_impact_methods() -> list:
     """
-    List all LCIA methods available in the connected database.
-    Examples: TRACI 2.2, ReCiPe 2016, EF 3.1, CML, ImpactWorld+.
+    List all LCIA methods available in the Brightway project.
+    Returns a list of dicts with name and categories.
     """
-    r = requests.get(f"{server_url}/data/impact-methods", timeout=10)
-    r.raise_for_status()
-    return [{"id": m["@id"], "name": m["name"]} for m in r.json()]
+    return list_methods()
 
 
 @mcp.tool()
-def check_server(server_url: str = _DEFAULT_SERVER_URL) -> dict:
-    """Check if the openLCA gdt-server is running and ready."""
-    try:
-        r = requests.get(f"{server_url}/api/version", timeout=5)
-        return {"running": True, "version": r.json().get("version")}
-    except Exception:
-        return {"running": False}
+def check_server() -> dict:
+    """Check that the Brightway LCA engine is initialised and ready."""
+    return check_brightway()
 
 
 if __name__ == "__main__":
