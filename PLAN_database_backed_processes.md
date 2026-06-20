@@ -3,14 +3,14 @@
 ## Problem Statement
 
 Currently, every number in a recipe card — all flows, emissions, and resource
-extractions — is hand-authored directly in the YAML. For teaching purposes
-this is fine, but for more realistic case studies we want process inputs to be
-pulled automatically from a background database (e.g., Ecoinvent, US LCI, or a
-custom inventory) instead of typed by hand.
+extractions — is hand-authored directly in the YAML. For a production LCA
+server we want process inputs to link to real background inventory databases
+(e.g., Ecoinvent, US LCI) so that upstream supply chains are resolved
+accurately by the solver rather than approximated by hand.
 
-The goal is to let a recipe card say "this process consumes 0.3 kWh of grid
-electricity — get the emissions profile of that electricity from the database"
-rather than enumerating all the upstream emissions by hand.
+The goal is to let a recipe card say "this process consumes 0.45 kWh of grid
+electricity — link to the database process for that electricity and let openLCA
+solve the full supply chain" rather than enumerating upstream emissions by hand.
 
 ---
 
@@ -20,9 +20,9 @@ rather than enumerating all the upstream emissions by hand.
 Recipe Card (YAML)
   └─ processes[i]
        ├─ reference_output: { flow, amount }
-       ├─ inputs: [{ flow, amount }]         ← all amounts are hand-authored
-       ├─ emissions: [{ flow, amount }]      ← all amounts are hand-authored
-       └─ resources: [{ flow, amount }]      ← all amounts are hand-authored
+       ├─ inputs: [{ flow, amount }]         ← foreground links only (A-matrix)
+       ├─ emissions: [{ flow, amount }]      ← hand-authored (B-matrix)
+       └─ resources: [{ flow, amount }]      ← hand-authored (B-matrix)
 ```
 
 Every amount ends up as an entry in the A-matrix (technosphere) or B-matrix
@@ -37,38 +37,65 @@ no fuels, etc.).
 
 ---
 
+## How openLCA Desktop Works (Production Target)
+
+In the openLCA desktop app, background processes are **real nodes** in the
+product system connected via technosphere flows. They appear as columns in the
+A-matrix alongside foreground processes, and the solver handles everything as
+one unified matrix:
+
+```
+s = A⁻¹ f
+```
+
+Where A contains **all** processes — foreground and background — and f is the
+demand vector. The solver scales every process simultaneously. Background
+processes remain individually visible in the product system graph, with their
+own scaling factors in the solution vector `s`.
+
+This is what the gdt-server is designed to do. The production approach must
+match it: background processes become real linked nodes, not pre-collapsed
+emission grafts.
+
+---
+
 ## Proposed Extension: `db_ref` Inputs
 
 ### Core Idea
 
 Allow an input entry in a recipe card to declare itself as database-backed by
-adding a `db_ref` field instead of (or alongside) explicit emission/resource
-amounts:
+adding a `db_ref` field. The engine looks up that process in the background
+database and creates a **real technosphere link** between the background process
+and the foreground process — exactly as openLCA desktop would:
 
 ```yaml
 processes:
   - name: P2 — Cotton farming
     reference_output: { flow: Cotton fiber, amount: 1.0, unit: kg }
     inputs:
-      # Foreground input — amounts stay in the recipe card (unchanged)
+      # Foreground input — unchanged, links to another recipe process
       - { flow: N-fertilizer, amount: 0.2, unit: kg }
 
-      # Background input — emissions pulled from database
-      - flow: Electricity, US grid
+      # Background input — links to a real database process
+      - flow: Electricity, at grid, US
         amount: 0.45
         unit: kWh
         db_ref:
-          source: uslci          # which database/library to query
-          process: "Electricity, at grid, US"   # exact process name in that DB
-          # Optional overrides:
-          allocation: mass       # allocation method if the DB process is multi-output
+          source: uslci          # named database from the registry
+          process: "Electricity, at grid/US"  # exact process name or UUID in DB
 ```
 
-When `db_ref` is present, the engine looks up that process in the specified
-background database, scales its elementary flows by `amount`, and folds them
-into the current process's B-matrix column. The technosphere connection is
-**not** added to the A-matrix (i.e., it stays a "cut-off" for the foreground
-system; the background emissions are grafted in directly).
+When `db_ref` is present, the engine:
+1. Looks up the named process in the background database by name or UUID
+2. Retrieves the Process object (including its own inputs, emissions, and
+   resource flows)
+3. Adds that Process as a column in the product system's A-matrix
+4. Creates a technosphere link: background process reference output →
+   foreground process input
+5. Lets `A⁻¹ f` propagate the demand through the full supply chain recursively
+
+The background process's entire upstream supply chain is resolved by the solver.
+No manual scaling or emission grafting occurs.
 
 ---
 
@@ -78,167 +105,196 @@ system; the background emissions are grafted in directly).
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `db_ref` | object | no | If present, emissions for this input come from DB |
-| `db_ref.source` | string | yes | Named database to query (see registry below) |
-| `db_ref.process` | string | yes | Exact name (or UUID) of the background process |
-| `db_ref.allocation` | string | no | Allocation method: `mass`, `economic`, `physical`, `none` |
-| `db_ref.system_boundary` | string | no | `cradle_to_gate` (default) or `gate_to_gate` |
+| `db_ref` | object | no | If present, this input links to a database process |
+| `db_ref.source` | string | yes | Named database from the `databases` registry |
+| `db_ref.process` | string | yes | Process name or UUID in that database |
+| `db_ref.allocation` | string | no | Allocation method if multi-output: `mass`, `economic`, `physical`, `none` (default: `none`) |
 
 ### New top-level section: `databases`
 
 ```yaml
 databases:
   uslci:
-    type: olca_gdt          # gdt-server REST endpoint
+    type: olca_gdt
     url: http://localhost:8080
-    database: uslci_corr    # database name within the server
-  custom_ecoinvent:
+    database: uslci_corr
+  ecoinvent:
     type: olca_gdt
     url: http://localhost:8080
     database: ecoinvent_391_cutoff
 ```
 
-This registry decouples the `db_ref.source` short name from the actual
-connection details, so recipe cards stay portable.
-
-If the `databases` section is omitted, a single default database (the
-currently running gdt-server) is assumed for all `db_ref` lookups.
+This registry decouples the `db_ref.source` short name from actual connection
+details so recipe cards remain portable across deployments. If the `databases`
+section is omitted, the default gdt-server instance is assumed.
 
 ---
 
 ## Implementation Plan
 
-### Phase 1 — Database Registry and Connection Layer
+### Phase 1 — Background Database Registry
 
-**File:** `lca_engine.py` (new helper class)
+**File:** `lca_engine.py` (new `DatabaseRegistry` class)
 
-1. Parse the `databases` section from the recipe YAML.
-2. Build a `DatabaseRegistry` dict: `{name -> RestClient}`.
+1. Parse the `databases` section from the recipe YAML at startup.
+2. Build a registry: `{source_name -> RestClient}`.
 3. If no `databases` section, use the existing default `RestClient`.
-4. Add a helper `get_background_client(source_name)` that returns the right
-   client or raises a clear error.
+4. Expose `get_client(source_name) -> RestClient` with clear error on missing
+   source.
 
-No recipe card changes needed yet; this is pure infrastructure.
+No recipe card format changes yet; pure infrastructure.
 
 ---
 
 ### Phase 2 — Background Process Resolver
 
-**File:** `lca_engine.py` (new method `_resolve_background_process`)
+**File:** `lca_engine.py` (new `BackgroundProcessResolver` class)
 
 ```
-_resolve_background_process(client, process_name_or_uuid, allocation)
-  → dict { flow_name: { amount, unit, type } }   # per-unit LCI of that process
+resolve(source, process_name_or_uuid) -> olca.Process
 ```
 
-Steps inside the resolver:
+Steps:
 
-1. Query the background database for the named process (`GET /data/processes`
-   filtered by name, or direct UUID lookup).
-2. If the process is multi-output, apply the requested allocation method to
-   reduce it to a single-output equivalent.
-3. Run a unit-process LCI calculation on it (or read stored LCI if available).
-4. Return a flat dict of elementary flows (emissions + resources) normalised
-   to 1 unit of the process's reference output.
+1. Call `get_client(source)` to get the right database connection.
+2. Search for the process by name (`GET /data/processes` filtered by name) or
+   fetch directly by UUID.
+3. Return the full `olca.Process` object as retrieved from the database —
+   including all its exchanges (inputs, outputs, emissions, resources).
+4. Cache results keyed on `(source, process_name_or_uuid)` to avoid repeated
+   network calls within a single `run_analysis()` call.
 
-The resolver caches results keyed on `(source, process_name, allocation)` to
-avoid repeated network calls within a single `run_analysis()` call.
+The resolver does **not** pre-solve or collapse the process. It returns the raw
+Process object so the engine can link it into the product system properly.
 
 ---
 
-### Phase 3 — Integration into Process Building
+### Phase 3 — Product System Builder Update
 
-**File:** `lca_engine.py` → `_create_process()` (or equivalent)
+**File:** `lca_engine.py` — process and product system construction
 
-When iterating over `process.inputs`:
+This is the core change. When iterating over `process.inputs`:
 
 ```python
 for inp in process.get("inputs", []):
     if "db_ref" in inp:
-        bg_lci = resolver.resolve(
+        # Resolve the background process from the database
+        bg_process = resolver.resolve(
             source=inp["db_ref"]["source"],
             process=inp["db_ref"]["process"],
-            allocation=inp["db_ref"].get("allocation", "none"),
         )
-        scale = inp["amount"]   # amount of this input per reference output
-        # Add scaled elementary flows directly to this process's B-matrix column
-        for flow_name, flow_data in bg_lci.items():
-            add_to_biosphere(process_obj, flow_name, flow_data["amount"] * scale, flow_data["unit"])
-        # Do NOT add inp["flow"] to the A-matrix (cut-off)
+        # Add the background process to the product system as a real node
+        product_system.processes.append(bg_process.to_ref())
+
+        # Create a technosphere link: bg_process.ref_output → this process input
+        link = olca.ProcessLink()
+        link.provider = bg_process.to_ref()
+        link.flow = bg_process.quantitative_reference.flow
+        link.process = current_process.to_ref()
+        link.exchange = find_input_exchange(current_process, inp["flow"])
+        product_system.process_links.append(link)
+
+        # The solver will traverse bg_process's own inputs recursively
     else:
-        # Existing behaviour — foreground technosphere link
-        add_to_technosphere(process_obj, inp)
+        # Existing behaviour — foreground technosphere link (unchanged)
+        add_foreground_link(inp)
 ```
+
+The gdt-server's `POST /calculate` call already handles recursive supply chain
+resolution when the product system graph is fully specified. No additional
+recursion logic is needed in Python.
 
 ---
 
-### Phase 4 — Transparency: Annotated LCI Output
+### Phase 4 — Handling Multi-Output Background Processes
 
-When `db_ref` inputs are present, the output dict should include a
-`background_contributions` section so the user can see where numbers came from:
+**File:** `lca_engine.py`
+
+When a background process has multiple outputs (e.g., a co-production process),
+the engine must apply the allocation method specified in `db_ref.allocation`
+before linking. openLCA supports this natively via the `AllocationMethod` field
+in `CalculationSetup`:
+
+```python
+setup = olca.CalculationSetup()
+setup.allocation_method = map_allocation(recipe.get("default_allocation", "none"))
+```
+
+Per-input overrides of allocation method are applied by creating a modified
+copy of the background process with the specified allocation pre-applied, or by
+using openLCA's process-level allocation factors if stored in the database.
+
+Default: `none` (cut-off allocation), consistent with Ecoinvent cutoff system
+model.
+
+---
+
+### Phase 5 — Scaling Vector and Results
+
+The output `scaling_vector` already maps process name → scale factor. With
+background processes included in the product system, the scaling vector will
+now include entries for every background process the solver touched:
 
 ```json
-"background_contributions": {
-  "P2 — Cotton farming": {
-    "Electricity, US grid (0.45 kWh)": {
-      "source": "uslci",
-      "process": "Electricity, at grid, US",
-      "scaled_flows": {
-        "Carbon dioxide": { "amount": 0.312, "unit": "kg" },
-        "Sulfur dioxide": { "amount": 0.0009, "unit": "kg" }
-      }
-    }
-  }
+"scaling_vector": {
+  "P1 — Fertilizer production": 0.2,
+  "P2 — Cotton farming": 1.0,
+  "Electricity, at grid/US [uslci]": 0.45,
+  "Steam, natural gas [uslci]": 0.031
 }
 ```
 
-This lives alongside the existing `lci` key and is optional (only present when
-db_ref inputs exist).
+Background process entries should be labelled with their source database in
+brackets to distinguish them from foreground processes.
+
+The existing `lci` and `lcia` output keys are unchanged — they already
+represent the total system result after solver propagation.
 
 ---
 
-### Phase 5 — Recipe Card Validation
+### Phase 6 — Recipe Card Validation
 
-**File:** `lca_engine.py` or a new `lca_validator.py`
+**File:** new `lca_validator.py`
 
-Add validation at parse time (before touching any database):
+Validate before touching any database:
 
-- If `db_ref` present on an input, require `db_ref.source` and `db_ref.process`.
-- If `db_ref.source` names a database not listed in `databases`, raise a clear
-  error pointing to the missing registry entry.
-- Warn (don't fail) if the `flow` name on a db_ref input doesn't match the
-  reference output of the resolved background process.
+- If `db_ref` is present on an input, require both `db_ref.source` and
+  `db_ref.process`.
+- If `db_ref.source` names a database not in the `databases` registry, raise a
+  clear error identifying the missing entry.
+- Validate `db_ref.allocation` is one of the accepted values if provided.
+
+At resolution time (Phase 2), raise a clear error if the named process cannot
+be found in the specified database, including the source and process name in
+the message.
 
 ---
 
-### Phase 6 — SVG Visualization Update
+### Phase 7 — SVG Visualization Update
 
 **File:** `lca_svg.py`
 
-Database-backed inputs should render differently from foreground inputs:
+Background processes are real nodes in the product system and should render as
+real nodes in the SVG, visually distinct from foreground processes:
 
-- Dashed border box (or different color fill) for the "virtual" background
-  process node.
-- Label showing `db_ref.source` and abbreviated process name.
-- Arrow from the background box into the foreground process, labelled with
-  the amount and unit.
-
-This makes it visually obvious to students which numbers came from the recipe
-card vs. which were looked up.
+- Different fill color (e.g., light blue for foreground, light grey for
+  background database processes).
+- Label includes the source database name: `"Electricity, at grid/US\n[uslci]"`.
+- Arrow from background node into foreground process, labelled with amount and
+  unit, same as any other technosphere link.
+- Background processes connected to other background processes (upstream supply
+  chain) are rendered if their scaling factor is above a configurable threshold,
+  collapsed to a single "upstream" node if the chain is too deep.
 
 ---
 
-### Phase 7 — Bundle Generation Update
+### Phase 8 — Bundle Generation Update
 
 **File:** `generate_bundles.py`
 
-The bundler already runs `run_analysis()` and stores results as JSON. No
-structural change needed — the new `background_contributions` key will be
-included automatically once Phase 4 is done.
+Bundles containing `db_ref` inputs are database-dependent. The bundler should:
 
-However, bundles that contain `db_ref` inputs are **database-dependent**. The
-bundler should record which database sources were used and at what version, so
-stale bundles can be detected:
+1. Record which background databases were queried and their version metadata:
 
 ```json
 "bundle_metadata": {
@@ -249,13 +305,18 @@ stale bundles can be detected:
 }
 ```
 
+2. Optionally cache the resolved background `Process` objects as JSON in the
+   bundle so that the recipe can be re-run offline without a live database
+   connection. The engine checks for a `resolved_processes` section in the
+   bundle and uses it instead of live lookups when present.
+
 ---
 
 ## Recipe Card Example (After Extension)
 
 ```yaml
-name: "Electricity-Intensive Process — 1 kg output"
-goal: "Demonstrates database-backed electricity input"
+name: "Cotton Fiber — 1 kg"
+goal: "Full supply chain LCA linking electricity to USLCI"
 
 databases:
   uslci:
@@ -267,81 +328,114 @@ lcia:
   method_name: TRACI 2.2
 
 functional_unit:
-  description: 1 kg of product
+  description: 1 kg of cotton fiber
   amount: 1.0
   unit: kg
 
 units:
   kg: Mass
   kWh: Energy
+  L:   Volume
 
 products:
-  - { name: Product, unit: kg }
-  - { name: Electricity, US grid, unit: kWh }
+  - { name: N-fertilizer,   unit: kg }
+  - { name: Cotton fiber,   unit: kg }
 
 elementary_flows:
   emissions:
     - { name: Carbon dioxide, compartment: air, unit: kg }
+    - { name: Nitrous oxide,  compartment: air, unit: kg }
+  resources:
+    - { name: Water,          compartment: water, unit: L }
 
 processes:
-  - name: P1 — Manufacturing
-    reference_output: { flow: Product, amount: 1.0, unit: kg }
+  - name: P1 — Fertilizer production
+    reference_output: { flow: N-fertilizer, amount: 1.0, unit: kg }
     inputs:
-      # Foreground input with hand-authored numbers (unchanged)
-      - { flow: Raw material A, amount: 0.8, unit: kg }
+      # Background: natural gas from USLCI, full upstream resolved by solver
+      - flow: Natural gas, at production
+        amount: 12.5
+        unit: MJ
+        db_ref:
+          source: uslci
+          process: "Natural gas, combusted in industrial boiler"
+    emissions:
+      - { flow: Carbon dioxide, amount: 3.5, unit: kg }
 
-      # Background input — pulls all emissions from USLCI
-      - flow: Electricity, US grid
+  - name: P2 — Cotton farming
+    reference_output: { flow: Cotton fiber, amount: 1.0, unit: kg }
+    inputs:
+      # Foreground link — stays in recipe card
+      - { flow: N-fertilizer, amount: 0.2, unit: kg }
+      # Background link — solver resolves full electricity supply chain
+      - flow: Electricity, at grid, US
         amount: 0.45
         unit: kWh
         db_ref:
           source: uslci
           process: "Electricity, at grid/US"
-
-    # Direct emissions still hand-authored
     emissions:
-      - { flow: Carbon dioxide, amount: 0.05, unit: kg }
+      - { flow: Nitrous oxide, amount: 0.015, unit: kg }
+    resources:
+      - { flow: Water, amount: 850.0, unit: L }
 
-reference_process: P1 — Manufacturing
+reference_process: P2 — Cotton farming
 ```
 
 ---
 
 ## What Does NOT Change
 
-- The existing foreground-only recipe card format is **fully backward
-  compatible**. `db_ref` is opt-in per input.
-- The gdt-server and `lca_methods` database are unchanged; the new feature
-  adds connections to *additional* databases.
-- LCIA characterization still comes from `lca_methods` regardless of which
-  inventory database supplies the emissions.
-- The matrix algebra (`A⁻¹ f`) is unchanged; `db_ref` inputs just contribute
-  extra rows to the B-matrix column rather than a row in the A-matrix.
+- Existing foreground-only recipe cards are **fully backward compatible**.
+  `db_ref` is opt-in per input entry.
+- The `lca_methods` database and LCIA characterization logic are unchanged.
+- The `POST /calculate` call to gdt-server is unchanged; it already supports
+  full product system graphs with arbitrary depth.
+- Output keys (`lci`, `lcia`, `scaling_vector`) are unchanged in structure;
+  `scaling_vector` gains additional entries for background processes.
+- The matrix algebra (`A⁻¹ f`) is handled entirely by the gdt-server — no
+  changes to solver logic.
+
+---
+
+## What This Replaces (vs. Previous Teaching Approximation)
+
+The previous draft proposed "grafting" background emissions directly into the
+foreground B-matrix (pre-solving and collapsing upstream flows by hand). That
+approach was rejected because:
+
+- It does not match how openLCA desktop works
+- It loses the background process as a visible, individually-scalable node
+- It requires manual maintenance if the background process changes in the DB
+- It cannot represent multi-level upstream supply chains correctly
+- It is not appropriate for a production LCA server
+
+The correct approach — and what this plan implements — is to add background
+processes as real A-matrix nodes linked via technosphere flows, and let the
+gdt-server solver (`A⁻¹ f`) resolve the full supply chain as designed.
 
 ---
 
 ## Open Questions / Decisions Needed
 
-1. **Cut-off vs. linked-process**: Should `db_ref` inputs be grafted into the
-   B-matrix directly (cut-off, simpler) or should they be added as actual
-   linked processes in the A-matrix (full system expansion, more accurate but
-   harder to explain to students)? Recommendation: **cut-off first**, with
-   a flag to opt into full linking later.
+1. **Which background databases to support initially?** USLCI is free and
+   directly supported by openLCA. Ecoinvent requires a license. Recommendation:
+   **USLCI first**, with the registry design making Ecoinvent straightforward
+   to add.
 
-2. **Which background databases to support initially?** Options: USLCI only,
-   or also Ecoinvent, or a custom flat-file library? Recommendation: **USLCI
-   first** since it's free and well-supported by openLCA.
+2. **Upstream graph depth in SVG**: How many levels of background supply chain
+   to render before collapsing to a summary node? Suggestion: configurable,
+   defaulting to 2 levels.
 
-3. **Allocation default**: When a background process is multi-output, what
-   allocation method should be the default? Recommendation: `none` (cut-off
-   allocation) consistent with how Ecoinvent cutoff system model works.
+3. **Process name vs. UUID in `db_ref.process`**: Name lookup is human-readable
+   but fragile if the database has duplicate names. UUID lookup is robust but
+   opaque. Recommendation: **support both** — if the value is a valid UUID,
+   use direct lookup; otherwise search by name and raise an error if ambiguous.
 
-4. **Offline / bundled fallback**: Should the bundler be able to pre-resolve
-   all `db_ref` lookups and embed the results in the bundle JSON so the recipe
-   can run offline without a background database? Recommendation: **yes** —
-   add a `resolved_background` section to the bundle that caches the scaled
-   flows, with a flag `db_ref_resolved: true` so the engine skips the live
-   lookup when running from a bundle.
+4. **Offline bundle fallback**: Should pre-resolved Process objects be embedded
+   in bundles for offline use? Recommendation: **yes**, as a serialized openLCA
+   JSON archive alongside the bundle, loaded by the engine when no live
+   database is available.
 
 ---
 
@@ -349,8 +443,8 @@ reference_process: P1 — Manufacturing
 
 | File | Change |
 |------|--------|
-| `lca_engine.py` | Add `DatabaseRegistry`, `BackgroundProcessResolver`, modify `_create_process` to handle `db_ref` |
-| `lca_svg.py` | Render db_ref inputs as dashed/shaded background nodes |
-| `generate_bundles.py` | Record `database_versions`; support pre-resolved background flows |
-| `case_studies/*.md` | (Optional) Add `databases:` section and `db_ref` fields to inputs |
-| New: `lca_validator.py` | Schema validation for `db_ref` fields before computation |
+| `lca_engine.py` | Add `DatabaseRegistry`, `BackgroundProcessResolver`; update product system builder to create real A-matrix links for `db_ref` inputs |
+| `lca_svg.py` | Render background processes as real nodes with distinct styling and configurable depth cutoff |
+| `generate_bundles.py` | Record `database_versions`; optionally embed resolved Process objects for offline use |
+| `case_studies/*.md` | Add `databases:` section and `db_ref` fields to inputs as needed |
+| New: `lca_validator.py` | Schema and reference validation for `db_ref` fields before computation |
