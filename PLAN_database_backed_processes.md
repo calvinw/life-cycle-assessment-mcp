@@ -1,17 +1,53 @@
 # Plan: Database-Backed Process Inputs in Recipe Cards
 
+## Decision: Replace gdt-server with Brightway 2.5
+
+The openLCA gdt-server Docker setup is replaced entirely with
+**Brightway 2.5** (`pip install brightway25`). This eliminates Java, Docker,
+and REST overhead from the calculation stack. The entire LCA engine runs
+in-process as pure Python using numpy/scipy for matrix operations.
+
+### Why Brightway 2.5
+
+- Mature Python LCA framework (~12 years, standard in academic research)
+- Activity Browser and many production LCA tools are built on it
+- The recursive product system building we need is native behaviour
+- `bw2io 0.9.x` imports USLCI, Ecoinvent, and openLCA JSON-LD natively
+- No Docker, no Java, no REST serialization overhead
+- Direct numpy/scipy matrix access — the A and B matrices are Python objects
+- Core calculation engine (`bw2calc`) is very stable
+
+### Version
+
+Install via: `pip install brightway25`
+
+This installs Brightway **2.5** (bw2data 4.x, bw2calc 2.x, bw2io 0.9.x,
+bw_processing, matrix_utils). Do not confuse with the experimental
+"Brightway25 next-generation rewrite" which is a separate, unfinished project.
+
+### What is Removed
+
+- `docker-compose.yml` gdt-server service (and any database service overlays)
+- Java / openLCA gdt-server
+- `olca_ipc` Python dependency
+- All `RestClient` usage in `lca_engine.py`
+- `~/olca-data` volume mounts
+- The `lca_methods` openLCA database (LCIA methods are loaded via `bw2io`)
+
+---
+
 ## Problem Statement
 
 Currently, every number in a recipe card — all flows, emissions, and resource
 extractions — is hand-authored directly in the YAML. For a production LCA
 server we want process inputs to optionally link to real background inventory
-databases (USLCI, openLCA reference data, and other free databases) so that
-upstream supply chains are resolved accurately by the solver.
+databases (USLCI and others) so that upstream supply chains are resolved
+accurately by the solver.
 
-The system should support a **hybrid model**: if an input has explicit amounts
-in the recipe card, use them; if an input has no amounts, look it up in the
-database and resolve its upstream supply chain recursively. This is how openLCA
-desktop works when you mix foreground unit processes with background database
+The system supports a **hybrid model**: if an input has explicit amounts in the
+recipe card, use them; if an input has no amounts, look it up in the database
+and resolve its upstream supply chain recursively. This matches how openLCA
+desktop works when mixing foreground unit processes with background database
 processes.
 
 ---
@@ -25,34 +61,51 @@ Recipe Card (YAML)
        ├─ inputs: [{ flow, amount }]         ← foreground links only (A-matrix)
        ├─ emissions: [{ flow, amount }]      ← hand-authored (B-matrix)
        └─ resources: [{ flow, amount }]      ← hand-authored (B-matrix)
+
+lca_engine.py
+  └─ RestClient → HTTP → gdt-server (Java) → A⁻¹f → HTTP → Python
 ```
-
-The gdt-server performs `s = A⁻¹ f` at calculation time.
-
-The database (`lca_methods`) currently holds **only** LCIA methods and FEDEFL
-elementary flow definitions — no inventory processes.
 
 ---
 
-## Background Databases to Load
+## Target Architecture
 
-The following free/open databases will be imported into the gdt-server as
-openLCA JSON-LD archives. Each requires a separate gdt-server instance (or
-database slot) since gdt-server opens one database at a time.
+```
+Recipe Card (YAML)
+  └─ processes[i]
+       ├─ reference_output: { flow, amount }
+       ├─ inputs: [{ flow, amount }]              ← foreground (hand-authored)
+       │          [{ flow, amount, db_ref }]      ← pinned database lookup
+       │          [{ flow, amount }]              ← implicit database search
+       ├─ emissions: [{ flow, amount }]           ← hand-authored direct emissions
+       └─ resources: [{ flow, amount }]           ← hand-authored direct resources
 
-| Short name | Database | Notes |
-|------------|----------|-------|
-| `uslci` | US Life Cycle Inventory (USLCI) | Free, ~1000 processes, US focus |
-| `glad` | Global LCA Data (GLAD) | Free aggregated datasets |
-| `openlca_ref` | openLCA reference data | Unit groups, flow properties, FEDEFL flows |
+lca_engine.py (rewritten)
+  └─ Brightway 2.5 in-process
+       ├─ bw2data  — activity/database storage (SQLite)
+       ├─ bw2io    — database import (USLCI, openLCA JSON-LD, etc.)
+       ├─ bw2calc  — LCA calculation (sparse LU, numpy/scipy)
+       └─ matrix_utils — A and B matrix construction
+```
 
-Ecoinvent is excluded (requires license) but the architecture supports adding
-it later.
+No network calls during calculation. Everything is in-process Python.
 
-**Loading mechanism:** A Docker Compose service per database, each running its
-own gdt-server instance with the database volume pre-populated by an import
-script (`scripts/import_database.py`) that fetches the JSON-LD zip and POSTs
-it to the server's import endpoint on first run.
+---
+
+## Background Databases
+
+The following free/open databases are imported once into Brightway projects on
+first run and reused across calculations.
+
+| Short name | Source | Import method |
+|------------|--------|---------------|
+| `uslci` | US Life Cycle Inventory | `bw2io` + UBW pipeline or direct ecospold/JSON-LD import |
+| `biosphere` | FEDEFL / ecoinvent biosphere | `bw2io.create_default_biosphere3()` |
+| `lcia_methods` | TRACI 2.2, ReCiPe, etc. | `bw2io.import_ecoinvent_lcia_methods()` |
+
+A `scripts/setup_databases.py` script handles first-run import. Subsequent
+runs reuse the Brightway project from disk (SQLite, stored in
+`~/.local/share/Brightway3/` by default).
 
 ---
 
@@ -60,35 +113,34 @@ it to the server's import endpoint on first run.
 
 ### Decision Tree for Each Input
 
-For every input entry in a recipe card process, the engine applies this logic:
+For every input entry in a recipe card process:
 
 ```
 Does the input have explicit emission/resource amounts in the recipe card?
-  YES → use those amounts directly (existing foreground behaviour, unchanged)
+  YES → use those amounts directly (foreground, unchanged behaviour)
   NO  → does the input have a db_ref?
-          YES → look up the named process in the specified database
-                and link it as a real A-matrix node (see Phase 3)
-          NO  → does a process in any loaded database produce this flow?
-                  YES → auto-link it (implicit db_ref, see below)
-                  NO  → leave as unlinked (cut-off, with warning)
+          YES → fetch the pinned process from the named database
+          NO  → search loaded databases for a provider of this flow
+                  FOUND → link as background process, recurse into its inputs
+                  NOT FOUND → cut-off with warning in unlinked_flows
 ```
 
-### Simplified Recipe Card Syntax
-
-Rather than always requiring an explicit `db_ref` block, inputs that have no
-amounts are treated as implicit database lookups:
+### Recipe Card Syntax
 
 ```yaml
 inputs:
-  # Explicit amounts → used as-is, no database lookup
-  - { flow: N-fertilizer, amount: 0.2, unit: kg }
+  # 1. Fully hand-authored — no database lookup
+  - flow: N-fertilizer
+    amount: 0.2
+    unit: kg
 
-  # No amounts → engine searches loaded databases for a provider
-  - { flow: Electricity, unit: kWh, amount: 0.45 }
-    # amount here is the QUANTITY consumed, not the emissions per unit
-    # emissions come entirely from the database process
+  # 2. Implicit database search — amount is quantity consumed,
+  #    emissions come entirely from the database process
+  - flow: Electricity
+    amount: 0.45
+    unit: kWh
 
-  # Explicit db_ref → pin to a specific database and process name
+  # 3. Pinned to a specific database and process
   - flow: Electricity
     amount: 0.45
     unit: kWh
@@ -96,11 +148,6 @@ inputs:
       source: uslci
       process: "Electricity, at grid/US"
 ```
-
-The `amount` field on a database-backed input is always the **quantity
-consumed** (e.g., 0.45 kWh). The database process supplies the emissions and
-upstream inputs per unit of that flow. The engine scales by `amount` when
-building the technosphere link.
 
 ---
 
@@ -111,102 +158,77 @@ building the technosphere link.
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `flow` | string | yes | Flow name |
-| `amount` | number | yes | Quantity consumed per reference output |
+| `amount` | number | yes | Quantity consumed per reference output unit |
 | `unit` | string | yes | Unit of measure |
-| `emissions` | list | no | If present, hand-authored amounts are used (foreground) |
 | `db_ref` | object | no | Pin to a specific database process |
-| `db_ref.source` | string | yes if db_ref | Named database from registry |
-| `db_ref.process` | string | yes if db_ref | Process name or UUID in that database |
+| `db_ref.source` | string | yes if db_ref | Named database (`uslci`, etc.) |
+| `db_ref.process` | string | yes if db_ref | Activity name or UUID in that database |
 | `db_ref.allocation` | string | no | `mass`, `economic`, `physical`, `none` (default) |
 
-If neither `emissions` nor `db_ref` is present and the flow has no hand-authored
-amounts, the engine performs an implicit database search.
+An input with no hand-authored emission amounts and no `db_ref` triggers
+implicit database search. An input with hand-authored amounts is always
+used as-is and never touches the database.
 
-### New top-level section: `databases`
+### New optional top-level section: `databases`
 
 ```yaml
 databases:
   uslci:
-    type: olca_gdt
-    url: http://localhost:8081   # separate gdt-server instance per database
-  glad:
-    type: olca_gdt
-    url: http://localhost:8082
+    brightway_project: lca_server   # Brightway project name
+    brightway_database: uslci       # database name within that project
 ```
 
-If `databases` is omitted, only the default `lca_methods` instance is
-available (existing behaviour).
+If omitted, the server's default Brightway project and database priority list
+from `config.yml` are used.
 
 ---
 
 ## Recursive Resolution
 
-### How it Works
+### How It Works in Brightway 2.5
 
-When the engine links a background process to a foreground process, that
-background process may itself have inputs that are also in the database. The
-engine resolves these recursively:
+In Brightway, every Activity (process) has Exchanges (inputs/outputs). The
+`ProductSystemBuilder` traverses these recursively, mirroring openLCA desktop's
+"auto-complete product system":
 
+```python
+def resolve(activity, visited=None):
+    if visited is None:
+        visited = set()
+    if activity.key in visited:
+        return          # cycle detected — A-matrix diagonal handles this
+    visited.add(activity.key)
+
+    for exc in activity.technosphere():
+        provider = find_provider(exc.input)
+        if provider:
+            link(provider, activity, exc)
+            resolve(provider, visited)   # recurse
+        else:
+            record_gap(exc, activity)    # cut-off
 ```
-resolve(process P):
-  for each input I of P:
-    if I has explicit amounts in the recipe card:
-      add to A-matrix as foreground exchange
-    else:
-      provider = find_provider(I.flow, loaded_databases)
-      if provider found:
-        add provider to product system if not already present
-        add technosphere link: provider → P
-        resolve(provider)          # recurse
-      else:
-        mark I as unlinked (cut-off)
-        emit warning
-```
 
-This matches the openLCA desktop "auto-complete product system" behaviour
-exactly. The recursion terminates when:
-- A process has no further inputs in any loaded database (all inputs are either
-  hand-authored or unlinked), or
-- A cycle is detected (the same process UUID appears twice in the current
-  resolution path — openLCA handles this via the A-matrix diagonal)
+Brightway's `bw2calc.LCA` receives the complete activity graph and builds the
+full sparse A and B matrices internally. The solve is `s = A⁻¹ f` using
+scipy sparse LU decomposition (UMFPACK).
 
-The engine tracks visited process UUIDs to avoid infinite loops in circular
-supply chains (e.g., process A uses output of process B, which uses output of
-process A).
+### Termination Conditions
 
-### Where the Recursion Lives
-
-The gdt-server's `POST /calculate` endpoint does **not** auto-complete the
-product system. The Python engine must build the complete `ProductSystem` object
-(all process refs + all process links) before submitting the calculation. The
-recursive resolver in Python produces this complete graph.
-
-This is consistent with how the openLCA IPC Python library works when used
-programmatically (as opposed to the desktop GUI's auto-complete button).
+- Activity has no further technosphere inputs (elementary process)
+- Activity UUID already in `visited` (cycle)
+- No provider found in any loaded database (cut-off)
 
 ---
 
 ## Handling Missing Upstream Processes (Gaps)
 
-When a database process has an input that cannot be found in any loaded
-database, the engine must decide what to do. openLCA desktop calls these
-"unlinked flows" and handles them via the **cut-off** approach by default.
+When a database activity has an input that cannot be found in any loaded
+database, the engine applies **cut-off** (the industry default for attributional
+LCA). The unlinked demand is excluded from the calculation.
 
-### Cut-Off (Default)
+### Reporting
 
-The unlinked input is simply not connected to any upstream provider. Its demand
-propagates to the technosphere but has no upstream to resolve — effectively it
-disappears from the calculation. This is the industry-standard approach for
-attributional LCA with system boundary cut-offs (e.g., Ecoinvent cutoff system
-model).
-
-The calculation still produces valid results; the unlinked flows represent
-inputs whose upstream burden is intentionally excluded at the system boundary.
-
-### How Gaps Are Reported
-
-Every calculation result includes an `unlinked_flows` section listing all
-flows that were cut off:
+Every result includes `unlinked_flows`:
 
 ```json
 "unlinked_flows": [
@@ -220,112 +242,138 @@ flows that were cut off:
 ]
 ```
 
-This gives the user visibility into what is and isn't accounted for, which is
-standard practice in professional LCA reporting.
+### Gap Filling Options (explicit, never automatic)
 
-### Future: Gap-Filling
-
-If a gap is significant, the recipe card author can fill it by:
-1. Adding a foreground process to the recipe card that models the missing
-   upstream (hand-authored amounts)
-2. Loading an additional database that contains the missing process
-3. Adding a `db_ref` override on the specific input pointing to a proxy process
-
-No automatic gap-filling is implemented; all gap decisions are explicit.
+1. Add a foreground process to the recipe card modelling the missing upstream
+2. Load an additional database that contains the missing process
+3. Add a `db_ref` override on the specific input pointing to a proxy process
 
 ---
 
 ## Implementation Plan
 
-### Phase 0 — Database Loading Infrastructure
+### Phase 0 — Remove gdt-server, Add Brightway
 
-**New files:** `docker-compose.databases.yml`, `scripts/import_database.py`
-
-1. Add a Docker Compose overlay with one gdt-server service per background
-   database (USLCI, GLAD), each on its own port.
-2. Write an import script that:
-   - Downloads the openLCA JSON-LD zip for each database from the official
-     source (openLCA Nexus or GitHub releases)
-   - POSTs the zip to `PUT /data` on the respective gdt-server instance
-   - Verifies import by checking process count
-3. Add a `databases` registry to a server config file (not in recipe cards)
-   so all recipe cards share it without repeating connection details.
+1. Remove gdt-server from `docker-compose.yml` (or remove the file entirely
+   if it only served gdt-server)
+2. Remove `olca_ipc` from dependencies
+3. Add to `requirements.txt` (or `pyproject.toml`):
+   ```
+   brightway25>=1.0
+   bw2io>=0.9
+   ```
+4. Write `scripts/setup_databases.py`:
+   - Creates/opens a Brightway project (`bw2data.projects.set_current(...)`)
+   - Imports biosphere flows (`bw2io.create_default_biosphere3()`)
+   - Imports LCIA methods (`bw2io.import_ecoinvent_lcia_methods()`)
+   - Imports USLCI (via `bw2io` USLCI importer or UBW pipeline)
+   - Idempotent — skips steps already completed
 
 ---
 
-### Phase 1 — Database Registry
+### Phase 1 — Rewrite lca_engine.py for Brightway
 
-**File:** `lca_engine.py` (new `DatabaseRegistry` class)
+Replace all `RestClient` / openLCA object construction with Brightway
+equivalents.
 
-1. Load the server-level database registry from config.
-2. Build `{source_name -> RestClient}`.
-3. Expose `get_client(source_name)` and `all_clients()` (for implicit search).
+**Foreground process construction (from recipe card):**
+```python
+import bw2data as bd
+
+db = bd.Database("foreground")
+activity = db.new_activity(
+    name=proc["name"],
+    unit=proc["reference_output"]["unit"],
+    location="GLO",
+)
+activity.save()
+
+# Reference output
+activity.new_exchange(
+    input=activity,
+    amount=proc["reference_output"]["amount"],
+    type="production",
+).save()
+
+# Hand-authored emissions
+for em in proc.get("emissions", []):
+    flow = bd.get_activity(name=em["flow"], database="biosphere")
+    activity.new_exchange(
+        input=flow,
+        amount=em["amount"],
+        type="biosphere",
+    ).save()
+```
+
+**Database-backed input (implicit or db_ref):**
+```python
+provider = provider_search.find(inp["flow"], inp["unit"])
+if provider:
+    activity.new_exchange(
+        input=provider,
+        amount=inp["amount"],
+        type="technosphere",
+    ).save()
+    # Brightway/bw2calc resolves provider's upstream automatically
+```
 
 ---
 
 ### Phase 2 — Provider Search
 
-**File:** `lca_engine.py` (new `ProviderSearch` class)
-
-```
-find_provider(flow_name, flow_unit) -> (RestClient, olca.Process) | None
-```
-
-1. Search all loaded databases in priority order (uslci → glad → ...) for a
-   process whose reference output matches `flow_name` and `flow_unit`.
-2. If multiple providers match, prefer the one whose reference output unit
-   matches exactly; otherwise raise an ambiguity warning and use the first.
-3. If `db_ref` is specified, skip the search and fetch directly from the named
-   database.
-4. Cache results keyed on `(flow_name, flow_unit)`.
-
----
-
-### Phase 3 — Recursive Product System Builder
-
-**File:** `lca_engine.py` (new `ProductSystemBuilder` class)
+**File:** `lca_engine.py` (`ProviderSearch` class)
 
 ```python
-class ProductSystemBuilder:
-    def __init__(self, registry, provider_search):
-        self.visited = set()        # process UUIDs already added
-        self.process_links = []
-        self.processes = []
+def find(flow_name, unit, db_ref=None):
+    if db_ref:
+        db = bd.Database(db_ref["source"])
+        return db.get(name=db_ref["process"])  # or by UUID
 
-    def add_process(self, process, client):
-        if process.id in self.visited:
-            return
-        self.visited.add(process.id)
-        self.processes.append(process.to_ref())
-
-        for exchange in process.exchanges:
-            if exchange.is_input and not exchange.is_avoided_product:
-                provider, p_client = self.provider_search.find(exchange.flow)
-                if provider:
-                    self.process_links.append(
-                        make_link(provider, process, exchange)
-                    )
-                    self.add_process(provider, p_client)  # recurse
-                else:
-                    self.unlinked.append(make_gap_record(exchange, process))
+    # Implicit search: check databases in priority order
+    for db_name in config.database_priority:
+        db = bd.Database(db_name)
+        matches = [a for a in db if a["name"] == flow_name
+                   and a["unit"] == unit
+                   and a["type"] == "process"]
+        if len(matches) == 1:
+            return matches[0]
+        if len(matches) > 1:
+            warn(f"Ambiguous provider for {flow_name} in {db_name}")
+            return matches[0]
+    return None
 ```
 
-The final `ProductSystem` object passed to `POST /calculate` contains the
-complete pre-built graph.
+Cache results keyed on `(flow_name, unit)`.
 
 ---
 
-### Phase 4 — Calculation and Results
+### Phase 3 — LCA Calculation
 
-No changes to the `POST /calculate` call itself. The gdt-server receives a
-fully-specified `ProductSystem` and returns LCI + LCIA results as today.
+```python
+import bw2calc as bc
 
-Output additions:
-- `scaling_vector` gains entries for all background processes, labelled with
-  their source database: `"Electricity, at grid/US [uslci]": 0.45`
-- New `unlinked_flows` array (see Gap Handling above)
-- New `background_process_count` integer for quick visibility into how many
-  database processes were resolved
+lca = bc.LCA(
+    demand={reference_activity: functional_unit_amount},
+    method=("TRACI 2.2", "human health", "..."),
+)
+lca.lci()    # builds and solves A⁻¹f, produces inventory
+lca.lcia()   # applies characterization factors → impact scores
+```
+
+Results map directly to the existing output format:
+- `lca.inventory` → `lci` dict
+- `lca.score` / `lca.characterized_inventory` → `lcia` dict
+- `lca.supply_array` → `scaling_vector` (one entry per activity in graph)
+
+---
+
+### Phase 4 — Results and Gap Reporting
+
+Collect `unlinked_flows` during Phase 1 traversal (any `find()` call that
+returns `None`). Include in the result dict alongside existing keys.
+
+Background process entries in `scaling_vector` are labelled with their source
+database: `"Electricity, at grid/US [uslci]": 0.45`.
 
 ---
 
@@ -333,22 +381,22 @@ Output additions:
 
 **File:** new `lca_validator.py`
 
-- Validate `db_ref` fields at parse time before any network calls.
-- After provider search, warn on ambiguous matches (multiple providers for same
-  flow).
-- After build, report total unlinked flow count in validation summary.
+- Validate `db_ref` fields at parse time
+- After provider search, warn on ambiguous matches
+- Report unlinked flow count in validation summary
 
 ---
 
 ### Phase 6 — SVG Visualization
 
-**File:** `lca_svg.py`
+**File:** `lca_svg.py` — minimal changes needed
 
-- Background processes render as real nodes with distinct fill color.
-- Label includes source database: `"Electricity, at grid/US\n[uslci]"`.
-- Upstream recursion depth is configurable; beyond the threshold, a collapsed
-  `"... N upstream processes [uslci]"` summary node is shown.
-- Unlinked flows shown as dashed outbound arrows with a `"⚠ cut-off"` label.
+- Background activities render as real nodes (they already appear in the
+  activity graph from Brightway traversal)
+- Distinct fill color for database-sourced vs. foreground processes
+- Label includes source database name
+- Unlinked flows shown as dashed arrows with `⚠ cut-off` label
+- Configurable upstream depth cutoff before collapsing to summary node
 
 ---
 
@@ -356,11 +404,10 @@ Output additions:
 
 **File:** `generate_bundles.py`
 
-- Record database versions in `bundle_metadata`.
-- Serialize the complete resolved `ProductSystem` graph (all process refs and
-  links) into the bundle JSON so bundles can be recalculated offline against a
-  locally loaded database without re-running provider search.
-- Include `unlinked_flows` in the bundle for transparency.
+- Record Brightway project name and database versions in `bundle_metadata`
+- Serialize the resolved activity graph (all keys + exchange amounts) into the
+  bundle so bundles can be inspected offline
+- Include `unlinked_flows` in bundle for transparency
 
 ---
 
@@ -368,7 +415,7 @@ Output additions:
 
 ```yaml
 name: "Cotton Fiber — 1 kg"
-goal: "Hybrid LCA: some inputs hand-authored, some from USLCI"
+goal: "Hybrid LCA: foreground processes with USLCI background inputs"
 
 lcia:
   method_name: TRACI 2.2
@@ -399,35 +446,23 @@ processes:
   - name: P1 — Fertilizer production
     reference_output: { flow: N-fertilizer, amount: 1.0, unit: kg }
     inputs:
-      # Hand-authored: we know this number, don't need the database
-      - flow: Water
-        amount: 5.0
-        unit: L
-        resources:
-          - { flow: Water, amount: 5.0, unit: L }
-
-      # No amounts provided → engine searches USLCI for a natural gas process
-      - flow: Natural gas
-        amount: 12.5
-        unit: MJ
-
+      # Implicit database search — engine finds natural gas in USLCI
+      - { flow: Natural gas, amount: 12.5, unit: MJ }
     emissions:
       - { flow: Carbon dioxide, amount: 3.5, unit: kg }
 
   - name: P2 — Cotton farming
     reference_output: { flow: Cotton fiber, amount: 1.0, unit: kg }
     inputs:
-      # Foreground link to our own P1 process (unchanged)
+      # Foreground link to our own P1 (unchanged)
       - { flow: N-fertilizer, amount: 0.2, unit: kg }
-
-      # Pinned to specific USLCI process by name
+      # Pinned to specific USLCI process
       - flow: Electricity
         amount: 0.45
         unit: kWh
         db_ref:
           source: uslci
           process: "Electricity, at grid/US"
-
     emissions:
       - { flow: Nitrous oxide, amount: 0.015, unit: kg }
     resources:
@@ -436,45 +471,33 @@ processes:
 reference_process: P2 — Cotton farming
 ```
 
-In this example:
-- P1's water input is hand-authored (we have the number)
-- P1's natural gas input triggers an implicit database search → USLCI returns
-  a natural gas process → its upstream (extraction, transport) is resolved
-  recursively
-- P2's electricity input is pinned explicitly to a specific USLCI process
-- Anything in the natural gas or electricity supply chains not found in USLCI
-  is cut off and reported in `unlinked_flows`
-
 ---
 
 ## What Does NOT Change
 
-- Recipe cards with all amounts hand-authored work exactly as before.
-- LCIA characterization comes from `lca_methods` regardless of which inventory
-  database supplies the emissions.
-- The `POST /calculate` call to gdt-server is unchanged.
-- Output keys (`lci`, `lcia`, `scaling_vector`) are unchanged in structure.
+- Recipe card YAML format is backward compatible — existing cards with all
+  amounts hand-authored work without modification
+- LCIA method names in recipe cards (`TRACI 2.2`, etc.) are unchanged
+- Output keys (`lci`, `lcia`, `scaling_vector`) are unchanged in structure
+- `lca_svg.py` SVG generation is largely unchanged
 
 ---
 
 ## Open Questions / Decisions Needed
 
-1. **Server-level vs. recipe-level database registry**: Should the `databases`
-   section live in a server config file (shared across all recipe cards) or
-   per-recipe-card? Recommendation: **server config** (`config.yml`) with
-   per-recipe optional overrides.
+1. **Brightway project name**: single project for all databases (`lca_server`)
+   or one project per database? Recommendation: **single project**, multiple
+   named databases within it (`uslci`, `biosphere`, `foreground`).
 
-2. **Provider search priority order**: When multiple databases contain a
-   provider for the same flow, which wins? Recommendation: explicit `db_ref`
-   always wins; implicit search uses a configurable priority list in server
-   config.
+2. **Provider search priority**: when multiple databases have a provider,
+   which wins? Recommendation: configurable list in `config.yml`, defaulting
+   to `uslci → biosphere`.
 
-3. **Upstream SVG depth cutoff**: How many levels to render before collapsing.
-   Recommendation: default 2 levels, configurable per recipe card.
+3. **SVG upstream depth cutoff**: how many levels to render before collapsing.
+   Recommendation: default 2, configurable per recipe card.
 
-4. **UUID vs. name in `db_ref.process`**: Recommendation: if the value parses
-   as a UUID, use direct lookup; otherwise search by name and raise an error if
-   ambiguous.
+4. **UUID vs. name in `db_ref.process`**: Recommendation: if value parses as
+   UUID use direct lookup; otherwise search by name, error if ambiguous.
 
 ---
 
@@ -482,11 +505,12 @@ In this example:
 
 | File | Change |
 |------|--------|
-| `docker-compose.databases.yml` | New: one gdt-server service per background database |
-| `scripts/import_database.py` | New: download and import JSON-LD database archives |
-| `config.yml` | New: server-level database registry |
-| `lca_engine.py` | Add `DatabaseRegistry`, `ProviderSearch`, `ProductSystemBuilder` with recursive resolution |
-| `lca_svg.py` | Render background processes as real nodes; show cut-off warnings |
-| `generate_bundles.py` | Record database versions; embed resolved product system graph |
-| `case_studies/*.md` | Add `db_ref` fields or implicit database inputs as needed |
+| `docker-compose.yml` | Remove gdt-server service entirely |
+| `requirements.txt` | Replace `olca_ipc` with `brightway25`, `bw2io` |
+| `lca_engine.py` | Full rewrite: Brightway 2.5 replaces all RestClient/openLCA object code |
+| `lca_svg.py` | Minor updates: background node styling, cut-off labels |
+| `generate_bundles.py` | Record Brightway database versions; embed activity graph |
+| `config.yml` | New: Brightway project name, database priority list |
+| `scripts/setup_databases.py` | New: first-run database import (biosphere, LCIA, USLCI) |
 | New: `lca_validator.py` | Parse-time and post-search validation |
+| `case_studies/*.md` | Add `db_ref` or implicit inputs as needed per case study |
