@@ -9,6 +9,14 @@ Run scripts/setup_databases.py once before using this module.
 """
 
 import os
+import pathlib
+
+# Must be set before bw2data is imported; directory must exist
+if "BRIGHTWAY2_DIR" not in os.environ:
+    _bw_dir = pathlib.Path(__file__).parent / "brightway_data"
+    _bw_dir.mkdir(exist_ok=True)
+    os.environ["BRIGHTWAY2_DIR"] = str(_bw_dir)
+
 import yaml
 import numpy as np
 import bw2data as bd
@@ -17,6 +25,19 @@ import bw2calc as bc
 BRIGHTWAY_PROJECT = os.environ.get("BRIGHTWAY_PROJECT", "lca_server")
 BIOSPHERE_DB = "lca_biosphere"
 FOREGROUND_DB = "foreground"
+
+# Index: (lowercase name, compartment) → activity key — built once on first lookup
+_FLOW_INDEX: dict | None = None
+
+# Common-name → openLCA FEDEFL name aliases (case-insensitive, applied at lookup time)
+_FLOW_ALIASES: dict[str, str] = {
+    "nitrous oxide": "dinitrogen monoxide",
+    "n2o": "dinitrogen monoxide",
+    "nox": "nitrogen oxides",
+    "sox": "sulfur oxides",
+    "pm2.5": "particulate matter",
+    "pm10": "particulates",
+}
 
 
 def _ensure_project():
@@ -31,13 +52,41 @@ def _load_spec(recipe_card_yaml: str) -> dict:
     return yaml.safe_load(text)
 
 
+def _build_flow_index():
+    global _FLOW_INDEX
+    _FLOW_INDEX = {}
+    for flow in bd.Database(BIOSPHERE_DB):
+        name_key = flow.get("name", "").lower()
+        compartment = flow.get("compartment", "")
+        if not compartment:
+            cats = [c.lower() for c in flow.get("categories", [])]
+            cat_str = " ".join(cats)
+            if "air" in cat_str:
+                compartment = "air"
+            elif "water" in cat_str or "freshwater" in cat_str:
+                compartment = "water"
+            elif "soil" in cat_str or "ground" in cat_str:
+                compartment = "ground"
+            elif "resource" in cat_str:
+                compartment = "resource"
+            else:
+                compartment = "other"
+        _FLOW_INDEX[(name_key, compartment)] = flow.key
+
+
 def _find_biosphere_flow(name: str, compartment: str):
-    """Look up a flow in lca_biosphere by FEDEFL name and compartment."""
-    key = (BIOSPHERE_DB, f"{name}|{compartment}")
-    try:
-        return bd.get_activity(key)
-    except Exception:
-        return None
+    """Look up a flow in lca_biosphere by name and compartment."""
+    global _FLOW_INDEX
+    if _FLOW_INDEX is None:
+        _build_flow_index()
+    canonical = _FLOW_ALIASES.get(name.lower(), name.lower())
+    key = _FLOW_INDEX.get((canonical, compartment.lower()))
+    if key:
+        try:
+            return bd.get_activity(key)
+        except Exception:
+            pass
+    return None
 
 
 def _compartment_for_emission(em: dict) -> str:
@@ -106,7 +155,7 @@ def run_analysis(recipe_card_yaml: str) -> dict:
                 raise ValueError(
                     f"Emission flow '{em['flow']}' (compartment: {compartment}) "
                     f"not found in '{BIOSPHERE_DB}'. "
-                    f"Add it to data/lcia/biosphere_flows.json and re-run setup."
+                    f"Check the flow name and compartment in your recipe card."
                 )
             act.new_exchange(
                 input=flow,
@@ -121,7 +170,7 @@ def run_analysis(recipe_card_yaml: str) -> dict:
                 raise ValueError(
                     f"Resource flow '{res['flow']}' (compartment: {compartment}) "
                     f"not found in '{BIOSPHERE_DB}'. "
-                    f"Add it to data/lcia/biosphere_flows.json and re-run setup."
+                    f"Check the flow name and compartment in your recipe card."
                 )
             act.new_exchange(
                 input=flow,
@@ -172,11 +221,7 @@ def run_analysis(recipe_card_yaml: str) -> dict:
         if idx is not None and idx < len(total_inv):
             amount = float(total_inv[idx])
             if abs(amount) > 1e-15:
-                cats = flow.get("categories", [])
-                flow_type = (
-                    "resource" if any(c in cats for c in ("water", "ground", "raw"))
-                    else "emission"
-                )
+                flow_type = flow.get("type", "emission")
                 lci[flow["name"]] = {
                     "amount": amount,
                     "unit": flow.get("unit", "kg"),

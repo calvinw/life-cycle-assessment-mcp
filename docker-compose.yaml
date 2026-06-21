@@ -8,13 +8,13 @@ services:
     environment:
       - PORT=9000
       - BRIGHTWAY_PROJECT=lca_server
-      - BRIGHTWAY_DIR=/app/brightway_data
+      - BRIGHTWAY2_DIR=/app/brightway_data
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/api/health"]
       interval: 15s
       timeout: 5s
       retries: 5
-      start_period: 60s
+      start_period: 180s
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.lca-mcp.rule=Host(`lca-mcp.mathplosion.com`)"

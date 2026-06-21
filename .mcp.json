@@ -1,0 +1,9 @@
+{
+  "$schema": "https://schemas.anthropic.com/claude-code/mcp.json",
+  "mcpServers": {
+    "lca-mcp": {
+      "type": "http",
+      "url": "http://localhost:9000/mcp"
+    }
+  }
+}
