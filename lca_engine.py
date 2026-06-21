@@ -52,9 +52,26 @@ def _load_spec(recipe_card_yaml: str) -> dict:
     return yaml.safe_load(text)
 
 
+def _sub_compartment_priority(flow) -> int:
+    """Score a flow's sub-compartment: higher = preferred winner in _FLOW_INDEX.
+
+    "unspecified" is the canonical FEDEFL sub-compartment that LCIA methods
+    consistently characterize.  "indoor" and stratospheric sub-compartments
+    are rarely included in LCIA CF tables and must not win the index slot.
+    """
+    cats = [c.lower() for c in flow.get("categories", [])]
+    sub = cats[-1] if cats else ""
+    if "unspecified" in sub:
+        return 2
+    if "indoor" in sub or "stratosphere" in sub:
+        return 0
+    return 1
+
+
 def _build_flow_index():
     global _FLOW_INDEX
     _FLOW_INDEX = {}
+    _priority: dict = {}
     for flow in bd.Database(BIOSPHERE_DB):
         name_key = flow.get("name", "").lower()
         compartment = flow.get("compartment", "")
@@ -71,7 +88,11 @@ def _build_flow_index():
                 compartment = "resource"
             else:
                 compartment = "other"
-        _FLOW_INDEX[(name_key, compartment)] = flow.key
+        key = (name_key, compartment)
+        score = _sub_compartment_priority(flow)
+        if score > _priority.get(key, -1):
+            _FLOW_INDEX[key] = flow.key
+            _priority[key] = score
 
 
 def _find_biosphere_flow(name: str, compartment: str):
