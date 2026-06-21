@@ -680,7 +680,7 @@ def generate_unit_process(recipe: dict, proc_name: str, out_path: str):
 
     svg_out = '\n'.join([
         f'<svg xmlns="http://www.w3.org/2000/svg" '
-        f'width="{canvas_w:.1f}" height="{canvas_h:.1f}" '
+        f'width="100%" '
         f'viewBox="0 0 {canvas_w:.1f} {canvas_h:.1f}">',
         f'<rect x="0" y="0" width="{canvas_w:.1f}" height="{canvas_h:.1f}" fill="#f8f8f8"/>',
         svg_defs(),
@@ -769,7 +769,7 @@ def generate(recipe_path: str, out_path: str, show_quantities: bool = True):
 
     svg_parts[0] = (
         f'<svg xmlns="http://www.w3.org/2000/svg" '
-        f'width="{canvas_w:.1f}" height="{content_h:.1f}" '
+        f'width="100%" '
         f'viewBox="0 {svg_y0:.1f} {canvas_w:.1f} {content_h:.1f}">'
     )
     svg_parts[1] = (
