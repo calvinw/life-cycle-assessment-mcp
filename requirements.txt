@@ -1,8 +1,0 @@
-fastmcp
-fastapi
-uvicorn[standard]
-requests
-olca-ipc
-olca-schema
-pyyaml
-numpy

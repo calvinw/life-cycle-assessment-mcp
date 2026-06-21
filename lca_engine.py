@@ -1,15 +1,47 @@
 """
-lca_engine.py — core LCA computation for the Life Cycle Assessment MCP.
+lca_engine.py — Brightway 2.5 LCA engine.
 
-Accepts a recipe card as a YAML string and a gdt-server URL.
+Accepts a recipe card as a YAML string.
 Returns a structured dict with LCI totals, LCIA scores, and scaling vector.
-No file I/O — everything in memory.
+No external server required — all computation runs in-process via Brightway.
+
+Run scripts/setup_databases.py once before using this module.
 """
+
+import os
+import pathlib
+
+# Must be set before bw2data is imported; directory must exist
+if "BRIGHTWAY2_DIR" not in os.environ:
+    _bw_dir = pathlib.Path(__file__).parent / "brightway_data"
+    _bw_dir.mkdir(exist_ok=True)
+    os.environ["BRIGHTWAY2_DIR"] = str(_bw_dir)
 
 import yaml
 import numpy as np
-from olca_ipc.rest import RestClient
-import olca_schema as o
+import bw2data as bd
+import bw2calc as bc
+
+BRIGHTWAY_PROJECT = os.environ.get("BRIGHTWAY_PROJECT", "lca_server")
+BIOSPHERE_DB = "lca_biosphere"
+FOREGROUND_DB = "foreground"
+
+# Index: (lowercase name, compartment) → activity key — built once on first lookup
+_FLOW_INDEX: dict | None = None
+
+# Common-name → openLCA FEDEFL name aliases (case-insensitive, applied at lookup time)
+_FLOW_ALIASES: dict[str, str] = {
+    "nitrous oxide": "dinitrogen monoxide",
+    "n2o": "dinitrogen monoxide",
+    "nox": "nitrogen oxides",
+    "sox": "sulfur oxides",
+    "pm2.5": "particulate matter",
+    "pm10": "particulates",
+}
+
+
+def _ensure_project():
+    bd.projects.set_current(BRIGHTWAY_PROJECT)
 
 
 def _load_spec(recipe_card_yaml: str) -> dict:
@@ -20,211 +52,255 @@ def _load_spec(recipe_card_yaml: str) -> dict:
     return yaml.safe_load(text)
 
 
-def _build_lcia_flow_map(client: RestClient, method_name: str) -> dict:
-    """Return a name→UUID map of flows referenced by the named LCIA method."""
-    preferred: dict[str, str] = {}
-    try:
-        for m_desc in client.get_descriptors(o.ImpactMethod):
-            if method_name.strip().lower() not in (m_desc.name or "").strip().lower():
-                continue
-            method = client.get(o.ImpactMethod, m_desc.id)
-            for cat_ref in (method.impact_categories or []):
-                cat = client.get(o.ImpactCategory, cat_ref.id)
-                for cf in (cat.impact_factors or []):
-                    fref = cf.flow
-                    if fref and fref.name:
-                        key = fref.name.strip().lower()
-                        if key not in preferred:
-                            preferred[key] = fref.id
-    except Exception:
-        pass
-    return preferred
+def _sub_compartment_priority(flow) -> int:
+    """Score a flow's sub-compartment: higher = preferred winner in _FLOW_INDEX.
 
-
-def _resolve_flow(client: RestClient, name: str, flow_property,
-                  lcia_flow_map: dict) -> o.Flow:
-    key = name.strip().lower()
-    preferred_id = lcia_flow_map.get(key)
-    if preferred_id:
-        existing = client.get(o.Flow, preferred_id)
-        if existing is not None:
-            return existing
-    try:
-        for d in client.get_descriptors(o.Flow):
-            if d.name and d.name.strip().lower() == key:
-                existing = client.get(o.Flow, d.id)
-                if existing is not None:
-                    return existing
-    except Exception:
-        pass
-    flow = o.new_elementary_flow(name, flow_property)
-    if preferred_id:
-        flow.id = preferred_id
-    client.put(flow)
-    return flow
-
-
-def _build_model(client: RestClient, spec: dict, lcia_flow_map: dict):
-    reg: dict = {}
-
-    for symbol, description in spec["units"].items():
-        ug = o.new_unit_group(f"{description} units [{symbol}]", symbol)
-        fp = o.new_flow_property(description, ug)
-        client.put_all(ug, fp)
-        reg[symbol] = fp
-
-    for p in spec["products"]:
-        flow = o.new_product(p["name"], reg[p["unit"]])
-        client.put(flow)
-        reg[p["name"]] = flow
-
-    for ef in spec.get("elementary_flows", {}).get("emissions", []):
-        reg[ef["name"]] = _resolve_flow(client, ef["name"], reg[ef["unit"]], lcia_flow_map)
-    for ef in spec.get("elementary_flows", {}).get("resources", []):
-        reg[ef["name"]] = _resolve_flow(client, ef["name"], reg[ef["unit"]], lcia_flow_map)
-
-    for ps in spec["processes"]:
-        p = o.new_process(ps["name"])
-        ro = ps["reference_output"]
-        ref_ex = o.new_output(p, reg[ro["flow"]], ro["amount"])
-        ref_ex.is_quantitative_reference = True
-        for inp in ps.get("inputs", []):
-            o.new_input(p, reg[inp["flow"]], inp["amount"])
-        for em in ps.get("emissions", []):
-            o.new_output(p, reg[em["flow"]], em["amount"])
-        for res in ps.get("resources", []):
-            o.new_input(p, reg[res["flow"]], res["amount"])
-        client.put(p)
-        reg[ps["name"]] = p
-
-    ref_proc = reg[spec["reference_process"]]
-    system_ref = client.create_product_system(ref_proc)
-    if system_ref is None:
-        raise RuntimeError("create_product_system returned None — check gdt-server logs")
-    return reg, system_ref
-
-
-def _build_matrices(spec: dict):
-    prod_names = [p["name"] for p in spec["products"]]
-    proc_names = [p["name"] for p in spec["processes"]]
-    em_names   = [e["name"] for e in spec.get("elementary_flows", {}).get("emissions", [])]
-    res_names  = [r["name"] for r in spec.get("elementary_flows", {}).get("resources", [])]
-
-    prod_idx = {n: i for i, n in enumerate(prod_names)}
-    ef_idx   = {n: i for i, n in enumerate(em_names + res_names)}
-
-    A = np.zeros((len(prod_names), len(proc_names)))
-    B = np.zeros((len(em_names) + len(res_names), len(proc_names)))
-
-    for j, ps in enumerate(spec["processes"]):
-        ro = ps["reference_output"]
-        if ro["flow"] in prod_idx:
-            A[prod_idx[ro["flow"]], j] = ro["amount"]
-        for inp in ps.get("inputs", []):
-            if inp["flow"] in prod_idx:
-                A[prod_idx[inp["flow"]], j] = -inp["amount"]
-        for em in ps.get("emissions", []):
-            if em["flow"] in ef_idx:
-                B[ef_idx[em["flow"]], j] = +em["amount"]
-        for res in ps.get("resources", []):
-            if res["flow"] in ef_idx:
-                B[ef_idx[res["flow"]], j] = -res["amount"]
-
-    return A, B, prod_names, proc_names, em_names, res_names
-
-
-def _ef_unit(spec: dict, flow_name: str) -> str:
-    for ef in spec.get("elementary_flows", {}).get("emissions", []):
-        if ef["name"] == flow_name:
-            return ef["unit"]
-    for ef in spec.get("elementary_flows", {}).get("resources", []):
-        if ef["name"] == flow_name:
-            return ef["unit"]
-    return "?"
-
-
-def run_analysis(recipe_card_yaml: str,
-                 server_url: str = "http://localhost:8080") -> dict:
+    "unspecified" is the canonical FEDEFL sub-compartment that LCIA methods
+    consistently characterize.  "indoor" and stratospheric sub-compartments
+    are rarely included in LCIA CF tables and must not win the index slot.
     """
-    Run a full LCA from a recipe card YAML string.
+    cats = [c.lower() for c in flow.get("categories", [])]
+    sub = cats[-1] if cats else ""
+    if "unspecified" in sub:
+        return 2
+    if "indoor" in sub or "stratosphere" in sub:
+        return 0
+    return 1
 
-    Returns a dict with:
-        name, method, functional_unit, system_id,
-        lci  — {flow_name: {amount, unit, type}},
-        lcia — {category_name: {score, unit}},
-        scaling_vector — {process_name: scale_factor}
-    """
-    if not server_url.endswith("/"):
-        server_url += "/"
 
-    spec        = _load_spec(recipe_card_yaml)
-    fu          = spec["functional_unit"]
-    method_name = spec.get("lcia", {}).get("method_name", "")
+def _build_flow_index():
+    global _FLOW_INDEX
+    _FLOW_INDEX = {}
+    _priority: dict = {}
+    for flow in bd.Database(BIOSPHERE_DB):
+        name_key = flow.get("name", "").lower()
+        compartment = flow.get("compartment", "")
+        if not compartment:
+            cats = [c.lower() for c in flow.get("categories", [])]
+            cat_str = " ".join(cats)
+            if "air" in cat_str:
+                compartment = "air"
+            elif "water" in cat_str or "freshwater" in cat_str:
+                compartment = "water"
+            elif "soil" in cat_str or "ground" in cat_str:
+                compartment = "ground"
+            elif "resource" in cat_str:
+                compartment = "resource"
+            else:
+                compartment = "other"
+        key = (name_key, compartment)
+        score = _sub_compartment_priority(flow)
+        if score > _priority.get(key, -1):
+            _FLOW_INDEX[key] = flow.key
+            _priority[key] = score
 
-    client = RestClient(server_url)
 
-    lcia_flow_map    = _build_lcia_flow_map(client, method_name) if method_name else {}
-    reg, system_ref  = _build_model(client, spec, lcia_flow_map)
+def _find_biosphere_flow(name: str, compartment: str):
+    """Look up a flow in lca_biosphere by name and compartment."""
+    global _FLOW_INDEX
+    if _FLOW_INDEX is None:
+        _build_flow_index()
+    canonical = _FLOW_ALIASES.get(name.lower(), name.lower())
+    key = _FLOW_INDEX.get((canonical, compartment.lower()))
+    if key:
+        try:
+            return bd.get_activity(key)
+        except Exception:
+            pass
+    return None
 
-    A, B, prod_names, proc_names, em_names, res_names = _build_matrices(spec)
-    n_em = len(em_names)
 
-    ref_ps   = next(ps for ps in spec["processes"] if ps["name"] == spec["reference_process"])
-    ref_flow = ref_ps["reference_output"]["flow"]
-    prod_idx = {n: i for i, n in enumerate(prod_names)}
-    f        = np.zeros(len(prod_names))
-    f[prod_idx[ref_flow]] = fu["amount"]
-    s  = np.linalg.solve(A, f)
-    Bs = B @ s
+def _compartment_for_emission(em: dict) -> str:
+    return em.get("compartment", "air")
 
-    method_ref = None
-    if method_name:
-        for d in client.get_descriptors(o.ImpactMethod):
-            if d.name and method_name.strip().lower() in d.name.strip().lower():
-                method_ref = d.to_ref()
-                break
 
-    setup = o.CalculationSetup(
-        target=o.Ref(id=system_ref.id),
-        amount=fu["amount"],
-        impact_method=method_ref,
+def _compartment_for_resource(res: dict) -> str:
+    comp = res.get("compartment", "water")
+    return comp
+
+
+def run_analysis(recipe_card_yaml: str) -> dict:
+    _ensure_project()
+    spec = _load_spec(recipe_card_yaml)
+
+    # Rebuild foreground database fresh each run
+    if FOREGROUND_DB in bd.databases:
+        del bd.databases[FOREGROUND_DB]
+    fg = bd.Database(FOREGROUND_DB)
+    fg.register()
+
+    # Pass 1 — create all activities so we can resolve technosphere links
+    activities: dict = {}
+    product_to_activity: dict = {}
+
+    for proc in spec["processes"]:
+        ref = proc["reference_output"]
+        act = fg.new_activity(
+            code=proc["name"],
+            name=proc["name"],
+            unit=ref.get("unit", "kg"),
+            location="GLO",
+        )
+        act.save()
+        activities[proc["name"]] = act
+        product_to_activity[ref["flow"]] = act
+
+    # Pass 2 — add exchanges
+    for proc in spec["processes"]:
+        act = activities[proc["name"]]
+        ref = proc["reference_output"]
+
+        act.new_exchange(
+            input=act,
+            amount=float(ref["amount"]),
+            type="production",
+        ).save()
+
+        for inp in proc.get("inputs", []):
+            provider = product_to_activity.get(inp["flow"])
+            if provider is None:
+                raise ValueError(
+                    f"Input flow '{inp['flow']}' in process '{proc['name']}' "
+                    f"has no provider in this recipe card."
+                )
+            act.new_exchange(
+                input=provider,
+                amount=float(inp["amount"]),
+                type="technosphere",
+            ).save()
+
+        for em in proc.get("emissions", []):
+            compartment = _compartment_for_emission(em)
+            flow = _find_biosphere_flow(em["flow"], compartment)
+            if flow is None:
+                raise ValueError(
+                    f"Emission flow '{em['flow']}' (compartment: {compartment}) "
+                    f"not found in '{BIOSPHERE_DB}'. "
+                    f"Check the flow name and compartment in your recipe card."
+                )
+            act.new_exchange(
+                input=flow,
+                amount=float(em["amount"]),
+                type="biosphere",
+            ).save()
+
+        for res in proc.get("resources", []):
+            compartment = _compartment_for_resource(res)
+            flow = _find_biosphere_flow(res["flow"], compartment)
+            if flow is None:
+                raise ValueError(
+                    f"Resource flow '{res['flow']}' (compartment: {compartment}) "
+                    f"not found in '{BIOSPHERE_DB}'. "
+                    f"Check the flow name and compartment in your recipe card."
+                )
+            act.new_exchange(
+                input=flow,
+                amount=float(res["amount"]),
+                type="biosphere",
+            ).save()
+
+    # Identify reference activity and functional unit amount
+    ref_proc_name = spec["reference_process"]
+    ref_act = activities[ref_proc_name]
+    fu_amount = float(spec["functional_unit"]["amount"])
+
+    # Find all LCIA categories for the requested method
+    method_name = spec["lcia"]["method_name"]
+    method_tuples = sorted(
+        [m for m in bd.methods if len(m) >= 2 and m[0] == method_name],
+        key=lambda m: m[-1],
     )
-    result = client.calculate(setup)
-    result.wait_until_ready()
+    if not method_tuples:
+        raise ValueError(
+            f"LCIA method '{method_name}' not found. "
+            f"Run scripts/setup_databases.py to load methods."
+        )
 
-    flows        = result.get_total_flows()
-    olca_outputs = {f.envi_flow.flow.name: f.amount for f in flows if not f.envi_flow.is_input}
-    olca_inputs  = {f.envi_flow.flow.name: f.amount for f in flows if f.envi_flow.is_input}
+    # Run LCA — compute inventory once, switch characterization per category
+    lca = bc.LCA(demand={ref_act: fu_amount}, method=method_tuples[0])
+    lca.lci(factorize=True)
 
-    lcia_scores: dict = {}
-    if method_ref:
-        for iv in result.get_total_impacts():
-            lcia_scores[iv.impact_category.name] = {
-                "score": iv.amount,
-                "unit":  iv.impact_category.ref_unit or "",
-            }
-    result.dispose()
+    # Scaling vector (one entry per foreground process)
+    scaling_vector: dict = {}
+    act_dict = lca.dicts.activity if hasattr(lca, "dicts") else lca.activity_dict
 
+    for act_name, act in activities.items():
+        node_id = act.id if hasattr(lca, "dicts") else act.key
+        idx = act_dict.get(node_id)
+        if idx is not None:
+            scaling_vector[act_name] = float(lca.supply_array[idx])
+
+    # LCI totals — sum inventory across all activities in the system
     lci: dict = {}
-    for i, name in enumerate(em_names):
-        lci[name] = {
-            "amount": float(olca_outputs.get(name, Bs[i])),
-            "unit":   _ef_unit(spec, name),
-            "type":   "emission",
-        }
-    for i, name in enumerate(res_names):
-        lci[name] = {
-            "amount": float(olca_inputs.get(name, abs(Bs[n_em + i]))),
-            "unit":   _ef_unit(spec, name),
-            "type":   "resource",
+    total_inv = np.array(lca.inventory.sum(axis=1)).flatten()
+    bio_dict = lca.dicts.biosphere if hasattr(lca, "dicts") else lca.biosphere_dict
+    bio_db = bd.Database(BIOSPHERE_DB)
+
+    for flow in bio_db:
+        node_id = flow.id if hasattr(lca, "dicts") else flow.key
+        idx = bio_dict.get(node_id)
+        if idx is not None and idx < len(total_inv):
+            amount = float(total_inv[idx])
+            if abs(amount) > 1e-15:
+                flow_type = flow.get("type", "emission")
+                lci[flow["name"]] = {
+                    "amount": amount,
+                    "unit": flow.get("unit", "kg"),
+                    "type": flow_type,
+                }
+
+    # LCIA scores — one per impact category
+    lca.lcia()
+    lcia_results: dict = {}
+    lcia_results[method_tuples[0][-1]] = {
+        "score": float(lca.score),
+        "unit": bd.methods[method_tuples[0]].get("unit", ""),
+    }
+    for method_tuple in method_tuples[1:]:
+        lca.switch_method(method_tuple)
+        lca.lcia()
+        lcia_results[method_tuple[-1]] = {
+            "score": float(lca.score),
+            "unit": bd.methods[method_tuple].get("unit", ""),
         }
 
+    fu_spec = spec["functional_unit"]
     return {
-        "name":           spec["name"],
-        "method":         method_name,
-        "functional_unit": f"{fu['amount']} {fu['unit']} — {fu['description']}",
-        "system_id":      system_ref.id,
-        "lci":            lci,
-        "lcia":           lcia_scores,
-        "scaling_vector": {proc_names[j]: float(s[j]) for j in range(len(proc_names))},
+        "name": spec.get("name", ""),
+        "method": method_name,
+        "functional_unit": (
+            f"{fu_amount} {fu_spec['unit']} — {fu_spec['description']}"
+        ),
+        "lci": lci,
+        "lcia": lcia_results,
+        "scaling_vector": scaling_vector,
     }
+
+
+def list_methods() -> list:
+    """Return all LCIA methods registered in the current Brightway project."""
+    _ensure_project()
+    seen = set()
+    results = []
+    for m in sorted(bd.methods):
+        top = m[0]
+        if top not in seen:
+            seen.add(top)
+            results.append({"name": top, "categories": []})
+        results[-1]["categories"].append(m[-1])
+    return results
+
+
+def check_brightway() -> dict:
+    """Return Brightway project status."""
+    try:
+        _ensure_project()
+        return {
+            "running": True,
+            "engine": "brightway2.5",
+            "project": BRIGHTWAY_PROJECT,
+            "databases": list(bd.databases),
+            "methods": len(list(bd.methods)),
+        }
+    except Exception as exc:
+        return {"running": False, "error": str(exc)}
