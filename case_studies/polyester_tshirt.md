@@ -56,7 +56,7 @@ processes:
 reference_process: "P3 — T-shirt assembly"
 
 lcia:
-  method_name: "TRACI 2.2"
+  method_name: "TRACI v2.1"
 ---
 
 ## About this analysis
@@ -99,12 +99,12 @@ teaching moment for the scaling vector concept.
 
 ### LCIA results (GWP100, IPCC AR6)
 
-| Process | s | CO2 direct | CH4 (×27.9) | Contribution |
+| Process | s | CO2 direct | CH4 (×25.0) | Contribution |
 |---|---|---|---|---|
-| P3 T-shirt assembly | 1.000 | 1.00 kg CO2 eq | — | 1.00 kg CO2 eq |
-| P2 Polyester fiber | 0.200 | 1.10 kg CO2 eq | — | 1.10 kg CO2 eq |
-| P1 Oil extraction | 0.300 | 0.06 kg CO2 eq | 0.42 kg CO2 eq | 0.48 kg CO2 eq |
-| **Total** | | | | **2.58 kg CO2 eq** |
+| P3 T-shirt assembly | 1.000 | 1.00 kg CO2-Eq | — | 1.00 kg CO2-Eq |
+| P2 Polyester fiber | 0.200 | 1.10 kg CO2-Eq | — | 1.10 kg CO2-Eq |
+| P1 Oil extraction | 0.300 | 0.06 kg CO2-Eq | 0.375 kg CO2-Eq | 0.435 kg CO2-Eq |
+| **Total** | | | | **2.535 kg CO2-Eq** |
 
 ### Key teaching point — "Your T-shirt is oil"
 
@@ -120,9 +120,9 @@ in every polyester T-shirt, before the factory has burned a single watt of
 electricity.
 
 The methane from oil wells (CH4, a fugitive — meaning leaked, not burned)
-is only 0.05 kg per kg of crude oil extracted, but its GWP100 factor of 27.9
-turns those 0.015 kg of CH4 (0.3 × 0.05) into 0.42 kg CO2 eq — nearly as
-large as the factory's direct emissions from sewing.
+is only 0.05 kg per kg of crude oil extracted, but its GWP100 factor of 25.0 (TRACI v2.1)
+turns those 0.015 kg of CH4 (0.3 × 0.05) into 0.375 kg CO2-Eq — a
+significant contribution from a small fugitive leak.
 
 ### Simplifications
 

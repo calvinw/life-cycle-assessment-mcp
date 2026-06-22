@@ -10,7 +10,7 @@ dependencies = [
     "pyyaml",
     "numpy",
     "brightway25>=1.0",
-    "bw2io>=0.9",
+    "bw2io>=0.9,<0.10",
     "bw2calc>=2.0",
     "bw2data>=4.0",
 ]

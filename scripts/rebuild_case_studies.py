@@ -63,7 +63,8 @@ def rebuild(md_path: pathlib.Path):
 
     out_path = md_path.with_suffix(".json")
     out_path.write_text(json.dumps(bundle, indent=2))
-    print(f"  Wrote {out_path.name}  (global warming: {result['lcia'].get('Global warming', {}).get('score', '?')})")
+    gwp = result['lcia'].get('global warming potential (GWP100)', result['lcia'].get('Global warming', {})).get('score', '?')
+    print(f"  Wrote {out_path.name}  (global warming: {gwp})")
 
 
 def main():

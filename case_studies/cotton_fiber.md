@@ -57,7 +57,7 @@ processes:
 reference_process: "P2 — Cotton farming"
 
 lcia:
-  method_name: "TRACI 2.2"
+  method_name: "TRACI v2.1"
 ---
 
 ## About this analysis
@@ -96,34 +96,34 @@ produced. All of that fertilizer comes from P1, so P1's scaling factor is 0.2.
 
 ### LCIA method
 
-EF 3.0 (European Commission Environmental Footprint, version 3.0).
+TRACI v2.1 (Tool for the Reduction and Assessment of Chemical and other environmental Impacts, version 2.1).
 Two impact categories:
 
 **Climate change (GWP100):**
-- CO2: 1.0 kg CO2 eq per kg
-- N2O: 273.0 kg CO2 eq per kg (IPCC AR6 value used in EF 3.0)
+- CO2: 1.0 kg CO2-Eq per kg
+- N2O: 298.0 kg CO2-Eq per kg (IPCC AR4 value used in TRACI v2.1)
 
-**Terrestrial eutrophication (EP-terrestrial):**
-- NH3: 3.54 mol N eq per kg (nitrogen content drives eutrophication)
-- N2O: 0.27 mol N eq per kg (partial nitrogen content)
+**Eutrophication potential:**
+- NH3: 0.1186 kg N-Eq per kg
+- N2O: 0 (not characterized in TRACI v2.1 eutrophication)
 
 ### LCIA results
 
 **Climate change (GWP100):**
 
-| Process | s | CO2 (×1.0) | N2O (×273.0) | Contribution |
+| Process | s | CO2 (×1.0) | N2O (×298.0) | Contribution |
 |---|---|---|---|---|
-| P1 Fertilizer production | 0.200 | 0.70 kg CO2 eq | — | 0.70 kg CO2 eq |
-| P2 Cotton farming | 1.000 | 0.80 kg CO2 eq | 4.10 kg CO2 eq | 4.90 kg CO2 eq |
-| **Total** | | | | **5.60 kg CO2 eq** |
+| P1 Fertilizer production | 0.200 | 0.70 kg CO2-Eq | — | 0.70 kg CO2-Eq |
+| P2 Cotton farming | 1.000 | 0.80 kg CO2-Eq | 4.47 kg CO2-Eq | 5.27 kg CO2-Eq |
+| **Total** | | | | **5.97 kg CO2-Eq** |
 
-**Terrestrial eutrophication (EP-terrestrial):**
+**Eutrophication potential:**
 
-| Process | s | NH3 (×3.54) | N2O (×0.27) | Contribution |
-|---|---|---|---|---|
-| P1 Fertilizer production | 0.200 | — | — | 0.000 mol N eq |
-| P2 Cotton farming | 1.000 | 0.035 mol N eq | 0.004 mol N eq | 0.039 mol N eq |
-| **Total** | | | | **0.039 mol N eq** |
+| Process | s | NH3 (×0.1186) | Contribution |
+|---|---|---|---|
+| P1 Fertilizer production | 0.200 | — | 0.000 kg N-Eq |
+| P2 Cotton farming | 1.000 | 0.00119 kg N-Eq | 0.00119 kg N-Eq |
+| **Total** | | | **0.00119 kg N-Eq** |
 
 ### Key teaching points
 
@@ -132,9 +132,9 @@ Two impact categories:
 The raw N2O emission from the cotton field (0.015 kg) looks tiny compared to
 the CO2 from the farm (0.8 kg) and fertilizer factory (0.2 × 3.5 = 0.7 kg).
 But the GWP100 characterization factor of 273 transforms it:
-- 0.015 kg N2O → 4.10 kg CO2 eq
-- All CO2 combined → 1.50 kg CO2 eq
-- **N2O accounts for 73% of the total climate impact**
+- 0.015 kg N2O → 4.47 kg CO2-Eq
+- All CO2 combined → 1.50 kg CO2-Eq
+- **N2O accounts for 75% of the total climate impact**
 
 Cotton has a natural reputation. The problem is not the factory — it is the
 field chemistry caused by synthetic nitrogen fertilizer.
@@ -152,8 +152,8 @@ NH3 (ammonia) volatilised from the soil surface has no greenhouse warming
 effect — its GWP characterization factor is zero. But it deposits nitrogen in
 soils and waterways, causing eutrophication: excessive plant and algae growth
 that depletes oxygen and damages aquatic ecosystems. NH3 is completely invisible
-in a climate-only study, yet it is responsible for 90% of the eutrophication
-impact here.
+in a climate-only study, yet it is responsible for 100% of the eutrophication
+impact here (N2O has no eutrophication characterization factor in TRACI v2.1).
 
 ### Simplifications
 

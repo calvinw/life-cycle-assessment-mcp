@@ -60,7 +60,7 @@ ELEM_ARM      = 30          # length of elementary flow arrows
 EMIT_OFFSET   = 45          # ±px horizontal offset for multiple emissions
 TITLE_HEIGHT  = 38          # px reserved for title above the graph
 
-# Map FEDEFL full names → short chemistry symbols for diagram labels.
+# Map biosphere3 flow names → short chemistry symbols for diagram labels.
 # chem_sub() will then render digits as proper SVG subscripts (CO2 → CO₂).
 FLOW_DISPLAY = {
     "Carbon dioxide":  "CO2",
@@ -74,7 +74,7 @@ FLOW_DISPLAY = {
 
 
 def _display_name(flow_name: str) -> str:
-    """Return a short chemistry symbol for FEDEFL flows, or the name unchanged."""
+    """Return a short chemistry symbol for biosphere3 flows, or the name unchanged."""
     return FLOW_DISPLAY.get(flow_name, flow_name)
 
 DPI           = 96          # graphviz uses 72 pt; we scale to 96px

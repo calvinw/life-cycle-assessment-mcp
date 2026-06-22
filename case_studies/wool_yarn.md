@@ -51,7 +51,7 @@ processes:
 reference_process: "P2 — Wool yarn production"
 
 lcia:
-  method_name: "TRACI 2.2"
+  method_name: "TRACI v2.1"
 ---
 
 ## About this analysis
@@ -82,7 +82,7 @@ occurs during scouring (washing the fleece) and carding (combing the fibers).
 
 IPCC Sixth Assessment Report (AR6), GWP100. Characterization factors:
 - CO2: 1.0 kg CO2 eq per kg
-- CH4: 27.9 kg CO2 eq per kg (fossil methane; 20-year GWP is 81.2)
+- CH4: 25.0 kg CO2-Eq per kg (fossil methane, TRACI v2.1; 20-year GWP is 81.2)
 
 ### Key teaching point
 
@@ -90,12 +90,12 @@ The raw CH4 emitted at the sheep farm (0.4 kg × 1.1 scaling = 0.44 kg) looks
 modest compared to the CO2 from processing (2.0 kg). But once the GWP100
 characterization factor of 27.9 is applied:
 
-- CH4 contribution: 0.44 × 27.9 = **12.3 kg CO2 eq**
-- CO2 from farming: 0.55 kg CO2 eq
-- CO2 from processing: 2.0 kg CO2 eq
-- **Total: ~14.9 kg CO2 eq per kg of wool yarn**
+- CH4 contribution: 0.44 × 25.0 = **11.0 kg CO2-Eq**
+- CO2 from farming: 0.55 kg CO2-Eq
+- CO2 from processing: 2.0 kg CO2-Eq
+- **Total: 13.55 kg CO2-Eq per kg of wool yarn**
 
-The sheep farm is responsible for roughly 86% of the climate impact.
+The sheep farm is responsible for roughly 85% of the climate impact.
 Wool's reputation as a "natural" fiber does not mean low-carbon.
 
 ### Simplifications

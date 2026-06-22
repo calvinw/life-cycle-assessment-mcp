@@ -23,20 +23,22 @@ import bw2data as bd
 import bw2calc as bc
 
 BRIGHTWAY_PROJECT = os.environ.get("BRIGHTWAY_PROJECT", "lca_server")
-BIOSPHERE_DB = "lca_biosphere"
+BIOSPHERE_DB = "biosphere3"
 FOREGROUND_DB = "foreground"
 
 # Index: (lowercase name, compartment) → activity key — built once on first lookup
 _FLOW_INDEX: dict | None = None
 
-# Common-name → openLCA FEDEFL name aliases (case-insensitive, applied at lookup time)
+# Common-name → ecoinvent/biosphere3 name aliases (case-insensitive, applied at lookup time)
 _FLOW_ALIASES: dict[str, str] = {
-    "nitrous oxide": "dinitrogen monoxide",
+    "co2": "carbon dioxide, fossil",
+    "carbon dioxide": "carbon dioxide, fossil",
+    "ch4": "methane, fossil",
+    "methane": "methane, fossil",
     "n2o": "dinitrogen monoxide",
+    "nitrous oxide": "dinitrogen monoxide",
     "nox": "nitrogen oxides",
-    "sox": "sulfur oxides",
-    "pm2.5": "particulate matter",
-    "pm10": "particulates",
+    "sox": "sulfur dioxide",
 }
 
 
@@ -55,7 +57,7 @@ def _load_spec(recipe_card_yaml: str) -> dict:
 def _sub_compartment_priority(flow) -> int:
     """Score a flow's sub-compartment: higher = preferred winner in _FLOW_INDEX.
 
-    "unspecified" is the canonical FEDEFL sub-compartment that LCIA methods
+    "unspecified" is the preferred biosphere3 sub-compartment that LCIA methods
     consistently characterize.  "indoor" and stratospheric sub-compartments
     are rarely included in LCIA CF tables and must not win the index slot.
     """
@@ -96,7 +98,7 @@ def _build_flow_index():
 
 
 def _find_biosphere_flow(name: str, compartment: str):
-    """Look up a flow in lca_biosphere by name and compartment."""
+    """Look up a flow in biosphere3 by name and compartment."""
     global _FLOW_INDEX
     if _FLOW_INDEX is None:
         _build_flow_index()
