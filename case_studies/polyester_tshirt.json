@@ -12,13 +12,13 @@
     "method": "TRACI v2.1",
     "functional_unit": "1.0 unit \u2014 1 polyester T-shirt, ready for sale (approximately 200 g of fabric)",
     "lci": {
-      "Carbon dioxide, fossil": {
-        "amount": 2.160000018179417,
+      "Methane, fossil": {
+        "amount": 0.01500000044703484,
         "unit": "kilogram",
         "type": "emission"
       },
-      "Methane, fossil": {
-        "amount": 0.01500000044703484,
+      "Carbon dioxide, fossil": {
+        "amount": 2.160000018179417,
         "unit": "kilogram",
         "type": "emission"
       }

@@ -16,6 +16,11 @@
         "unit": "kilogram",
         "type": "emission"
       },
+      "Carbon dioxide, fossil": {
+        "amount": 1.5000000223517418,
+        "unit": "kilogram",
+        "type": "emission"
+      },
       "Ammonia": {
         "amount": 0.009999999776482582,
         "unit": "kilogram",
@@ -24,11 +29,6 @@
       "Water": {
         "amount": 8000.0,
         "unit": "cubic meter",
-        "type": "emission"
-      },
-      "Carbon dioxide, fossil": {
-        "amount": 1.5000000223517418,
-        "unit": "kilogram",
         "type": "emission"
       }
     },

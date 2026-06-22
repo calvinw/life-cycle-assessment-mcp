@@ -11,11 +11,6 @@
     "method": "TRACI v2.1",
     "functional_unit": "1.0 kg \u2014 1 kg of wool yarn, ready for knitting or weaving",
     "lci": {
-      "Carbon dioxide, fossil": {
-        "amount": 2.550000011920929,
-        "unit": "kilogram",
-        "type": "emission"
-      },
       "Water": {
         "amount": 30.0,
         "unit": "cubic meter",
@@ -23,6 +18,11 @@
       },
       "Methane, fossil": {
         "amount": 0.44000001609325423,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Carbon dioxide, fossil": {
+        "amount": 2.550000011920929,
         "unit": "kilogram",
         "type": "emission"
       }
