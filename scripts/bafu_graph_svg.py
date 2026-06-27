@@ -106,7 +106,7 @@ def generate_bafu_svg(
     node_info   = {}   # unique_id → dict
 
     for uid, node in result["nodes"].items():
-        dot_id = f"n{uid}"
+        dot_id = f"n{str(uid).replace('-', '_')}"
         node_labels[uid] = dot_id
         if node.activity_index == -1:
             node_info[uid] = {"name": "Functional Unit", "location": "", "depth": 0,
