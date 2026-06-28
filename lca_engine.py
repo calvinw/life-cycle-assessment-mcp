@@ -179,6 +179,10 @@ def run_analysis(recipe_card_yaml: str) -> dict:
         activities[proc["name"]] = act
         product_to_activity[ref["flow"]] = act
 
+    # Collect direct inputs to the reference process for top-level breakdown
+    ref_proc_name_early = spec["reference_process"]
+    direct_inputs: list = []  # [{activity, amount, label}]
+
     # Pass 2 — add exchanges
     for proc in spec["processes"]:
         act = activities[proc["name"]]
@@ -219,6 +223,14 @@ def run_analysis(recipe_card_yaml: str) -> dict:
                 amount=float(inp["amount"]),
                 type="technosphere",
             ).save()
+
+            if proc["name"] == ref_proc_name_early:
+                direct_inputs.append({
+                    "activity": provider,
+                    "amount": float(inp["amount"]),
+                    "label": provider["name"],
+                    "location": provider.get("location", ""),
+                })
 
         for em in proc.get("emissions", []):
             compartment = _compartment_for_emission(em)
@@ -305,6 +317,28 @@ def run_analysis(recipe_card_yaml: str) -> dict:
     lcia_results: dict = {}
     contributions: dict = {}
 
+    def _top_level(method_tuple):
+        """Score each direct input to the reference process separately."""
+        if not direct_inputs:
+            return []
+        total = lca.score
+        if total == 0:
+            return []
+        rows = []
+        for inp in direct_inputs:
+            lca2 = bc.LCA({inp["activity"]: inp["amount"]}, method_tuple)
+            lca2.lci()
+            lca2.lcia()
+            rows.append({
+                "activity": inp["label"],
+                "location": inp["location"],
+                "amount": inp["amount"],
+                "score": float(lca2.score),
+                "fraction": float(lca2.score / total) if total else 0.0,
+            })
+        rows.sort(key=lambda r: -r["score"])
+        return rows
+
     def _contributions(lca, top_n):
         """Return top_n activities by contribution to current lca.score."""
         total = lca.score
@@ -335,7 +369,10 @@ def run_analysis(recipe_card_yaml: str) -> dict:
         "score": float(lca.score),
         "unit": bd.methods[method_tuples[0]].get("unit", ""),
     }
-    contributions[key0] = _contributions(lca, top_n)
+    contributions[key0] = {
+        "top_level": _top_level(method_tuples[0]),
+        "processes": _contributions(lca, top_n),
+    }
 
     for method_tuple in method_tuples[1:]:
         lca.switch_method(method_tuple)
@@ -345,7 +382,10 @@ def run_analysis(recipe_card_yaml: str) -> dict:
             "score": float(lca.score),
             "unit": bd.methods[method_tuple].get("unit", ""),
         }
-        contributions[key] = _contributions(lca, top_n)
+        contributions[key] = {
+            "top_level": _top_level(method_tuple),
+            "processes": _contributions(lca, top_n),
+        }
 
     fu_spec = spec["functional_unit"]
     return {
@@ -379,9 +419,13 @@ def get_contributions(recipe_card_yaml: str, method_name: str, top_n: int = 10) 
             f"Method '{method_name}' not found in results. "
             f"Available: {available}"
         )
-    # Return first match (most specific)
     key = next(iter(matched))
-    return {"method": key, "contributions": matched[key][:top_n]}
+    data = matched[key]
+    return {
+        "method": key,
+        "top_level": data["top_level"],
+        "processes": data["processes"][:top_n],
+    }
 
 
 def list_databases() -> list:
