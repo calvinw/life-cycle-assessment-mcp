@@ -37,6 +37,7 @@ from lca_engine import run_analysis, list_methods, check_brightway, _ensure_data
 from lca_engine import list_databases as _list_databases
 from lca_engine import search_database as _search_database
 from lca_svg_engine import generate_svg, generate_unit_process_svg
+from scripts.bafu_graph_svg import generate_bafu_svg as _generate_bafu_svg
 
 mcp = FastMCP("Life Cycle Assessment MCP")
 
@@ -87,6 +88,62 @@ def get_lca_svg(recipe_card: str, graph_type: str = "scaled") -> str:
     Returns SVG as a string.
     """
     return generate_svg(recipe_card, graph_type)
+
+
+@mcp.tool()
+def get_bafu_svg(
+    activity_name: str,
+    location: str,
+    method_name: str = "EF v3.1",
+    method_category: str = "climate change",
+    max_depth: int = 4,
+    cutoff: float = 0.01,
+    database: str = "bafu",
+) -> str:
+    """
+    Generate a supply chain SVG for any BAFU background process.
+
+    Shows the upstream supply chain with cumulative impact scores and
+    contribution percentages at each node, traversed via bw_graph_tools.
+
+    activity_name:   exact process name, e.g. "Polylactide, granulate, at plant"
+    location:        location code, e.g. "GLO", "RER", "CH"
+    method_name:     top-level LCIA method, e.g. "EF v3.1", "ReCiPe 2016 Midpoint (H)"
+    method_category: impact category substring, e.g. "climate change", "acidification"
+    max_depth:       how many levels deep to traverse (default 4)
+    cutoff:          minimum fraction of total score to show a node (default 0.01 = 1%)
+    database:        Brightway database name (default "bafu")
+
+    Returns SVG as a string.
+    """
+    import bw2data as bd
+    import tempfile, pathlib
+
+    bd.projects.set_current("lca_server")
+    matches = [m for m in bd.methods
+               if m[0] == method_name and method_category.lower() in m[1].lower()]
+    if not matches:
+        raise ValueError(
+            f"No method found for '{method_name}' / '{method_category}'. "
+            f"Use list_impact_methods() to browse available methods."
+        )
+    method = matches[0]
+
+    with tempfile.NamedTemporaryFile(suffix=".svg", delete=False) as f:
+        out_path = f.name
+
+    _generate_bafu_svg(
+        activity_name=activity_name,
+        location=location,
+        method=method,
+        output_path=out_path,
+        max_depth=max_depth,
+        cutoff=cutoff,
+        database=database,
+    )
+    svg = pathlib.Path(out_path).read_text()
+    pathlib.Path(out_path).unlink()
+    return svg
 
 
 @mcp.tool()
