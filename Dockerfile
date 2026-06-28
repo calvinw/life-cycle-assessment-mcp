@@ -27,4 +27,4 @@ ENV PATH="/app/.venv/bin:$PATH"
 
 # Run setup (idempotent) then start server.
 # Brightway data persists in /app/brightway_data via a Docker volume.
-CMD ["sh", "-c", "python scripts/setup_databases.py && python sse_server.py"]
+CMD ["python", "sse_server.py"]

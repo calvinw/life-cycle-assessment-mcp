@@ -33,10 +33,15 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 from fastmcp import FastMCP
 
-from lca_engine import run_analysis, list_methods, check_brightway
+from lca_engine import run_analysis, list_methods, check_brightway, _ensure_databases
+from lca_engine import list_databases as _list_databases
+from lca_engine import search_database as _search_database
 from lca_svg_engine import generate_svg, generate_unit_process_svg
 
 mcp = FastMCP("Life Cycle Assessment MCP")
+
+# Download BAFU database tarball on startup if not already present
+_ensure_databases()
 
 _CASE_STUDIES_DIR = pathlib.Path(__file__).parent / "case_studies"
 
@@ -115,6 +120,26 @@ def get_case_study(name: str) -> dict:
         return {"recipe_card": md_path.read_text()}
     available = [p.stem for p in _CASE_STUDIES_DIR.glob("*.md")]
     raise ValueError(f"Case study '{name}' not found. Available: {available}")
+
+
+@mcp.tool()
+def list_databases() -> list:
+    """
+    List all databases installed in the current Brightway project,
+    with size, backend, and dependencies.
+    """
+    return _list_databases()
+
+
+@mcp.tool()
+def search_database(query: str, database: str = "biosphere3", limit: int = 25) -> list:
+    """
+    Search for flows or activities in a named Brightway database.
+
+    Returns matching entries with name, categories, unit, type, and key.
+    Use list_databases() to see available database names.
+    """
+    return _search_database(query, database=database, limit=limit)
 
 
 @mcp.tool()
