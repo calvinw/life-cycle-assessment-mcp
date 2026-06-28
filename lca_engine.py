@@ -300,20 +300,52 @@ def run_analysis(recipe_card_yaml: str) -> dict:
                     "type": flow_type,
                 }
 
-    # LCIA scores — one per impact category
+    # LCIA scores + contributions — one per impact category
     lca.lcia()
     lcia_results: dict = {}
-    lcia_results[" | ".join(method_tuples[0][1:])] = {
+    contributions: dict = {}
+
+    def _contributions(lca, top_n):
+        """Return top_n activities by contribution to current lca.score."""
+        total = lca.score
+        if total == 0:
+            return []
+        import bw2analyzer as ba
+        ca = ba.ContributionAnalysis()
+        rows = []
+        for score, _, act in ca.annotated_top_processes(lca, limit=top_n):
+            try:
+                name = act["name"]
+                location = act.get("location", "")
+            except Exception:
+                name = str(act)
+                location = ""
+            rows.append({
+                "activity": name,
+                "location": location,
+                "score": float(score),
+                "fraction": float(score / total),
+            })
+        return rows
+
+    top_n = spec.get("lcia", {}).get("top_n", 10)
+
+    key0 = " | ".join(method_tuples[0][1:])
+    lcia_results[key0] = {
         "score": float(lca.score),
         "unit": bd.methods[method_tuples[0]].get("unit", ""),
     }
+    contributions[key0] = _contributions(lca, top_n)
+
     for method_tuple in method_tuples[1:]:
         lca.switch_method(method_tuple)
         lca.lcia()
-        lcia_results[" | ".join(method_tuple[1:])] = {
+        key = " | ".join(method_tuple[1:])
+        lcia_results[key] = {
             "score": float(lca.score),
             "unit": bd.methods[method_tuple].get("unit", ""),
         }
+        contributions[key] = _contributions(lca, top_n)
 
     fu_spec = spec["functional_unit"]
     return {
@@ -324,8 +356,32 @@ def run_analysis(recipe_card_yaml: str) -> dict:
         ),
         "lci": lci,
         "lcia": lcia_results,
+        "contributions": contributions,
         "scaling_vector": scaling_vector,
     }
+
+
+def get_contributions(recipe_card_yaml: str, method_name: str, top_n: int = 10) -> list:
+    """
+    Run contribution analysis for a single named impact category.
+
+    method_name must match a substring of the full method key
+    (e.g. "climate change | global warming" or "acidification").
+    Returns a ranked list of {activity, location, score, fraction} dicts.
+    """
+    _ensure_project()
+    result = run_analysis(recipe_card_yaml)
+    matched = {k: v for k, v in result["contributions"].items()
+               if method_name.lower() in k.lower()}
+    if not matched:
+        available = list(result["contributions"].keys())
+        raise ValueError(
+            f"Method '{method_name}' not found in results. "
+            f"Available: {available}"
+        )
+    # Return first match (most specific)
+    key = next(iter(matched))
+    return {"method": key, "contributions": matched[key][:top_n]}
 
 
 def list_databases() -> list:

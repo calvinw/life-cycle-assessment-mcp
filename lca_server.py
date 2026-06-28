@@ -33,7 +33,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 from fastmcp import FastMCP
 
-from lca_engine import run_analysis, list_methods, check_brightway, _ensure_databases
+from lca_engine import run_analysis, list_methods, check_brightway, _ensure_databases, get_contributions
 from lca_engine import list_databases as _list_databases
 from lca_engine import search_database as _search_database
 from lca_svg_engine import generate_svg, generate_unit_process_svg
@@ -62,6 +62,19 @@ def run_lca(recipe_card: str) -> dict:
     result["svg_scaled"]    = generate_svg(recipe_card, "scaled")
     result["svg_structure"] = generate_svg(recipe_card, "structure")
     return result
+
+
+@mcp.tool()
+def get_contributions_tool(recipe_card: str, method_name: str, top_n: int = 10) -> dict:
+    """
+    Run contribution analysis for a single impact category from a recipe card.
+
+    method_name: substring of the impact category key, e.g. "climate change",
+                 "acidification", "eutrophication: freshwater".
+    top_n: number of top contributing processes to return (default 10).
+    Returns {method, contributions: [{activity, location, score, fraction}]}.
+    """
+    return get_contributions(recipe_card, method_name, top_n)
 
 
 @mcp.tool()
