@@ -3,5 +3,5 @@ __pycache__/
 *.pyc
 lca_debug/
 brightway_data/
-data/lcia/*.zip
+data/
 .claude/
