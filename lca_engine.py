@@ -159,12 +159,29 @@ def run_analysis(recipe_card_yaml: str) -> dict:
         ).save()
 
         for inp in proc.get("inputs", []):
-            provider = product_to_activity.get(inp["flow"])
-            if provider is None:
-                raise ValueError(
-                    f"Input flow '{inp['flow']}' in process '{proc['name']}' "
-                    f"has no provider in this recipe card."
+            db_name = inp.get("database")
+            if db_name:
+                # Background database lookup (e.g. bafu)
+                bg_db = bd.Database(db_name)
+                location = inp.get("location")
+                provider = next(
+                    (a for a in bg_db
+                     if a["name"] == inp["flow"]
+                     and (location is None or a.get("location") == location)),
+                    None,
                 )
+                if provider is None:
+                    raise ValueError(
+                        f"Background flow '{inp['flow']}' [{location}] not found "
+                        f"in database '{db_name}'."
+                    )
+            else:
+                provider = product_to_activity.get(inp["flow"])
+                if provider is None:
+                    raise ValueError(
+                        f"Input flow '{inp['flow']}' in process '{proc['name']}' "
+                        f"has no provider in this recipe card."
+                    )
             act.new_exchange(
                 input=provider,
                 amount=float(inp["amount"]),
@@ -254,14 +271,14 @@ def run_analysis(recipe_card_yaml: str) -> dict:
     # LCIA scores — one per impact category
     lca.lcia()
     lcia_results: dict = {}
-    lcia_results[method_tuples[0][-1]] = {
+    lcia_results[" | ".join(method_tuples[0][1:])] = {
         "score": float(lca.score),
         "unit": bd.methods[method_tuples[0]].get("unit", ""),
     }
     for method_tuple in method_tuples[1:]:
         lca.switch_method(method_tuple)
         lca.lcia()
-        lcia_results[method_tuple[-1]] = {
+        lcia_results[" | ".join(method_tuple[1:])] = {
             "score": float(lca.score),
             "unit": bd.methods[method_tuple].get("unit", ""),
         }
@@ -277,6 +294,41 @@ def run_analysis(recipe_card_yaml: str) -> dict:
         "lcia": lcia_results,
         "scaling_vector": scaling_vector,
     }
+
+
+def list_databases() -> list:
+    """Return all databases installed in the current Brightway project."""
+    _ensure_project()
+    results = []
+    for name in sorted(bd.databases):
+        meta = bd.databases[name]
+        results.append({
+            "name": name,
+            "size": meta.get("number", len(bd.Database(name))),
+            "backend": meta.get("backend", "sqlite"),
+            "depends": meta.get("depends", []),
+        })
+    return results
+
+
+def search_database(query: str, database: str = "biosphere3", limit: int = 25) -> list:
+    """Search for flows or activities in a named Brightway database."""
+    _ensure_project()
+    if database not in bd.databases:
+        available = list(bd.databases)
+        raise ValueError(f"Database '{database}' not found. Available: {available}")
+    db = bd.Database(database)
+    results = db.search(query, limit=limit)
+    return [
+        {
+            "name": r["name"],
+            "categories": list(r.get("categories", [])),
+            "unit": r.get("unit", ""),
+            "type": r.get("type", ""),
+            "key": list(r.key),
+        }
+        for r in results
+    ]
 
 
 def list_methods() -> list:
