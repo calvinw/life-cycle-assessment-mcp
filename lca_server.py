@@ -33,7 +33,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 from fastmcp import FastMCP
 
-from lca_engine import run_analysis, list_methods, check_brightway, _ensure_databases, get_contributions, query_database, get_database_schema
+from lca_engine import run_analysis, list_methods, check_brightway, _ensure_databases, get_contributions, query_database, get_database_schema, top_emissions, compare_activities
 from lca_engine import list_databases as _list_databases
 from lca_engine import search_database as _search_database
 from lca_svg_engine import generate_svg, generate_unit_process_svg
@@ -174,6 +174,50 @@ def query_lca_database(sql: str, limit: int = 100) -> dict:
     Only SELECT statements are permitted. Returns {columns, rows, count}.
     """
     return query_database(sql, limit=limit)
+
+
+@mcp.tool()
+def get_top_emissions(recipe_card: str, method_name: str, top_n: int = 15) -> list:
+    """
+    Return the top biosphere flows (emissions/resources) driving impact for one
+    LCIA category, ranked by direct impact score.
+
+    method_name: substring match e.g. "climate change", "acidification", "water use"
+    top_n: number of flows to return (default 15)
+
+    Returns list of {flow, categories, unit, score, fraction}.
+
+    Example: get_top_emissions(recipe_card, "climate change") returns
+    [{"flow": "Carbon dioxide, fossil", "score": 1.03, "fraction": 0.60, ...}, ...]
+    """
+    return top_emissions(recipe_card, method_name, top_n=top_n)
+
+
+@mcp.tool()
+def compare_background_activities(
+    activity_names: list,
+    method_name: str,
+    database: str = "bafu",
+    location: str | None = None,
+    amount: float = 1.0,
+    method_family: str = "EF v3.1",
+) -> list:
+    """
+    Compare multiple background database activities on a single LCIA method.
+
+    activity_names: list of process names from the database e.g.
+        ["Nylon 6, at plant", "Polylactide, granulate, at plant", "Polyethylene terephthalate, granulate, at plant"]
+    method_name: substring match against LCIA category e.g. "climate change", "acidification"
+    database: which Brightway database to look up (default "bafu")
+    location: optional location filter e.g. "RER", "GLO" (searches all locations if omitted)
+    amount: functional unit amount (default 1.0, assumed kg or unit)
+    method_family: top-level LCIA method family (default "EF v3.1")
+
+    Returns list of {activity, location, score, unit, fraction} sorted by score descending,
+    where fraction is relative to the highest-scoring activity (1.0 = worst).
+    """
+    return compare_activities(activity_names, method_name, database=database,
+                              location=location, amount=amount, method_family=method_family)
 
 
 @mcp.tool()

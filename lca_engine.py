@@ -547,6 +547,155 @@ def search_database(query: str, database: str = "biosphere3", limit: int = 25) -
     ]
 
 
+def top_emissions(recipe_card_yaml: str, method_name: str, top_n: int = 15) -> list:
+    """
+    Return the top biosphere flows (emissions/resources) driving impact for one
+    LCIA category, ranked by absolute direct impact score.
+
+    method_name must substring-match a key in the LCIA results
+    e.g. "climate change", "acidification", "water use".
+
+    Returns list of {flow, categories, unit, score, fraction}.
+    """
+    import bw2analyzer as ba
+    _ensure_project()
+    result = run_analysis(recipe_card_yaml)
+
+    matched = {k: v for k, v in result["lcia"].items()
+               if method_name.lower() in k.lower()}
+    if not matched:
+        raise ValueError(
+            f"Method '{method_name}' not found. "
+            f"Available: {list(result['lcia'].keys())}"
+        )
+    key = next(iter(matched))
+    total = matched[key]["score"]
+
+    # Re-run LCA to get the live lca object
+    spec = yaml.safe_load(recipe_card_yaml.split("---")[1] if "---" in recipe_card_yaml else recipe_card_yaml)
+    method_name_full = spec["lcia"]["method_name"]
+    method_tuples = sorted(
+        [m for m in bd.methods if len(m) >= 2 and m[0] == method_name_full],
+        key=lambda m: m[-1],
+    )
+    target = next((m for m in method_tuples if method_name.lower() in " | ".join(m[1:]).lower()), None)
+    if target is None:
+        raise ValueError(f"Could not resolve method tuple for '{method_name}'")
+
+    # Need to rebuild foreground for LCA object — use get_contributions path
+    contributions = get_contributions(recipe_card_yaml, method_name, top_n=1)
+
+    # Re-derive lca from scratch (cheapest path: re-run run_analysis internals)
+    # We already have the score; rebuild lca for the emission breakdown
+    spec_full = yaml.safe_load(
+        recipe_card_yaml.split("---")[1] if "---" in recipe_card_yaml else recipe_card_yaml
+    )
+    ref_proc_name = spec_full["reference_process"]
+
+    fg_db = bd.Database("foreground")
+    ref_act = next((a for a in fg_db if a["name"] == ref_proc_name), None)
+    if ref_act is None:
+        raise ValueError(f"Reference process '{ref_proc_name}' not found in foreground database.")
+
+    fu_amount = float(spec_full["functional_unit"]["amount"])
+    lca = bc.LCA(demand={ref_act: fu_amount}, method=target)
+    lca.lci(factorize=True)
+    lca.lcia()
+
+    ca = ba.ContributionAnalysis()
+    rows = []
+    bio_db = bd.Database("biosphere3")
+    for score, _, flow in ca.annotated_top_emissions(lca, limit=top_n):
+        try:
+            name = flow["name"]
+            categories = list(flow.get("categories", []))
+            unit = flow.get("unit", "")
+        except Exception:
+            name = str(flow)
+            categories = []
+            unit = ""
+        rows.append({
+            "flow": name,
+            "categories": categories,
+            "unit": unit,
+            "score": float(score),
+            "fraction": float(score / total) if total else 0.0,
+        })
+    return rows
+
+
+def compare_activities(
+    activity_names: list,
+    method_name: str,
+    database: str = "bafu",
+    location: str | None = None,
+    amount: float = 1.0,
+    method_family: str = "EF v3.1",
+) -> list:
+    """
+    Compare multiple background database activities on a single LCIA method.
+
+    activity_names: list of process names to compare (must exist in `database`)
+    method_name: substring match against category e.g. "climate change", "acidification"
+    database: Brightway database to search (default "bafu")
+    location: optional location filter e.g. "RER", "GLO"
+    amount: functional unit amount (default 1.0 kg)
+    method_family: top-level method family to search within (default "EF v3.1")
+
+    Returns list of {activity, location, score, unit, fraction} sorted by score descending.
+    """
+    _ensure_project()
+    bg_db = bd.Database(database)
+
+    family_methods = [m for m in bd.methods if len(m) >= 2 and m[0] == method_family]
+    if not family_methods:
+        raise ValueError(f"Method family '{method_family}' not found.")
+    target = next(
+        (m for m in sorted(family_methods, key=lambda m: m[-1])
+         if method_name.lower() in " | ".join(m[1:]).lower()),
+        None,
+    )
+    if target is None:
+        categories = [" | ".join(m[1:]) for m in family_methods]
+        raise ValueError(
+            f"No category matching '{method_name}' in '{method_family}'. "
+            f"Available: {categories[:10]}"
+        )
+
+    rows = []
+    for name in activity_names:
+        act = next(
+            (a for a in bg_db
+             if a["name"] == name
+             and (location is None or a.get("location") == location)),
+            None,
+        )
+        if act is None:
+            rows.append({"activity": name, "location": location or "?", "score": None,
+                         "unit": "", "fraction": None, "error": "not found"})
+            continue
+        lca = bc.LCA({act: amount}, target)
+        lca.lci()
+        lca.lcia()
+        rows.append({
+            "activity": act["name"],
+            "location": act.get("location", ""),
+            "score": float(lca.score),
+            "unit": bd.methods[target].get("unit", ""),
+            "fraction": None,
+        })
+
+    # Compute fractions relative to max score
+    valid = [r for r in rows if r["score"] is not None]
+    if valid:
+        max_score = max(r["score"] for r in valid)
+        for r in valid:
+            r["fraction"] = float(r["score"] / max_score) if max_score else 0.0
+
+    rows.sort(key=lambda r: (r["score"] is None, -(r["score"] or 0)))
+    return rows
+
+
 def list_methods() -> list:
     """Return all LCIA methods registered in the current Brightway project."""
     _ensure_project()
