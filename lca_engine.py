@@ -10,6 +10,9 @@ Run scripts/setup_databases.py once before using this module.
 
 import os
 import pathlib
+import tarfile
+import threading
+import urllib.request
 
 # Must be set before bw2data is imported; directory must exist
 if "BRIGHTWAY2_DIR" not in os.environ:
@@ -25,6 +28,34 @@ import bw2calc as bc
 BRIGHTWAY_PROJECT = os.environ.get("BRIGHTWAY_PROJECT", "lca_server")
 BIOSPHERE_DB = "biosphere3"
 FOREGROUND_DB = "foreground"
+
+# URL of the pre-built Brightway database tarball on GitHub Releases.
+# To update: build a new tarball (see docs/bafu_database_setup.md) and bump this URL.
+TARBALL_URL = (
+    "https://github.com/calvinw/life-cycle-assessment-mcp"
+    "/releases/download/lca-data-v2/brightway_bafu_v1.tar.gz"
+)
+
+_db_lock = threading.Lock()
+
+
+def _ensure_databases():
+    """Download and extract the pre-built database tarball if bafu is missing."""
+    bd.projects.set_current(BRIGHTWAY_PROJECT)
+    if "bafu" in bd.databases:
+        return
+    with _db_lock:
+        if "bafu" in bd.databases:
+            return
+        bw_dir = pathlib.Path(os.environ["BRIGHTWAY2_DIR"])
+        tarball = bw_dir / "brightway_bafu_v1.tar.gz"
+        print(f"[lca_engine] bafu database not found — downloading from GitHub releases...")
+        urllib.request.urlretrieve(TARBALL_URL, tarball)
+        print(f"[lca_engine] Downloaded {tarball.stat().st_size // 1024 // 1024} MB — extracting...")
+        with tarfile.open(tarball, "r:gz") as tf:
+            tf.extractall(bw_dir.parent)
+        tarball.unlink()
+        print(f"[lca_engine] Database ready — {len(bd.Database('bafu'))} bafu processes.")
 
 # Index: (lowercase name, compartment) → activity key — built once on first lookup
 _FLOW_INDEX: dict | None = None
@@ -43,6 +74,7 @@ _FLOW_ALIASES: dict[str, str] = {
 
 
 def _ensure_project():
+    _ensure_databases()
     bd.projects.set_current(BRIGHTWAY_PROJECT)
 
 
