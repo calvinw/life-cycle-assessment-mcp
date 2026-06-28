@@ -473,6 +473,45 @@ def query_database(sql: str, limit: int = 100) -> dict:
     }
 
 
+def get_database_schema() -> dict:
+    """Return the SQLite schema for the Brightway database tables."""
+    return {
+        "tables": {
+            "activitydataset": {
+                "description": "One row per activity/process in any Brightway database",
+                "columns": {
+                    "id":       "integer primary key",
+                    "code":     "text — unique process code within its database",
+                    "database": "text — database name e.g. 'bafu', 'biosphere3'",
+                    "location": "text — location code e.g. 'CH', 'RER', 'GLO'",
+                    "name":     "text — process name",
+                    "product":  "text — reference product name",
+                    "type":     "text — 'processwithreferenceproduct' or 'emission'",
+                },
+                "example_query": "SELECT name, location FROM activitydataset WHERE database='bafu' AND name LIKE '%cotton%'",
+            },
+            "exchangedataset": {
+                "description": "One row per exchange (input/output) between activities",
+                "columns": {
+                    "id":               "integer primary key",
+                    "input_code":       "text — code of the input activity",
+                    "input_database":   "text — database of the input activity",
+                    "output_code":      "text — code of the receiving activity",
+                    "output_database":  "text — database of the receiving activity",
+                    "type":             "text — 'technosphere', 'biosphere', or 'production'",
+                },
+                "example_query": "SELECT DISTINCT a.name, a.location FROM activitydataset a JOIN exchangedataset e ON e.output_code=a.code AND e.output_database=a.database WHERE e.input_code='273090' AND e.input_database='bafu' AND e.type='technosphere'",
+            },
+        },
+        "notes": [
+            "Only SELECT queries are permitted via query_lca_database()",
+            "The 'data' column (pickle blob) is not SQL-queryable — use the extracted columns above",
+            "Join activitydataset to exchangedataset on (code, database) = (input_code, input_database) to find who uses a process",
+            "Join on (code, database) = (output_code, output_database) to find inputs to a process",
+        ],
+    }
+
+
 def list_databases() -> list:
     """Return all databases installed in the current Brightway project."""
     _ensure_project()

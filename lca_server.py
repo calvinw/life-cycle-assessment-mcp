@@ -33,7 +33,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 from fastmcp import FastMCP
 
-from lca_engine import run_analysis, list_methods, check_brightway, _ensure_databases, get_contributions, query_database
+from lca_engine import run_analysis, list_methods, check_brightway, _ensure_databases, get_contributions, query_database, get_database_schema
 from lca_engine import list_databases as _list_databases
 from lca_engine import search_database as _search_database
 from lca_svg_engine import generate_svg, generate_unit_process_svg
@@ -144,6 +144,17 @@ def get_bafu_svg(
     svg = pathlib.Path(out_path).read_text()
     pathlib.Path(out_path).unlink()
     return svg
+
+
+@mcp.tool()
+def get_lca_database_schema() -> dict:
+    """
+    Return the schema of the Brightway SQLite database tables.
+
+    Call this before writing SQL queries with query_lca_database() to understand
+    the available tables, columns, and join patterns.
+    """
+    return get_database_schema()
 
 
 @mcp.tool()
