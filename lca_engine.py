@@ -428,6 +428,51 @@ def get_contributions(recipe_card_yaml: str, method_name: str, top_n: int = 10) 
     }
 
 
+def query_database(sql: str, limit: int = 100) -> dict:
+    """
+    Run a read-only SQL query against the Brightway SQLite database.
+
+    The main tables are:
+      activitydataset  — columns: id, code, database, location, name, product, type
+      exchangedataset  — columns: id, input_code, input_database, output_code, output_database, type
+
+    Only SELECT statements are allowed.
+    Returns {columns, rows, count}.
+    """
+    import sqlite3
+    sql_stripped = sql.strip().lstrip(";").strip()
+    if not sql_stripped.upper().startswith("SELECT"):
+        raise ValueError("Only SELECT queries are allowed.")
+
+    _ensure_project()
+    db_path = (
+        pathlib.Path(os.environ["BRIGHTWAY2_DIR"])
+        / f"lca_server.{bd.projects.dir.name.split('.')[-1]}"
+        / "lci"
+        / "databases.db"
+    )
+    # Find the actual databases.db path
+    bw_dir = pathlib.Path(os.environ["BRIGHTWAY2_DIR"])
+    matches = list(bw_dir.glob("lca_server.*/lci/databases.db"))
+    if not matches:
+        raise FileNotFoundError("Brightway databases.db not found.")
+    db_path = matches[0]
+
+    conn = sqlite3.connect(str(db_path))
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+    cur.execute(sql_stripped)
+    rows = cur.fetchmany(limit)
+    columns = [d[0] for d in cur.description] if cur.description else []
+    conn.close()
+
+    return {
+        "columns": columns,
+        "rows": [list(row) for row in rows],
+        "count": len(rows),
+    }
+
+
 def list_databases() -> list:
     """Return all databases installed in the current Brightway project."""
     _ensure_project()

@@ -33,7 +33,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 from fastmcp import FastMCP
 
-from lca_engine import run_analysis, list_methods, check_brightway, _ensure_databases, get_contributions
+from lca_engine import run_analysis, list_methods, check_brightway, _ensure_databases, get_contributions, query_database
 from lca_engine import list_databases as _list_databases
 from lca_engine import search_database as _search_database
 from lca_svg_engine import generate_svg, generate_unit_process_svg
@@ -144,6 +144,25 @@ def get_bafu_svg(
     svg = pathlib.Path(out_path).read_text()
     pathlib.Path(out_path).unlink()
     return svg
+
+
+@mcp.tool()
+def query_lca_database(sql: str, limit: int = 100) -> dict:
+    """
+    Run a read-only SQL SELECT query against the Brightway SQLite database.
+
+    Available tables:
+      activitydataset  — id, code, database, location, name, product, type
+      exchangedataset  — id, input_code, input_database, output_code, output_database, type
+
+    Example queries:
+      SELECT location, COUNT(*) as n FROM activitydataset WHERE database='bafu' GROUP BY location ORDER BY n DESC
+      SELECT name, location FROM activitydataset WHERE database='bafu' AND name LIKE '%cotton%'
+      SELECT DISTINCT output_code FROM exchangedataset WHERE input_database='bafu' AND input_code='273090'
+
+    Only SELECT statements are permitted. Returns {columns, rows, count}.
+    """
+    return query_database(sql, limit=limit)
 
 
 @mcp.tool()
