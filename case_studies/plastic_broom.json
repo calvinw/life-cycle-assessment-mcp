@@ -1,0 +1,3300 @@
+{
+  "recipe_card": "---\nname: Plastic Broom — 1 unit\ngoal: >\n  Calculate the climate change and acidification impact of producing one plastic\n  broom made from 0.52 kg PLA and 0.03 kg nylon 6, including transport of\n  materials to the assembly site.\n\nfunctional_unit:\n  description: 1 plastic broom\n  amount: 1.0\n  unit: unit\n\nproducts:\n  - { name: Plastic broom, unit: unit }\n\nprocesses:\n  - name: Plastic broom assembly\n    reference_output: { flow: Plastic broom, amount: 1.0, unit: unit }\n    inputs:\n      - { flow: \"Polylactide, granulate, at plant\",                               location: GLO, database: bafu, amount: 0.52,   unit: kg }\n      - { flow: \"Nylon 6, at plant\",                                             location: RER, database: bafu, amount: 0.03,   unit: kg }\n      - { flow: \"Transport, freight, lorry, 16t-32t gross weight, fleet average\", location: RER, database: bafu, amount: 0.1055, unit: tkm }\n\nreference_process: \"Plastic broom assembly\"\n\nlcia:\n  method_name: \"EF v3.1\"\n---\n",
+  "svg_structure": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"100%\" viewBox=\"0 -38.0 583.4 106.8\">\n<rect x=\"0\" y=\"-38.0\" width=\"583.4\" height=\"106.8\" fill=\"#f8f8f8\"/>\n<defs>\n  <marker id=\"arr\"       viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\"\n          markerWidth=\"5\" markerHeight=\"5\" orient=\"auto\">\n    <path d=\"M0,0 L10,5 L0,10 z\" fill=\"#555555\"/>\n  </marker>\n  <marker id=\"arr-green\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\"\n          markerWidth=\"5\" markerHeight=\"5\" orient=\"auto\">\n    <path d=\"M0,0 L10,5 L0,10 z\" fill=\"#2d7a45\"/>\n  </marker>\n  <marker id=\"arr-red\"   viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\"\n          markerWidth=\"5\" markerHeight=\"5\" orient=\"auto\">\n    <path d=\"M0,0 L10,5 L0,10 z\" fill=\"#c0392b\"/>\n  </marker>\n</defs>\n<text x=\"291.7\" y=\"-11.4\" text-anchor=\"middle\" dominant-baseline=\"auto\" font-family=\"Helvetica,Arial,sans-serif\" font-size=\"14\" font-weight=\"bold\" fill=\"#222\">Plastic Broom — 1 unit</text>\n<line x1=\"225.0\" y1=\"34.4\" x2=\"358.4\" y2=\"34.4\" stroke=\"#555555\" stroke-width=\"1.6\" marker-end=\"url(#arr)\"/>\n<text x=\"291.7\" y=\"29.4\" text-anchor=\"middle\" dominant-baseline=\"auto\" font-family=\"Helvetica,Arial,sans-serif\" font-size=\"11\" font-weight=\"bold\" fill=\"#444\">Plastic broom</text>\n<rect x=\"60.0\" y=\"6.9\" width=\"165.0\" height=\"55.0\" rx=\"8\" fill=\"#3a7ebf\"/>\n<text x=\"142.5\" y=\"26.4\" text-anchor=\"middle\" dominant-baseline=\"auto\" font-family=\"Helvetica,Arial,sans-serif\" font-size=\"11\" font-weight=\"normal\" fill=\"white\">Plastic broom assembly</text>\n<rect x=\"358.4\" y=\"0.0\" width=\"165.0\" height=\"68.75\" rx=\"8\" fill=\"#7b4ea6\"/>\n<text x=\"440.9\" y=\"15.1\" text-anchor=\"middle\" dominant-baseline=\"auto\" font-family=\"Helvetica,Arial,sans-serif\" font-size=\"11\" font-weight=\"normal\" fill=\"white\">Functional Unit</text>\n<text x=\"440.9\" y=\"37.8\" text-anchor=\"middle\" dominant-baseline=\"auto\" font-family=\"Helvetica,Arial,sans-serif\" font-size=\"10\" font-weight=\"normal\" fill=\"white\">1 plastic broom</text>\n</svg>",
+  "svg_scaled": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"100%\" viewBox=\"0 -38.0 583.4 106.8\">\n<rect x=\"0\" y=\"-38.0\" width=\"583.4\" height=\"106.8\" fill=\"#f8f8f8\"/>\n<defs>\n  <marker id=\"arr\"       viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\"\n          markerWidth=\"5\" markerHeight=\"5\" orient=\"auto\">\n    <path d=\"M0,0 L10,5 L0,10 z\" fill=\"#555555\"/>\n  </marker>\n  <marker id=\"arr-green\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\"\n          markerWidth=\"5\" markerHeight=\"5\" orient=\"auto\">\n    <path d=\"M0,0 L10,5 L0,10 z\" fill=\"#2d7a45\"/>\n  </marker>\n  <marker id=\"arr-red\"   viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\"\n          markerWidth=\"5\" markerHeight=\"5\" orient=\"auto\">\n    <path d=\"M0,0 L10,5 L0,10 z\" fill=\"#c0392b\"/>\n  </marker>\n</defs>\n<text x=\"291.7\" y=\"-11.4\" text-anchor=\"middle\" dominant-baseline=\"auto\" font-family=\"Helvetica,Arial,sans-serif\" font-size=\"14\" font-weight=\"bold\" fill=\"#222\">Plastic Broom — 1 unit</text>\n<line x1=\"225.0\" y1=\"34.4\" x2=\"358.4\" y2=\"34.4\" stroke=\"#555555\" stroke-width=\"1.6\" marker-end=\"url(#arr)\"/>\n<text text-anchor=\"middle\" font-family=\"Helvetica,Arial,sans-serif\" font-size=\"11\" font-weight=\"bold\" fill=\"#444\">\n<tspan x=\"291.7\" y=\"13.2\" dominant-baseline=\"auto\">Plastic broom</tspan>\n<tspan x=\"291.7\" y=\"27.5\" dominant-baseline=\"auto\">1 unit</tspan>\n</text>\n<rect x=\"60.0\" y=\"6.9\" width=\"165.0\" height=\"55.0\" rx=\"8\" fill=\"#3a7ebf\"/>\n<text x=\"142.5\" y=\"26.4\" text-anchor=\"middle\" dominant-baseline=\"auto\" font-family=\"Helvetica,Arial,sans-serif\" font-size=\"11\" font-weight=\"normal\" fill=\"white\">Plastic broom assembly</text>\n<text x=\"142.5\" y=\"42.4\" text-anchor=\"middle\" dominant-baseline=\"auto\" font-family=\"Helvetica,Arial,sans-serif\" font-size=\"11\" font-weight=\"normal\" fill=\"white\">s1 = 1</text>\n<rect x=\"358.4\" y=\"0.0\" width=\"165.0\" height=\"68.75\" rx=\"8\" fill=\"#7b4ea6\"/>\n<text x=\"440.9\" y=\"15.1\" text-anchor=\"middle\" dominant-baseline=\"auto\" font-family=\"Helvetica,Arial,sans-serif\" font-size=\"11\" font-weight=\"normal\" fill=\"white\">Functional Unit</text>\n<text x=\"440.9\" y=\"37.8\" text-anchor=\"middle\" dominant-baseline=\"auto\" font-family=\"Helvetica,Arial,sans-serif\" font-size=\"10\" font-weight=\"normal\" fill=\"white\">1 plastic broom</text>\n</svg>",
+  "unit_process_svgs": {
+    "Plastic broom assembly": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"100%\" viewBox=\"0 0 535.0 224.0\">\n<rect x=\"0\" y=\"0\" width=\"535.0\" height=\"224.0\" fill=\"#f8f8f8\"/>\n<defs>\n  <marker id=\"arr\"       viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\"\n          markerWidth=\"5\" markerHeight=\"5\" orient=\"auto\">\n    <path d=\"M0,0 L10,5 L0,10 z\" fill=\"#555555\"/>\n  </marker>\n  <marker id=\"arr-green\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\"\n          markerWidth=\"5\" markerHeight=\"5\" orient=\"auto\">\n    <path d=\"M0,0 L10,5 L0,10 z\" fill=\"#2d7a45\"/>\n  </marker>\n  <marker id=\"arr-red\"   viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\"\n          markerWidth=\"5\" markerHeight=\"5\" orient=\"auto\">\n    <path d=\"M0,0 L10,5 L0,10 z\" fill=\"#c0392b\"/>\n  </marker>\n</defs>\n<text x=\"267.5\" y=\"15.0\" text-anchor=\"middle\" dominant-baseline=\"auto\" font-family=\"Helvetica,Arial,sans-serif\" font-size=\"13\" font-weight=\"bold\" fill=\"#222\">Plastic broom assembly</text>\n<text x=\"267.5\" y=\"30.0\" text-anchor=\"middle\" dominant-baseline=\"auto\" font-family=\"Helvetica,Arial,sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#666\">Unit Process</text>\n<rect x=\"230.0\" y=\"104.0\" width=\"165\" height=\"54\" rx=\"8\" fill=\"#3a7ebf\"/>\n<text x=\"312.5\" y=\"131.0\" text-anchor=\"middle\" dominant-baseline=\"auto\" font-family=\"Helvetica,Arial,sans-serif\" font-size=\"11\" font-weight=\"normal\" fill=\"white\">Plastic broom assembly</text>\n<line x1=\"395.0\" y1=\"131.0\" x2=\"485.0\" y2=\"131.0\" stroke=\"#555555\" stroke-width=\"1.6\" marker-end=\"url(#arr)\"/>\n<text text-anchor=\"middle\" font-family=\"Helvetica,Arial,sans-serif\" font-size=\"11\" font-weight=\"bold\" fill=\"#444\">\n<tspan x=\"440.0\" y=\"109.8\" dominant-baseline=\"auto\">Plastic broom</tspan>\n<tspan x=\"440.0\" y=\"124.1\" dominant-baseline=\"auto\">1.0 unit</tspan>\n</text>\n<line x1=\"140.0\" y1=\"95.0\" x2=\"230.0\" y2=\"95.0\" stroke=\"#555555\" stroke-width=\"1.6\" marker-end=\"url(#arr)\"/>\n<text text-anchor=\"middle\" font-family=\"Helvetica,Arial,sans-serif\" font-size=\"11\" font-weight=\"bold\" fill=\"#444\">\n<tspan x=\"185.0\" y=\"73.8\" dominant-baseline=\"auto\">Polylactide, granulate, at plant</tspan>\n<tspan x=\"185.0\" y=\"88.1\" dominant-baseline=\"auto\">0.52 </tspan>\n</text>\n<line x1=\"140.0\" y1=\"131.0\" x2=\"230.0\" y2=\"131.0\" stroke=\"#555555\" stroke-width=\"1.6\" marker-end=\"url(#arr)\"/>\n<text text-anchor=\"middle\" font-family=\"Helvetica,Arial,sans-serif\" font-size=\"11\" font-weight=\"bold\" fill=\"#444\">\n<tspan x=\"185.0\" y=\"109.8\" dominant-baseline=\"auto\">Nylon 6, at plant</tspan>\n<tspan x=\"185.0\" y=\"124.1\" dominant-baseline=\"auto\">0.03 </tspan>\n</text>\n<line x1=\"140.0\" y1=\"167.0\" x2=\"230.0\" y2=\"167.0\" stroke=\"#555555\" stroke-width=\"1.6\" marker-end=\"url(#arr)\"/>\n<text text-anchor=\"middle\" font-family=\"Helvetica,Arial,sans-serif\" font-size=\"11\" font-weight=\"bold\" fill=\"#444\">\n<tspan x=\"185.0\" y=\"145.8\" dominant-baseline=\"auto\">Transport, freight, lorry, 16t-32t gross weight, fleet average</tspan>\n<tspan x=\"185.0\" y=\"160.2\" dominant-baseline=\"auto\">0.1055 </tspan>\n</text>\n</svg>"
+  },
+  "lca_results": {
+    "name": "Plastic Broom — 1 unit",
+    "method": "EF v3.1",
+    "functional_unit": "1.0 unit — 1 plastic broom",
+    "lci": {
+      "Formamide": {
+        "amount": 3.5966409102369225e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Butanol": {
+        "amount": 9.740714844466207e-10,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "t-Butylamine": {
+        "amount": 5.0308801355150405e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Hydrocarbons, aliphatic, alkanes, cyclic": {
+        "amount": 1.1901873390262986e-07,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Water": {
+        "amount": 6.66608146127799e-08,
+        "unit": "cubic meter",
+        "type": "emission"
+      },
+      "Xylene": {
+        "amount": 8.34243512553093e-07,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Particulate Matter, > 10 um": {
+        "amount": 5.392015469975876e-06,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Ethane, 1,1,2-trichloro-": {
+        "amount": 3.3497901842810316e-12,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Zinc-65": {
+        "amount": 8.310673886063334e-10,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "1,2-Dichlorobenzene": {
+        "amount": 4.277185504612019e-08,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "2-Aminopropanol": {
+        "amount": 1.2452112173174623e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Phenol": {
+        "amount": 7.046138988718938e-07,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Ethylamine": {
+        "amount": 9.625047154409709e-08,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Tribenuron": {
+        "amount": 9.949450869893513e-14,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Methyl ethyl ketone": {
+        "amount": 7.611619613100207e-07,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Arsenic ion": {
+        "amount": 2.7651979212020413e-06,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Ruthenium-106": {
+        "amount": 1.254292212942678e-10,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Zinc II": {
+        "amount": 3.0934550516095484e-07,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Silver I": {
+        "amount": 1.1296979920082654e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Iodosulfuron": {
+        "amount": 2.639127138390344e-14,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Iron ion": {
+        "amount": 3.311843991563806e-05,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Ethanol": {
+        "amount": 1.976062153110995e-07,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Benzene, ethyl-": {
+        "amount": 8.475199954042239e-12,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Monocrotophos": {
+        "amount": 4.17688295543101e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Propene": {
+        "amount": 3.427357886481592e-07,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Hydrogen sulfide": {
+        "amount": 1.4292277322298243e-11,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Carbon disulfide": {
+        "amount": 4.691802693956122e-06,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Xenon-138": {
+        "amount": 0.0009738097033103764,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Caesium-137": {
+        "amount": 4.338231431882823e-09,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Carbon dioxide, non-fossil": {
+        "amount": 0.05008476606190737,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Occupation, traffic area, road network": {
+        "amount": 0.0009726604711754843,
+        "unit": "square meter-year",
+        "type": "natural resource"
+      },
+      "Sulfur": {
+        "amount": 8.315575509186005e-08,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Chromium-51": {
+        "amount": 4.552696059029078e-06,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Calcium": {
+        "amount": 2.453176491008697e-06,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Terpenes": {
+        "amount": 1.691628501184511e-08,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Barium II": {
+        "amount": 1.993802947486122e-08,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Bromide": {
+        "amount": 2.322790944063794e-05,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "AOX, Adsorbable Organic Halogen": {
+        "amount": 1.4248260281043738e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Vanadium V": {
+        "amount": 2.8276155840962664e-12,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "t-Butyl methyl ether": {
+        "amount": 6.000045776655111e-12,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Benzene": {
+        "amount": 1.156571496907793e-12,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Beryllium II": {
+        "amount": 8.055347495710525e-07,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Chlorosulfonic acid": {
+        "amount": 6.117199688164119e-10,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Ethane, 1,2-dichloro-1,1,2,2-tetrafluoro-, CFC-114": {
+        "amount": 8.18875786579267e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Chlorine": {
+        "amount": 1.5582912201151573e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Caesium": {
+        "amount": 3.41314302961228e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Silicon": {
+        "amount": 3.13792120143272e-05,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Occupation, urban, continuously built": {
+        "amount": 6.74593584518472e-08,
+        "unit": "square meter-year",
+        "type": "natural resource"
+      },
+      "Molybdenum, 0.014% in sulfide, Mo 8.2E-3% and Cu 0.81% in crude ore": {
+        "amount": 9.18449655725404e-07,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Thallium I": {
+        "amount": 1.3464250269967274e-07,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Titanium ion": {
+        "amount": 4.899406434759495e-10,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Pyrite": {
+        "amount": 2.472692608041847e-13,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Radium-226": {
+        "amount": 6.283383390523395e-06,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Nitrogen": {
+        "amount": 1.388437718086964e-08,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Ammonium": {
+        "amount": 9.168110286819943e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Oils, unspecified": {
+        "amount": 3.1458047914873236e-06,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Solids, inorganic": {
+        "amount": 2.112051333156303e-05,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Chromium VI": {
+        "amount": 1.20093303740936e-07,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Clay, bentonite": {
+        "amount": 0.00019434630489931486,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Magnesium": {
+        "amount": 3.428101659690952e-11,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Phosphorus": {
+        "amount": 1.1969117122480222e-11,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Ethane, 2-chloro-1,1,1,2-tetrafluoro-, HCFC-124": {
+        "amount": 9.134050217077109e-10,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Lithium I": {
+        "amount": 3.616156729208781e-12,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Acetamide": {
+        "amount": 7.921039631445237e-07,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Chloride": {
+        "amount": 0.007745932396906651,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Cyanide": {
+        "amount": 3.2761794455102264e-07,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Molybdenum, 0.022% in sulfide, Mo 8.2E-3% and Cu 0.36% in crude ore": {
+        "amount": 1.2535459773342148e-06,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Particulate Matter, < 2.5 um": {
+        "amount": 9.288967271572764e-06,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Bromine": {
+        "amount": 2.2238513656808626e-07,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Cumene": {
+        "amount": 4.906694978004068e-13,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Dimethenamid": {
+        "amount": 3.9414771756450115e-06,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Potassium-40": {
+        "amount": 6.099798917876878e-06,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "NMVOC, non-methane volatile organic compounds": {
+        "amount": 0.0013850526948644794,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Aluminium": {
+        "amount": 0.0006210676147562705,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Calcium II": {
+        "amount": 0.006763330868614944,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Pirimicarb": {
+        "amount": 1.3435387209328133e-10,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Toluene": {
+        "amount": 6.233870952939494e-07,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Occupation, shrub land, sclerophyllous": {
+        "amount": 1.5569764781557825e-05,
+        "unit": "square meter-year",
+        "type": "natural resource"
+      },
+      "Thorium-234": {
+        "amount": 9.010456137083434e-14,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Sodium I": {
+        "amount": 0.008187494461632316,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Boron": {
+        "amount": 1.301994191208205e-10,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Acenaphthene": {
+        "amount": 4.594450479883741e-14,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Acetaldehyde": {
+        "amount": 2.1649517377845766e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Ruthenium-103": {
+        "amount": 5.479125209594532e-09,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Lactic acid": {
+        "amount": 5.152111796865683e-10,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Uranium": {
+        "amount": 1.6118175934960431e-12,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Fluorine": {
+        "amount": 4.5971289343721357e-07,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Polychlorinated biphenyls": {
+        "amount": 4.849469869469665e-14,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "PAH, polycyclic aromatic hydrocarbons": {
+        "amount": 3.229655732973374e-08,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Acenaphthylene": {
+        "amount": 7.985706366384941e-11,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Mercury II": {
+        "amount": 3.410463270102719e-10,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Cobalt-60": {
+        "amount": 3.506357552480708e-10,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Borax": {
+        "amount": 7.241613921781527e-06,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "DOC, Dissolved Organic Carbon": {
+        "amount": 6.982339057493533e-06,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Radium-228": {
+        "amount": 0.00341428369058438,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Cobalt II": {
+        "amount": 6.060788753730323e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Ethyne": {
+        "amount": 4.6573597698044356e-08,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Ethane, 1,2-dichloro-": {
+        "amount": 1.021060925921325e-08,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Heat, waste": {
+        "amount": 7.718497454010451,
+        "unit": "megajoule",
+        "type": "emission"
+      },
+      "Pesticides, unspecified": {
+        "amount": 1.5579419318255968e-12,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Methyl formate": {
+        "amount": 9.525775932903316e-10,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Lanthanum-140": {
+        "amount": 1.7880881735815002e-09,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Propaquizafop": {
+        "amount": 4.730787024304189e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Carbon monoxide, fossil": {
+        "amount": 3.629516473705398e-10,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Potassium I": {
+        "amount": 5.795416275524643e-06,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Hydrocarbons, aromatic": {
+        "amount": 9.515624816803507e-08,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "1-Pentene": {
+        "amount": 2.5535468517555103e-12,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Iodine-131": {
+        "amount": 3.3943950495170935e-08,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Nitrate": {
+        "amount": 1.6696206756866117e-07,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Manganese II": {
+        "amount": 5.3380528778626275e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Transformation, from arable land, unspecified use": {
+        "amount": 0.0013371030878546709,
+        "unit": "square meter",
+        "type": "natural resource"
+      },
+      "m-Xylene": {
+        "amount": 2.58483780607137e-08,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Occupation, seabed, infrastructure": {
+        "amount": 1.3995636393881784e-07,
+        "unit": "square meter-year",
+        "type": "natural resource"
+      },
+      "Manganese-54": {
+        "amount": 1.664384046742375e-10,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Thorium-232": {
+        "amount": 1.7864621186034142e-06,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Uranium alpha": {
+        "amount": 5.770601806039363e-05,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Copper ion": {
+        "amount": 3.7711471094146535e-08,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Sulfur hexafluoride": {
+        "amount": 1.8184464370919544e-08,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Isopropylamine": {
+        "amount": 1.050820173497657e-07,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Occupation, lake, artificial": {
+        "amount": 0.004407583474194894,
+        "unit": "square meter-year",
+        "type": "natural resource"
+      },
+      "Nitrogen, organic bound": {
+        "amount": 1.1672292346466552e-06,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Cobalt-58": {
+        "amount": 5.251775876130456e-10,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Methane, tetrafluoro-, R-14": {
+        "amount": 3.1314847457965934e-15,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Oils, non-fossil": {
+        "amount": 5.44744682417046e-07,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Tin ion": {
+        "amount": 1.4895329155975933e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Benzene, hexachloro-": {
+        "amount": 5.7833539093754684e-12,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Butadiene": {
+        "amount": 1.0957045243862458e-12,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Sodium formate": {
+        "amount": 5.709361393671446e-11,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Sulfuric acid": {
+        "amount": 7.921597034856158e-10,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Nickel II": {
+        "amount": 3.3113728965462754e-05,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Methane, bromotrifluoro-, Halon 1301": {
+        "amount": 1.907196844233743e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Carbon-14": {
+        "amount": 7.58146041756438e-06,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Carbofuran": {
+        "amount": 7.711090597012491e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Transformation, to traffic area, rail/road embankment": {
+        "amount": 6.958188172389765e-06,
+        "unit": "square meter",
+        "type": "natural resource"
+      },
+      "Plutonium-alpha": {
+        "amount": 2.070520771009045e-12,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Occupation, construction site": {
+        "amount": 0.0014060015739219588,
+        "unit": "square meter-year",
+        "type": "natural resource"
+      },
+      "Fenpropimorph": {
+        "amount": 1.842498925914377e-11,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Ethane, 1,1,1,2-tetrafluoro-, HFC-134a": {
+        "amount": 4.350497312378987e-10,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Carbon monoxide, non-fossil": {
+        "amount": 4.113082696143677e-05,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Uranium-234": {
+        "amount": 3.533559350442242e-05,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Lead II": {
+        "amount": 4.4777657859205604e-08,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Trinexapac-ethyl": {
+        "amount": 1.258661897135854e-10,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Molybdenum VI": {
+        "amount": 6.920028882617558e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Nitrite": {
+        "amount": 8.267586995327247e-08,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "TiO2, 54% in ilmenite, 2.6% in crude ore": {
+        "amount": 6.33914011876842e-05,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Methane, fossil": {
+        "amount": 0.0017464482060243387,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "2-Methyl-2-butene": {
+        "amount": 3.3553622583973453e-13,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Heptane": {
+        "amount": 6.057364277521625e-07,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Scandium": {
+        "amount": 2.7005555216730424e-08,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Paraquat": {
+        "amount": 4.808967532220602e-07,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Energy, gross calorific value, in biomass": {
+        "amount": 13.271908240707937,
+        "unit": "megajoule",
+        "type": "natural resource"
+      },
+      "Neodymium": {
+        "amount": 8.417806010634013e-09,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Hydrogen fluoride": {
+        "amount": 2.0009196894033757e-06,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Ethane, 1,1,1-trichloro-, HCFC-140": {
+        "amount": 1.802095213347603e-12,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Protactinium-234": {
+        "amount": 2.9349766582538454e-05,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Gold, Au 4.3E-4%, in ore": {
+        "amount": 1.207574678226907e-09,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Sulfur dioxide": {
+        "amount": 1.9121342120379337e-10,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Aluminium III": {
+        "amount": 1.4506537836055262e-06,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Krypton-89": {
+        "amount": 4.36603150574537e-05,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Anthracene": {
+        "amount": 6.507138804542448e-14,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Metamitron": {
+        "amount": 3.178929857620063e-11,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Hydrocarbons, unspecified": {
+        "amount": 7.281819775651176e-07,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "BOD5, Biological Oxygen Demand": {
+        "amount": 2.4781992025873237e-05,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Strontium": {
+        "amount": 2.082300871062417e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Ammonia": {
+        "amount": 1.0382007242122209e-05,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Acrolein": {
+        "amount": 7.87098403973204e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Propylamine": {
+        "amount": 2.6747625826095144e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Tungsten": {
+        "amount": 1.3845902976786753e-06,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Ethane, pentafluoro-, HFC-125": {
+        "amount": 1.2907918950707536e-15,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Rubidium": {
+        "amount": 5.3915702841222244e-08,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Actinides, radioactive, unspecified": {
+        "amount": 1.7214218101083077e-05,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Ethylene oxide": {
+        "amount": 2.7576629863401092e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Kaolinite": {
+        "amount": 1.7813637631522876e-05,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Butene": {
+        "amount": 7.038320112383533e-08,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Nitrogen oxides": {
+        "amount": 0.0009195638739083135,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Chloroacetic acid": {
+        "amount": 5.4733513818405165e-08,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Propanal": {
+        "amount": 1.6466287651264003e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Dichlorprop-P": {
+        "amount": 7.917291939186466e-12,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Oxygen": {
+        "amount": 2.6374982328277746e-07,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Dipropylamine": {
+        "amount": 1.5784877361908563e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Lead-210": {
+        "amount": 7.667453295728953e-09,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Hydrocarbons, aliphatic, unsaturated": {
+        "amount": 1.0856334101125278e-10,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Acetonitrile": {
+        "amount": 2.0299543463684284e-08,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Sodium": {
+        "amount": 3.3116658089786115e-05,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Hexane": {
+        "amount": 3.7383478326323484e-06,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Methanol": {
+        "amount": 7.666522036806535e-07,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Sulfite": {
+        "amount": 1.0313266593632773e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Antimony-125": {
+        "amount": 8.67615795465682e-12,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Gas, natural": {
+        "amount": 0.42411860538703433,
+        "unit": "standard cubic meter",
+        "type": "natural resource"
+      },
+      "Transformation, to annual crop, non-irrigated, intensive": {
+        "amount": 0.0018496179745131555,
+        "unit": "square meter",
+        "type": "natural resource"
+      },
+      "Triethylene glycol": {
+        "amount": 3.5856934965797743e-11,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Cyanoacetic acid": {
+        "amount": 5.009640047325996e-10,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Tebuconazole": {
+        "amount": 1.0264119852273663e-08,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Tetramethyl ammonium hydroxide": {
+        "amount": 4.171613926815598e-13,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Chrysene": {
+        "amount": 2.686862184712427e-15,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "COD, Chemical Oxygen Demand": {
+        "amount": 2.5098157300014213e-05,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Carbon, organic, in soil or biomass stock": {
+        "amount": 2.2764540586278403e-05,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Methane, tetrachloro-, R-10": {
+        "amount": 1.9606013495239208e-10,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Copper, 0.52% in sulfide, Cu 0.27% and Mo 8.2E-3% in crude ore": {
+        "amount": 5.83438129289655e-10,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Fluorspar": {
+        "amount": 0.00011652731735543806,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Radium-224": {
+        "amount": 0.0008609321825209144,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Lead": {
+        "amount": 6.813286305264502e-05,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Transformation, to unknown": {
+        "amount": 2.1089276231861408e-06,
+        "unit": "square meter",
+        "type": "natural resource"
+      },
+      "Anthranilic acid": {
+        "amount": 8.833734019721899e-10,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Metconazole": {
+        "amount": 3.1931978819926878e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Hydrocarbons, chlorinated": {
+        "amount": 2.188340695919068e-06,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Naphthalene": {
+        "amount": 2.282968561259347e-13,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Olivine": {
+        "amount": 4.7453794755249935e-07,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Flusilazole": {
+        "amount": 1.5897717703660163e-12,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Fenbuconazole": {
+        "amount": 4.552393419997351e-13,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Benzo(a)pyrene": {
+        "amount": 2.860781074356689e-08,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Argon-41": {
+        "amount": 1.4957776203755433e-06,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Sulfate": {
+        "amount": 0.011612331615849607,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "1-Pentanol": {
+        "amount": 1.9665427889566166e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Hydrogen-3, Tritium": {
+        "amount": 4.098974248800652,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "2-Propanol": {
+        "amount": 2.6889961150110395e-07,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Particulate Matter, > 2.5 um and < 10um": {
+        "amount": 9.029338464061412e-06,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Occupation, forest, unspecified": {
+        "amount": -1.211711931165117e-14,
+        "unit": "square meter-year",
+        "type": "natural resource"
+      },
+      "Hydrocarbons, aliphatic, alkanes, unspecified": {
+        "amount": 2.1379585392317297e-06,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "o-Xylene": {
+        "amount": 9.154420736986778e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Acetic acid": {
+        "amount": 1.2022021074089505e-06,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Boron trifluoride": {
+        "amount": 1.1842940494223592e-14,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Linuron": {
+        "amount": 3.938992451309729e-10,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Ethane": {
+        "amount": 9.30233088583065e-05,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "VOC, volatile organic compounds": {
+        "amount": 1.4502448108330213e-12,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Transformation, from annual crop, non-irrigated": {
+        "amount": 0.097346758416555,
+        "unit": "square meter",
+        "type": "natural resource"
+      },
+      "Sulfide": {
+        "amount": 1.4915577216938437e-06,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Clay, unspecified": {
+        "amount": 0.01210792837220398,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Methane, bromochlorodifluoro-, Halon 1211": {
+        "amount": 3.1944866784395246e-12,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Transformation, to shrub land, sclerophyllous": {
+        "amount": 3.109297448073723e-06,
+        "unit": "square meter",
+        "type": "natural resource"
+      },
+      "Technetium-99m": {
+        "amount": 4.7401113167823894e-07,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Selenium IV": {
+        "amount": 2.089437114478528e-08,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Cerium": {
+        "amount": 5.105344866689044e-08,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Transformation, from pasture, man made": {
+        "amount": 0.01694668250912987,
+        "unit": "square meter",
+        "type": "natural resource"
+      },
+      "Propane": {
+        "amount": 4.682309875961065e-06,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Ethylene diamine": {
+        "amount": 3.793163252244894e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Styrene": {
+        "amount": 1.4069626202255041e-08,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Methane, dichloro-, HCC-30": {
+        "amount": 7.342713026457473e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Gravel": {
+        "amount": 0.16969744369147433,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Indium": {
+        "amount": 1.1057031003115863e-09,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Caesium-134": {
+        "amount": 4.226745095999438e-10,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Transformation, from unknown": {
+        "amount": 8.062783958995553e-05,
+        "unit": "square meter",
+        "type": "natural resource"
+      },
+      "Fluosilicic acid": {
+        "amount": 2.316337165202497e-08,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Azoxystrobin": {
+        "amount": 5.740067962919442e-12,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Titanium": {
+        "amount": 1.2473362068530727e-09,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Krypton-87": {
+        "amount": 0.00014377032331715342,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Thorium-230": {
+        "amount": 1.0540791874224848e-08,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Mecoprop-P": {
+        "amount": 4.117110558255568e-12,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Acetochlor": {
+        "amount": 4.658116756300733e-05,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Transformation, to mineral extraction site": {
+        "amount": 4.077989952850222e-05,
+        "unit": "square meter",
+        "type": "natural resource"
+      },
+      "Transformation, to pasture, man made": {
+        "amount": 7.317607952713012e-06,
+        "unit": "square meter",
+        "type": "natural resource"
+      },
+      "Wood, soft, standing": {
+        "amount": 2.642869490560237e-05,
+        "unit": "cubic meter",
+        "type": "natural resource"
+      },
+      "Carbon dioxide, from soil or biomass stock": {
+        "amount": 0.00043747546969542524,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Chrysotile": {
+        "amount": 1.3245140606401842e-07,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Kieserite": {
+        "amount": 6.858857182541383e-08,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Occupation, urban, discontinuously built": {
+        "amount": 0.000489193020174461,
+        "unit": "square meter-year",
+        "type": "natural resource"
+      },
+      "Aldehydes, unspecified": {
+        "amount": 8.727544802857394e-07,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "TOC, Total Organic Carbon": {
+        "amount": 6.404933590082058e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Methane, chlorodifluoro-, HCFC-22": {
+        "amount": 6.448136321507824e-11,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Spiroxamine": {
+        "amount": 1.3063882068238058e-11,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Ethane, 1,1,2-trichloro-1,2,2-trifluoro-, CFC-113": {
+        "amount": 9.134036792978509e-10,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Metolachlor": {
+        "amount": 3.693479742782676e-05,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Transformation, from seabed, unspecified": {
+        "amount": 6.217762058122539e-05,
+        "unit": "square meter",
+        "type": "natural resource"
+      },
+      "Bromate": {
+        "amount": 5.340920954365689e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Antimony-124": {
+        "amount": 4.028470213485165e-11,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Methane, monochloro-, R-40": {
+        "amount": 5.616517320910429e-11,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Aerosols, radioactive, unspecified": {
+        "amount": 2.242456541671855e-06,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Radon-222": {
+        "amount": 288.6089851142669,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Iodine-133": {
+        "amount": 2.0885542990301552e-07,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Diatomite": {
+        "amount": 9.593222971201555e-11,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Trifluralin": {
+        "amount": 1.6666177402262156e-08,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Glutaraldehyde": {
+        "amount": 4.762454837179768e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Uranium-235": {
+        "amount": 8.630164968969286e-13,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Ethane, 1,1-difluoro-, HFC-152a": {
+        "amount": 6.678888713995458e-08,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Occupation, traffic area, rail/road embankment": {
+        "amount": 0.0009671110122612015,
+        "unit": "square meter-year",
+        "type": "natural resource"
+      },
+      "Transformation, from forest, extensive": {
+        "amount": 1.6394775784887383e-05,
+        "unit": "square meter",
+        "type": "natural resource"
+      },
+      "2-Methyl-1-propanol": {
+        "amount": 9.968696266310757e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Imazapyr": {
+        "amount": 3.7717408213155724e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Water, unspecified natural origin": {
+        "amount": 0.0020869399437469962,
+        "unit": "cubic meter",
+        "type": "natural resource"
+      },
+      "Sodium chloride": {
+        "amount": 0.007469154419723628,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Benzo(k)fluoranthene": {
+        "amount": 1.7374993005027595e-15,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Trimethylamine": {
+        "amount": 1.2979204267002505e-07,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Bentazone": {
+        "amount": 1.4156654077298826e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Orbencarb": {
+        "amount": 2.8024097812349805e-10,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Cinidon-ethyl": {
+        "amount": 2.1113017107122753e-13,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Platinum": {
+        "amount": 1.250275919746127e-12,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Sand, unspecified": {
+        "amount": 3.244946788336597e-05,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Bromoxynil": {
+        "amount": 5.09186183658994e-07,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Volume occupied, reservoir": {
+        "amount": 0.036541129959403874,
+        "unit": "cubic meter-year",
+        "type": "natural resource"
+      },
+      "Suspended solids, unspecified": {
+        "amount": 4.123987439993367e-06,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Transformation, from pasture, man made, intensive": {
+        "amount": 0.00012653076598971238,
+        "unit": "square meter",
+        "type": "natural resource"
+      },
+      "Cadmium II": {
+        "amount": 1.0783899328171226e-08,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Ethephon": {
+        "amount": 8.43590892254683e-11,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Chromium III": {
+        "amount": 2.326081554871567e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Barite, 15% in crude ore": {
+        "amount": 0.0026516561846222806,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Uranium-238": {
+        "amount": 2.1095355881249593e-08,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Teflubenzuron": {
+        "amount": 3.4597014532465425e-12,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Gold": {
+        "amount": 3.1899983878973305e-09,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Pentane": {
+        "amount": 7.029581392989662e-06,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Vanadium": {
+        "amount": 3.326703758661767e-13,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Methane, dichlorofluoro-, HCFC-21": {
+        "amount": 1.1626013087431038e-13,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Silver, Ag 9.7E-4%, in mixed ore": {
+        "amount": 5.15194494014345e-09,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Transformation, from dump site, sanitary landfill": {
+        "amount": 1.5520910138001272e-07,
+        "unit": "square meter",
+        "type": "natural resource"
+      },
+      "Tributyltin compounds": {
+        "amount": 1.8948052407031824e-11,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Atrazine": {
+        "amount": 7.617566923429235e-05,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Polonium-210": {
+        "amount": 6.256930599634293e-08,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Benomyl": {
+        "amount": 1.406522181283464e-11,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Methanesulfonic acid": {
+        "amount": 5.06239945262187e-10,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Mesotrione": {
+        "amount": 1.225849007797881e-06,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Nickel, 1.13% in sulfide, Ni 0.76% and Cu 0.76% in crude ore": {
+        "amount": 7.313997740077182e-06,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Radioactive species, Nuclides, unspecified": {
+        "amount": 0.09912209916995612,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Gold, Au 6.7E-4%, in ore": {
+        "amount": 4.4777431333517424e-09,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Transformation, to forest, extensive": {
+        "amount": 1.0391075848060253e-15,
+        "unit": "square meter",
+        "type": "natural resource"
+      },
+      "Wood, hard, standing": {
+        "amount": 1.6196753197790035e-05,
+        "unit": "cubic meter",
+        "type": "natural resource"
+      },
+      "Silicon tetrafluoride": {
+        "amount": 1.2871399731223854e-10,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Dioxins, measured as 2,3,7,8-tetrachlorodibenzo-p-dioxin": {
+        "amount": 3.601345734874626e-14,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Iodine": {
+        "amount": 3.5056391354058763e-06,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Transformation, from shrub land, sclerophyllous": {
+        "amount": 2.2755387695838888e-05,
+        "unit": "square meter",
+        "type": "natural resource"
+      },
+      "Basalt": {
+        "amount": 0.00016399838400704336,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Aclonifen": {
+        "amount": 2.7641686729593963e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Plutonium-238": {
+        "amount": 1.445749291827996e-12,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Tebutam": {
+        "amount": 5.0229199814516285e-08,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Ozone": {
+        "amount": 2.6994404450038557e-14,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Carbetamide": {
+        "amount": 2.4714611614460826e-08,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Gold, Au 1.3E-4%, Ag 4.6E-5%, in ore": {
+        "amount": 2.6642461992990387e-09,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Antimony-122": {
+        "amount": 1.6426984625720053e-08,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Deltamethrin": {
+        "amount": 3.3844958485647405e-10,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Methylamine": {
+        "amount": 1.7949125127513386e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Chlorinated solvents, unspecified": {
+        "amount": 1.5245895485398743e-13,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Phosphate": {
+        "amount": 0.00017437775074448034,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Volume occupied, final repository for low-active radioactive waste": {
+        "amount": 1.3169304482147659e-08,
+        "unit": "cubic meter",
+        "type": "natural resource"
+      },
+      "Chloroacetyl chloride": {
+        "amount": 4.058124520128582e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Metribuzin": {
+        "amount": 5.189552381975852e-11,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Endosulfan": {
+        "amount": 7.095862781831491e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Transformation, to annual crop": {
+        "amount": 0.8413284525681128,
+        "unit": "square meter",
+        "type": "natural resource"
+      },
+      "Energy, potential (in hydropower reservoir), converted": {
+        "amount": 0.9260039435645725,
+        "unit": "megajoule",
+        "type": "natural resource"
+      },
+      "Fluoranthene": {
+        "amount": 1.6741228788890755e-14,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Nicosulfuron": {
+        "amount": 2.074453477491074e-07,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Palladium, Pd 1.6E-6%, in mixed ore": {
+        "amount": 1.4381731636512338e-09,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "1,4-Butanediol": {
+        "amount": 1.3745971746933471e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Chlorate": {
+        "amount": 6.478192383829895e-06,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Tellurium-132": {
+        "amount": 1.5300355922896459e-09,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Carbendazim": {
+        "amount": 5.712336082790415e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Methane, non-fossil": {
+        "amount": 7.664043236666816e-08,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Barium-140": {
+        "amount": 2.092301878546278e-08,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Ethane, 1,1-dichloro-1-fluoro-, HCFC-141b": {
+        "amount": 4.210758103116197e-13,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Occupation, annual crop, irrigated": {
+        "amount": 3.35138592287074e-05,
+        "unit": "square meter-year",
+        "type": "natural resource"
+      },
+      "Hydrogen peroxide": {
+        "amount": 1.0170100006173135e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Rhenium": {
+        "amount": 2.6335993789923307e-12,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Toluene, 2-chloro": {
+        "amount": 6.596136751754494e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Benzene, chloro-": {
+        "amount": 6.602012902348317e-07,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Propanol": {
+        "amount": 6.715678201697512e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Diflufenzopyr-sodium": {
+        "amount": 1.5086649801144276e-07,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Carbonate": {
+        "amount": 2.4326341387735457e-05,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Benzaldehyde": {
+        "amount": 3.1354444001694205e-08,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Feldspar": {
+        "amount": 3.668728323804127e-10,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Zinc": {
+        "amount": 0.00014369146902218387,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Formic acid": {
+        "amount": 2.505777540397705e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Antimony ion": {
+        "amount": 6.802926281460311e-10,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Thorium-228": {
+        "amount": 0.0006826285832422597,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Dinitrogen monoxide": {
+        "amount": 0.0004649351070118291,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Flumetsulam": {
+        "amount": 2.640242086229751e-07,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Fluoride": {
+        "amount": 5.400714638395808e-07,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Formate": {
+        "amount": 6.460874301432434e-07,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Fluorine, 4.5% in apatite, 3% in crude ore": {
+        "amount": 0.000604757050231761,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Peat": {
+        "amount": 0.0010626970980181644,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Phosphorus, 18% in apatite, 4% in crude ore": {
+        "amount": 3.2163190878783195e-05,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Cyclohexane": {
+        "amount": 2.0094741289588093e-15,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Molybdenum, 0.010% in sulfide, Mo 8.2E-3% and Cu 1.83% in crude ore": {
+        "amount": 6.452514879795429e-06,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Epoxiconazole": {
+        "amount": 2.2762416460880542e-12,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Krypton-85m": {
+        "amount": 0.00045674617828152464,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Transformation, to dump site, residual material landfill": {
+        "amount": 2.9098473970826378e-06,
+        "unit": "square meter",
+        "type": "natural resource"
+      },
+      "Iron": {
+        "amount": 0.010462044971182088,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Acetone": {
+        "amount": 4.1793137125130486e-07,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Aniline": {
+        "amount": 7.385042108659428e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Transformation, to urban, discontinuously built": {
+        "amount": 9.744409466345613e-06,
+        "unit": "square meter",
+        "type": "natural resource"
+      },
+      "Benzal chloride": {
+        "amount": 1.1673588933750798e-15,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Iodide": {
+        "amount": 1.9898467123119948e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Carbon": {
+        "amount": 0.0007097353204984918,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Cobalt": {
+        "amount": 1.601675628318142e-08,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Energy, kinetic (in wind), converted": {
+        "amount": 0.7451974535550459,
+        "unit": "megajoule",
+        "type": "natural resource"
+      },
+      "Wood, primary forest, standing": {
+        "amount": 1.9339569903713314e-07,
+        "unit": "cubic meter",
+        "type": "natural resource"
+      },
+      "Simazine": {
+        "amount": 1.904716939414283e-06,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Thiram": {
+        "amount": 2.495337842492879e-11,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Dichromate": {
+        "amount": 7.471536172669684e-12,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Formaldehyde": {
+        "amount": 6.187233426102623e-06,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Nickel, 1.98% in silicates, 1.04% in crude ore": {
+        "amount": 0.00023615675159214877,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Argon-40": {
+        "amount": 2.2606585312516379e-07,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Transformation, to heterogeneous, agricultural": {
+        "amount": 1.024552101017174e-05,
+        "unit": "square meter",
+        "type": "natural resource"
+      },
+      "Molybdenum, 0.025% in sulfide, Mo 8.2E-3% and Cu 0.39% in crude ore": {
+        "amount": 3.3656094569563574e-06,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Transformation, from industrial area": {
+        "amount": 1.5151792359745392e-06,
+        "unit": "square meter",
+        "type": "natural resource"
+      },
+      "Iodine-129": {
+        "amount": 2.183641092548736e-08,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Fluorene": {
+        "amount": 2.2476506512625303e-14,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Transformation, from forest, intensive": {
+        "amount": 0.0005815930980550132,
+        "unit": "square meter",
+        "type": "natural resource"
+      },
+      "Phenol, pentachloro-": {
+        "amount": 3.221465391363334e-13,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Transformation, to arable land, unspecified use": {
+        "amount": 1.4643407361090048e-14,
+        "unit": "square meter",
+        "type": "natural resource"
+      },
+      "Rimsulfuron": {
+        "amount": 9.42954770245761e-08,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Chlorosilane, trimethyl-": {
+        "amount": 7.553775489639213e-11,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Phenanthrene": {
+        "amount": 7.165888503123213e-14,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Propylene oxide": {
+        "amount": 1.1652079466055725e-13,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Transformation, to dump site, sanitary landfill": {
+        "amount": 1.5520910138001272e-07,
+        "unit": "square meter",
+        "type": "natural resource"
+      },
+      "Hypochlorite": {
+        "amount": 0.00221129982350978,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Ethofumesate": {
+        "amount": 8.34062799454939e-12,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Curium alpha": {
+        "amount": 6.901510985072908e-13,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Chloroform": {
+        "amount": 4.293817725512815e-10,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Niobium-95": {
+        "amount": 2.025345928991301e-11,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Magnesite": {
+        "amount": 0.0005577294278014859,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Cadmium": {
+        "amount": 7.604416223463307e-09,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Radioactive species, other beta emitters": {
+        "amount": 2.4607656974235767e-09,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Energy, gross calorific value, in biomass, primary forest": {
+        "amount": 0.0020842072825501164,
+        "unit": "megajoule",
+        "type": "natural resource"
+      },
+      "Carbon dioxide, in air": {
+        "amount": 1.1310710853917523,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Strontium-89": {
+        "amount": 3.6595569267588414e-07,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Butyl acetate": {
+        "amount": 3.833363185612394e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Silver-110": {
+        "amount": 2.2435172106142825e-05,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "2,4-D": {
+        "amount": 2.4386221313920794e-06,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Oil, crude": {
+        "amount": 0.0971260179644451,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Anhydrite": {
+        "amount": 2.8418129433236893e-07,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Acrylate": {
+        "amount": 2.954684297846577e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Thifensulfuron-methyl": {
+        "amount": 3.990392792740312e-14,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Transformation, from dump site, residual material landfill": {
+        "amount": 2.909770633547325e-06,
+        "unit": "square meter",
+        "type": "natural resource"
+      },
+      "Zirconium": {
+        "amount": 3.648207528113218e-08,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Methyl borate": {
+        "amount": 7.75888809258776e-10,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Lanthanum": {
+        "amount": 1.5296325891226022e-08,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Platinum, Pt 4.7E-7%, in mixed ore": {
+        "amount": 4.6345436663146155e-09,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Sulfur trioxide": {
+        "amount": 1.640628234488583e-14,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Gold, Au 1.1E-4%, Ag 4.2E-3%, in ore": {
+        "amount": 1.4528727103224032e-09,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Thorium": {
+        "amount": 7.867042490748113e-11,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Xenon-133": {
+        "amount": 8.411023232764212e-05,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Gold, Au 7.1E-4%, in ore": {
+        "amount": 5.049119479037305e-09,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Americium-241": {
+        "amount": 1.23830483557581e-10,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Isoproturon": {
+        "amount": 9.203124555118257e-11,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Ethyl acetate": {
+        "amount": 2.3731348204963895e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Isoprene": {
+        "amount": 1.7889806082835047e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Transformation, to annual crop, non-irrigated": {
+        "amount": 0.11383381569005281,
+        "unit": "square meter",
+        "type": "natural resource"
+      },
+      "Radon-220": {
+        "amount": 0.0002126051752441732,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Mefenpyr": {
+        "amount": 7.917291632455479e-14,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Molybdenum": {
+        "amount": 2.1403411105672126e-06,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Europium": {
+        "amount": 1.2790691992482035e-10,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Methane, dichlorodifluoro-, CFC-12": {
+        "amount": 1.0996359478684129e-14,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Calcite": {
+        "amount": 0.020190646836513105,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Manganese": {
+        "amount": 0.00010118006812689607,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Sodium nitrate": {
+        "amount": 2.4053621094854923e-14,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Vermiculite": {
+        "amount": 1.68666470241409e-08,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Water, salt, ocean": {
+        "amount": 1.2158761161177798,
+        "unit": "cubic meter",
+        "type": "natural resource"
+      },
+      "Silver, 3.2ppm in sulfide, Ag 1.2ppm, Cu and Te, in crude ore": {
+        "amount": 3.81787293722807e-08,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Esfenvalerate": {
+        "amount": 3.298886637064763e-14,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Methyl acetate": {
+        "amount": 6.603717135639813e-10,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Carbon dioxide, fossil": {
+        "amount": 1.029549661233344,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Permethrin": {
+        "amount": 8.486044585569896e-08,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Transformation, from forest, unspecified": {
+        "amount": 0.0001881508564544641,
+        "unit": "square meter",
+        "type": "natural resource"
+      },
+      "Chromium": {
+        "amount": 0.0004070919636336772,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Difenoconazole": {
+        "amount": 6.112716935108267e-14,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Propiconazole": {
+        "amount": 1.913355987639814e-12,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Diethylamine": {
+        "amount": 5.182259051018804e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Transformation, to permanent crop": {
+        "amount": 2.024917489815773e-07,
+        "unit": "square meter",
+        "type": "natural resource"
+      },
+      "TiO2, 95% in rutile, 0.40% in crude ore": {
+        "amount": 1.3182528281715017e-10,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Napropamide": {
+        "amount": 2.4945961615513228e-08,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Fluroxypyr": {
+        "amount": 5.225462934667735e-13,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Radioactive species, alpha emitters": {
+        "amount": 8.631294869302423e-06,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Transformation, to seabed, unspecified": {
+        "amount": 7.500157273368024e-08,
+        "unit": "square meter",
+        "type": "natural resource"
+      },
+      "Occupation, river, artificial": {
+        "amount": 0.0004920710038699165,
+        "unit": "square meter-year",
+        "type": "natural resource"
+      },
+      "Monoethanolamine": {
+        "amount": 5.115671313710644e-10,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Krypton-85": {
+        "amount": 0.02995447349146802,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Lithium": {
+        "amount": 1.0591610044836421e-07,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Caesium-136": {
+        "amount": 5.1061758125852645e-09,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Butane": {
+        "amount": 2.545720713880065e-06,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Foramsulfuron": {
+        "amount": 2.8287860232293032e-08,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Gas, mine, off-gas, process, coal mining": {
+        "amount": 0.0004693589704626142,
+        "unit": "standard cubic meter",
+        "type": "natural resource"
+      },
+      "Methane, trifluoro-, HFC-23": {
+        "amount": 3.700060954925338e-11,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Transformation, from dump site, inert material landfill": {
+        "amount": 2.665527756786603e-06,
+        "unit": "square meter",
+        "type": "natural resource"
+      },
+      "Energy, solar, converted": {
+        "amount": 0.3878328040820094,
+        "unit": "megajoule",
+        "type": "natural resource"
+      },
+      "Nitric acid": {
+        "amount": 1.3563033004537817e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Krypton-88": {
+        "amount": 0.00015852339980593411,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Transformation, to forest, unspecified": {
+        "amount": 0.00010521107544852317,
+        "unit": "square meter",
+        "type": "natural resource"
+      },
+      "Xenon-135": {
+        "amount": 0.009822718031370293,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Occupation, unspecified": {
+        "amount": 5.572253591434484e-07,
+        "unit": "square meter-year",
+        "type": "natural resource"
+      },
+      "Antimony": {
+        "amount": 1.6575782174402325e-15,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Borate": {
+        "amount": 4.251980555946259e-07,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Rhodium, Rh 1.6E-7%, in mixed ore": {
+        "amount": 4.765186455484218e-11,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Transformation, to traffic area, road network": {
+        "amount": 6.9860987280088705e-06,
+        "unit": "square meter",
+        "type": "natural resource"
+      },
+      "Butyrolactone": {
+        "amount": 7.088186028154757e-11,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Water, lake": {
+        "amount": 1.6174415438386476e-05,
+        "unit": "cubic meter",
+        "type": "natural resource"
+      },
+      "Metazachlor": {
+        "amount": 8.754704899518058e-08,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Methyl acrylate": {
+        "amount": 2.2794949902051274e-08,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Metsulfuron-methyl": {
+        "amount": 4.876966755236242e-14,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Iron-59": {
+        "amount": 1.1253165931188658e-08,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Transformation, to traffic area, rail network": {
+        "amount": 3.5671353453681515e-07,
+        "unit": "square meter",
+        "type": "natural resource"
+      },
+      "Acrylic acid": {
+        "amount": 1.2484133257698978e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Glufosinate": {
+        "amount": 9.334727164591818e-07,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Glyphosate": {
+        "amount": 9.38719793042959e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Imazethapyr": {
+        "amount": 1.3201210152743679e-08,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Nitrobenzene": {
+        "amount": 1.960207633788123e-08,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Water, cooling, unspecified natural origin": {
+        "amount": 0.01335170237577437,
+        "unit": "cubic meter",
+        "type": "natural resource"
+      },
+      "Copper, 2.19% in sulfide, Cu 1.83% and Mo 8.2E-3% in crude ore": {
+        "amount": 0.0003472051693470031,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Nitrogen fluoride": {
+        "amount": 6.745399777306135e-11,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Methane, trichlorofluoro-, CFC-11": {
+        "amount": 1.2154278402182755e-13,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Cyprodinil": {
+        "amount": 3.0085780285112417e-12,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "2-Nitrobenzoic acid": {
+        "amount": 1.1883162837768532e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Sodium chlorate": {
+        "amount": 1.1202196818586898e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Lambda-cyhalothrin": {
+        "amount": 1.9095710976273864e-08,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Tantalum": {
+        "amount": 2.310404378757387e-09,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Sodium hydroxide": {
+        "amount": 9.096599704417535e-14,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Acidity, unspecified": {
+        "amount": 3.2442382274184017e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Coal, hard, unspecified": {
+        "amount": 0.06137805070877204,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Cyproconazole": {
+        "amount": 2.5546787430654047e-12,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Xenon-131m": {
+        "amount": 0.0007994185559944165,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Coal, brown": {
+        "amount": 0.10385825973101705,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Barite": {
+        "amount": 3.857588514326965e-05,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Transformation, from traffic area, rail/road embankment": {
+        "amount": 6.417548664324783e-06,
+        "unit": "square meter",
+        "type": "natural resource"
+      },
+      "Terbufos": {
+        "amount": 2.1121466296617946e-06,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Occupation, dump site": {
+        "amount": 0.0006939232075460893,
+        "unit": "square meter-year",
+        "type": "natural resource"
+      },
+      "Copper, 1.42% in sulfide, Cu 0.81% and Mo 8.2E-3% in crude ore": {
+        "amount": 6.992342290698711e-05,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Transformation, from dump site, slag compartment": {
+        "amount": 4.39336323387518e-08,
+        "unit": "square meter",
+        "type": "natural resource"
+      },
+      "Propionic acid": {
+        "amount": 2.6898400634692457e-07,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Energy, geothermal, converted": {
+        "amount": 2.4790454182467412e-06,
+        "unit": "megajoule",
+        "type": "natural resource"
+      },
+      "Xenon-137": {
+        "amount": 3.1998498249472494e-06,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Transformation, to urban, continuously built": {
+        "amount": 4.083433613372064e-10,
+        "unit": "square meter",
+        "type": "natural resource"
+      },
+      "Cerium-141": {
+        "amount": 5.071872961608702e-09,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Gold, Au 2.1E-4%, Ag 2.1E-4%, in ore": {
+        "amount": 4.872385985280167e-09,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Ammonium carbonate": {
+        "amount": 1.8791863648318853e-10,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Tin": {
+        "amount": 1.5730488925595408e-06,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Primisulfuron": {
+        "amount": 9.42954770245761e-08,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Fenpiclonil": {
+        "amount": 1.3998011830056514e-10,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Gold, Au 4.9E-5%, in ore": {
+        "amount": 2.8922954785367884e-09,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Volume occupied, underground deposit": {
+        "amount": 6.578977672184061e-08,
+        "unit": "cubic meter",
+        "type": "natural resource"
+      },
+      "Dimethoate": {
+        "amount": 1.8114602814303976e-11,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Acetyl chloride": {
+        "amount": 3.7076612920937142e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Strontium-90": {
+        "amount": 0.0002193145488337007,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Furan": {
+        "amount": 3.8551770221933134e-08,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Chloramine": {
+        "amount": 7.968322177470926e-08,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Aldrin": {
+        "amount": 1.212106525838733e-10,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Diflufenican": {
+        "amount": 7.679954953882635e-12,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Triadimenol": {
+        "amount": 9.567229810311163e-13,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Clomazone": {
+        "amount": 1.9967346469788037e-10,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Xenon-133m": {
+        "amount": 0.00010129856726701119,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Wood, unspecified, standing": {
+        "amount": 4.581705821246339e-07,
+        "unit": "cubic meter",
+        "type": "natural resource"
+      },
+      "Parathion": {
+        "amount": 1.3578306943157603e-12,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Ethane, hexafluoro-, HFC-116": {
+        "amount": 1.8266739457013556e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Chlorpyrifos": {
+        "amount": 3.771740771202658e-06,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Water, salt, sole": {
+        "amount": 0.0012195959106175364,
+        "unit": "cubic meter",
+        "type": "natural resource"
+      },
+      "Occupation, mineral extraction site": {
+        "amount": 0.0004933325725943052,
+        "unit": "square meter-year",
+        "type": "natural resource"
+      },
+      "Water, river": {
+        "amount": 0.006207449520075579,
+        "unit": "cubic meter",
+        "type": "natural resource"
+      },
+      "Occupation, forest, intensive": {
+        "amount": 0.05127585581528773,
+        "unit": "square meter-year",
+        "type": "natural resource"
+      },
+      "Stibnite": {
+        "amount": 3.831707100243215e-11,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Phosphorus trichloride": {
+        "amount": 2.703681598483036e-10,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Occupation, industrial area": {
+        "amount": 0.0206738404748254,
+        "unit": "square meter-year",
+        "type": "natural resource"
+      },
+      "Dimethylamine": {
+        "amount": 1.6535894174849616e-08,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Alachlor": {
+        "amount": 3.2437236689598995e-06,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Copper, 0.99% in sulfide, Cu 0.36% and Mo 8.2E-3% in crude ore": {
+        "amount": 6.267474284899364e-05,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Iodine-135": {
+        "amount": 3.817617081344784e-07,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Prosulfuron": {
+        "amount": 1.697287232462467e-08,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Noble gases, radioactive, unspecified": {
+        "amount": 101.8245529543479,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Mancozeb": {
+        "amount": 1.4738591531602622e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Transformation, from annual crop": {
+        "amount": 0.8412388968659418,
+        "unit": "square meter",
+        "type": "natural resource"
+      },
+      "Sodium-24": {
+        "amount": 1.954083009462474e-07,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Transformation, to unspecified": {
+        "amount": 3.897234483544905e-05,
+        "unit": "square meter",
+        "type": "natural resource"
+      },
+      "Colemanite": {
+        "amount": 1.0339574596817828e-05,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Xenon-135m": {
+        "amount": 0.00525087815070899,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Chlormequat": {
+        "amount": 2.379781852465905e-08,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Gold, Au 9.7E-4%, in mixed ore": {
+        "amount": 3.0255386770438017e-10,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Ioxynil": {
+        "amount": 9.408045426269478e-12,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Hydrogen": {
+        "amount": 1.1943970049524459e-05,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Occupation, traffic area, rail network": {
+        "amount": 0.000154218259511026,
+        "unit": "square meter-year",
+        "type": "natural resource"
+      },
+      "Chlorothalonil": {
+        "amount": 1.1374203890344665e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Flurtamone": {
+        "amount": 4.618405097634378e-12,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Methyl lactate": {
+        "amount": 5.655880930004418e-10,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Tellurium": {
+        "amount": 1.223436965465679e-13,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Diflubenzuron": {
+        "amount": 3.418915661304597e-08,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Gypsum": {
+        "amount": 3.7425312397720106e-07,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Cinnabar": {
+        "amount": 1.769111571435313e-08,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Sodium dichromate": {
+        "amount": 2.5478769469927583e-12,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Cypermethrin": {
+        "amount": 4.6779127789222845e-08,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Isocyanic acid": {
+        "amount": 5.977067990279978e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Dolomite": {
+        "amount": 0.001560568135783033,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Praseodymium": {
+        "amount": 8.931619065826518e-10,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Shale": {
+        "amount": 8.045175806298346e-07,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Chlortoluron": {
+        "amount": 6.506180260273459e-12,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Fluazifop-P-butyl": {
+        "amount": 2.0391366638865557e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Transformation, to industrial area": {
+        "amount": 7.970919951659655e-05,
+        "unit": "square meter",
+        "type": "natural resource"
+      },
+      "Ulexite": {
+        "amount": 6.199113200942591e-07,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Isoxaflutole": {
+        "amount": 4.526073227851262e-07,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Carboxylic acids, unspecified": {
+        "amount": 2.0246660526450666e-05,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Gallium": {
+        "amount": 4.2824792751894235e-10,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Gadolinium": {
+        "amount": 3.192207268525437e-10,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Transformation, to forest, intensive": {
+        "amount": 0.0005876712945752508,
+        "unit": "square meter",
+        "type": "natural resource"
+      },
+      "Transformation, from heterogeneous, agricultural": {
+        "amount": 4.83383955340117e-08,
+        "unit": "square meter",
+        "type": "natural resource"
+      },
+      "Zirconium-95": {
+        "amount": 1.0681903302340512e-09,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Helium": {
+        "amount": 3.5517055165400368e-06,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Phenmedipham": {
+        "amount": 5.822702572717794e-12,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Samarium": {
+        "amount": 6.373482045076648e-10,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Water, well, in ground": {
+        "amount": 0.0006141587036797026,
+        "unit": "cubic meter",
+        "type": "natural resource"
+      },
+      "Silver, Ag 4.6E-5%, Au 1.3E-4%, in ore": {
+        "amount": 7.807700136216736e-09,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Fenpropidin": {
+        "amount": 7.24449183656503e-12,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Prochloraz": {
+        "amount": 8.842124943685327e-10,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Kresoxim-methyl": {
+        "amount": 2.7051390844169825e-12,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Nickel": {
+        "amount": 1.0937802509972622e-09,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Transformation, to dump site, slag compartment": {
+        "amount": 4.39336323387518e-08,
+        "unit": "square meter",
+        "type": "natural resource"
+      },
+      "Silver, Ag 4.2E-3%, Au 1.1E-4%, in ore": {
+        "amount": 7.96567917013259e-09,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Granite": {
+        "amount": 5.1442041382674614e-12,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Fipronil": {
+        "amount": 2.263075813360637e-07,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Benzene, pentachloro-": {
+        "amount": 1.8183847270735707e-11,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Molybdenum-99": {
+        "amount": 2.001416216281598e-08,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Phosphine": {
+        "amount": 1.2558514597022253e-12,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Tefluthrin": {
+        "amount": 6.223360209749159e-07,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Silver, 0.007% in sulfide, Ag 0.004%, Pb, Zn, Cd, In": {
+        "amount": 5.285982179376659e-08,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Transformation, from mineral extraction site": {
+        "amount": 1.102202389880933e-05,
+        "unit": "square meter",
+        "type": "natural resource"
+      },
+      "Dimethyl malonate": {
+        "amount": 6.282192270584669e-10,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Silver, Ag 2.1E-4%, Au 2.1E-4%, in ore": {
+        "amount": 3.4877761449129403e-09,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Cobalt-57": {
+        "amount": 1.6208927931283354e-07,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Fluquinconazole": {
+        "amount": 3.9586458162277397e-13,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Talc": {
+        "amount": 1.7777255669744637e-06,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Phenol, 2,4-dichloro": {
+        "amount": 2.1616785311544164e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Occupation, permanent crop": {
+        "amount": 1.4384443460632053e-05,
+        "unit": "square meter-year",
+        "type": "natural resource"
+      },
+      "Volume occupied, final repository for radioactive waste": {
+        "amount": 3.2155601124129664e-09,
+        "unit": "cubic meter",
+        "type": "natural resource"
+      },
+      "Urea": {
+        "amount": 8.334129133188971e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Occupation, annual crop": {
+        "amount": 0.49075120941464256,
+        "unit": "square meter-year",
+        "type": "natural resource"
+      },
+      "Hydroxide": {
+        "amount": 5.134047085305257e-08,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Transformation, to dump site": {
+        "amount": 6.596100161566049e-05,
+        "unit": "square meter",
+        "type": "natural resource"
+      },
+      "Waste mass, total, placed in landfill": {
+        "amount": 0.058632576073458155,
+        "unit": "kilogram",
+        "type": "inventory indicator"
+      },
+      "Arsine": {
+        "amount": 1.638760445363768e-14,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Tellurium-123m": {
+        "amount": 2.3855302670416643e-07,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Ethane, 1,1,1-trifluoro-, HFC-143a": {
+        "amount": 1.153166853111828e-15,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Occupation, annual crop, non-irrigated": {
+        "amount": 0.07067115763343461,
+        "unit": "square meter-year",
+        "type": "natural resource"
+      },
+      "Pendimethalin": {
+        "amount": 1.942427187739586e-06,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Fungicides, unspecified": {
+        "amount": 3.981420640591209e-13,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Copper, 1.18% in sulfide, Cu 0.39% and Mo 8.2E-3% in crude ore": {
+        "amount": 0.000263609002499961,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Ethyl cellulose": {
+        "amount": 1.3449279105444923e-09,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Bifenthrin": {
+        "amount": 1.697287204621959e-07,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Dicamba": {
+        "amount": 1.357814083923565e-06,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Amidosulfuron": {
+        "amount": 1.741850884493666e-13,
+        "unit": "kilogram",
+        "type": "emission"
+      },
+      "Potassium": {
+        "amount": 9.975452420477292e-11,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Transformation, from urban, continuously built": {
+        "amount": 2.287419912725755e-10,
+        "unit": "square meter",
+        "type": "natural resource"
+      },
+      "Transformation, to dump site, inert material landfill": {
+        "amount": 2.665527756786603e-06,
+        "unit": "square meter",
+        "type": "natural resource"
+      },
+      "Cerium-144": {
+        "amount": 8.762087772659445e-09,
+        "unit": "kilo Becquerel",
+        "type": "emission"
+      },
+      "Aluminium, 24% in bauxite, 11% in crude ore": {
+        "amount": 1.8147254038510612e-07,
+        "unit": "kilogram",
+        "type": "natural resource"
+      },
+      "Water, turbine use, unspecified natural origin": {
+        "amount": 5.475966531449633,
+        "unit": "cubic meter",
+        "type": "natural resource"
+      }
+    },
+    "lcia": {
+      "material resources: metals/minerals | abiotic depletion potential (ADP): elements (ultimate reserves)": {
+        "score": 5.640644342092135e-06,
+        "unit": "kg Sb-Eq"
+      },
+      "energy resources: non-renewable | abiotic depletion potential (ADP): fossil fuels": {
+        "score": 25.736354997038937,
+        "unit": "MJ, net calorific value"
+      },
+      "acidification | accumulated exceedance (AE)": {
+        "score": 0.006516547154900909,
+        "unit": "mol H+-Eq"
+      },
+      "eutrophication: terrestrial | accumulated exceedance (AE)": {
+        "score": 0.022455031202123357,
+        "unit": "mol N-Eq"
+      },
+      "ecotoxicity: freshwater | comparative toxic unit for ecosystems (CTUe)": {
+        "score": 17.866655332431986,
+        "unit": "CTUe"
+      },
+      "ecotoxicity: freshwater, inorganics | comparative toxic unit for ecosystems (CTUe)": {
+        "score": 6.811128753799179,
+        "unit": "CTUe"
+      },
+      "ecotoxicity: freshwater, organics | comparative toxic unit for ecosystems (CTUe)": {
+        "score": 11.055526578632806,
+        "unit": "CTUe"
+      },
+      "human toxicity: carcinogenic | comparative toxic unit for human (CTUh)": {
+        "score": 5.873268992760621e-10,
+        "unit": "CTUh"
+      },
+      "human toxicity: carcinogenic, inorganics | comparative toxic unit for human (CTUh)": {
+        "score": 2.767490045528853e-10,
+        "unit": "CTUh"
+      },
+      "human toxicity: carcinogenic, organics | comparative toxic unit for human (CTUh)": {
+        "score": 3.1057789472317673e-10,
+        "unit": "CTUh"
+      },
+      "human toxicity: non-carcinogenic | comparative toxic unit for human (CTUh)": {
+        "score": 9.825976608764194e-09,
+        "unit": "CTUh"
+      },
+      "human toxicity: non-carcinogenic, inorganics | comparative toxic unit for human (CTUh)": {
+        "score": 8.020808064159746e-09,
+        "unit": "CTUh"
+      },
+      "human toxicity: non-carcinogenic, organics | comparative toxic unit for human (CTUh)": {
+        "score": 1.8051685446044467e-09,
+        "unit": "CTUh"
+      },
+      "eutrophication: freshwater | fraction of nutrients reaching freshwater end compartment (P)": {
+        "score": 0.0005026124412149284,
+        "unit": "kg P-Eq"
+      },
+      "eutrophication: marine | fraction of nutrients reaching marine end compartment (N)": {
+        "score": 0.006614708757833669,
+        "unit": "kg N-Eq"
+      },
+      "climate change | global warming potential (GWP100)": {
+        "score": 1.7089725281835535,
+        "unit": "kg CO2-Eq"
+      },
+      "climate change: biogenic | global warming potential (GWP100)": {
+        "score": 0.006897942486239618,
+        "unit": "kg CO2-Eq"
+      },
+      "climate change: fossil | global warming potential (GWP100)": {
+        "score": 1.7016371096147116,
+        "unit": "kg CO2-Eq"
+      },
+      "climate change: land use and land use change | global warming potential (GWP100)": {
+        "score": 0.0004374760826026233,
+        "unit": "kg CO2-Eq"
+      },
+      "ionising radiation: human health | human exposure efficiency relative to u235": {
+        "score": 0.4423961000703148,
+        "unit": "kBq U235-Eq"
+      },
+      "particulate matter formation | impact on human health": {
+        "score": 4.8019937040242786e-08,
+        "unit": "disease incidence"
+      },
+      "ozone depletion | ozone depletion potential (ODP)": {
+        "score": 3.993045903815245e-08,
+        "unit": "kg CFC-11-Eq"
+      },
+      "land use | soil quality index": {
+        "score": 33.513517057601746,
+        "unit": "dimensionless"
+      },
+      "photochemical oxidant formation: human health | tropospheric ozone concentration increase": {
+        "score": 0.005178036795032099,
+        "unit": "kg NMVOC-Eq"
+      },
+      "water use | user deprivation potential (deprivation-weighted water consumption)": {
+        "score": 16.414101703554294,
+        "unit": "m3 world eq. deprived"
+      }
+    },
+    "scaling_vector": {
+      "Plastic broom assembly": 1.0
+    }
+  }
+}
