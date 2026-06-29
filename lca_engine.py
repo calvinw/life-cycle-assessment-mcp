@@ -153,17 +153,17 @@ def _compartment_for_resource(res: dict) -> str:
     return comp
 
 
-def run_analysis(recipe_card_yaml: str) -> dict:
-    _ensure_project()
-    spec = _load_spec(recipe_card_yaml)
+def _build_foreground_db(spec: dict) -> tuple[dict, dict]:
+    """Build (or rebuild) the foreground database from a parsed spec.
 
-    # Rebuild foreground database fresh each run
+    Returns (activities, product_to_activity) dicts so callers can
+    resolve the reference process without re-parsing the spec.
+    """
     if FOREGROUND_DB in bd.databases:
         del bd.databases[FOREGROUND_DB]
     fg = bd.Database(FOREGROUND_DB)
     fg.register()
 
-    # Pass 1 — create all activities so we can resolve technosphere links
     activities: dict = {}
     product_to_activity: dict = {}
 
@@ -179,8 +179,6 @@ def run_analysis(recipe_card_yaml: str) -> dict:
         activities[proc["name"]] = act
         product_to_activity[ref["flow"]] = act
 
-    # Collect direct inputs to the reference process for top-level breakdown
-    # Pass 2 — add exchanges
     for proc in spec["processes"]:
         act = activities[proc["name"]]
         ref = proc["reference_output"]
@@ -194,7 +192,6 @@ def run_analysis(recipe_card_yaml: str) -> dict:
         for inp in proc.get("inputs", []):
             db_name = inp.get("database")
             if db_name:
-                # Background database lookup (e.g. bafu)
                 bg_db = bd.Database(db_name)
                 location = inp.get("location")
                 provider = next(
@@ -250,6 +247,15 @@ def run_analysis(recipe_card_yaml: str) -> dict:
                 amount=float(res["amount"]),
                 type="biosphere",
             ).save()
+
+    return activities, product_to_activity
+
+
+def run_analysis(recipe_card_yaml: str) -> dict:
+    _ensure_project()
+    spec = _load_spec(recipe_card_yaml)
+
+    activities, _ = _build_foreground_db(spec)
 
     # Identify reference activity and functional unit amount
     ref_proc_name = spec["reference_process"]
@@ -366,13 +372,10 @@ def get_contributions(recipe_card_yaml: str, method_name: str, top_n: int = 10) 
             f"Method '{method_name}' not found. Available: {available}"
         )
 
-    # Re-run full LCA to get the live lca object
-    result = run_analysis(recipe_card_yaml)
+    activities, _ = _build_foreground_db(spec)
 
-    # Rebuild foreground reference activity
-    fg_db = bd.Database("foreground")
     ref_proc_name = spec["reference_process"]
-    ref_act = next((a for a in fg_db if a["name"] == ref_proc_name), None)
+    ref_act = activities.get(ref_proc_name)
     if ref_act is None:
         raise ValueError(f"Reference process '{ref_proc_name}' not found.")
 
@@ -552,10 +555,8 @@ def top_emissions(recipe_card_yaml: str, method_name: str, top_n: int = 15) -> l
         available = [" | ".join(m[1:]) for m in method_tuples]
         raise ValueError(f"Method '{method_name}' not found. Available: {available}")
 
-    # Build foreground and run LCA
-    run_analysis(recipe_card_yaml)  # populates foreground db
-    fg_db = bd.Database("foreground")
-    ref_act = next((a for a in fg_db if a["name"] == spec["reference_process"]), None)
+    activities, _ = _build_foreground_db(spec)
+    ref_act = activities.get(spec["reference_process"])
     if ref_act is None:
         raise ValueError(f"Reference process '{spec['reference_process']}' not found.")
 
