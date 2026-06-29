@@ -301,42 +301,15 @@ def run_analysis(recipe_card_yaml: str) -> dict:
                     "type": flow_type,
                 }
 
-    # LCIA scores + contributions — one per impact category
+    # LCIA scores — one per impact category
     lca.lcia()
     lcia_results: dict = {}
-    contributions: dict = {}
-
-    def _contributions(lca, top_n):
-        """Return top_n activities by contribution to current lca.score."""
-        total = lca.score
-        if total == 0:
-            return []
-        import bw2analyzer as ba
-        ca = ba.ContributionAnalysis()
-        rows = []
-        for score, _, act in ca.annotated_top_processes(lca, limit=top_n):
-            try:
-                name = act["name"]
-                location = act.get("location", "")
-            except Exception:
-                name = str(act)
-                location = ""
-            rows.append({
-                "activity": name,
-                "location": location,
-                "score": float(score),
-                "fraction": float(score / total),
-            })
-        return rows
-
-    top_n = spec.get("lcia", {}).get("top_n", 10)
 
     key0 = " | ".join(method_tuples[0][1:])
     lcia_results[key0] = {
         "score": float(lca.score),
         "unit": bd.methods[method_tuples[0]].get("unit", ""),
     }
-    contributions[key0] = _contributions(lca, top_n)
 
     for method_tuple in method_tuples[1:]:
         lca.switch_method(method_tuple)
@@ -346,7 +319,6 @@ def run_analysis(recipe_card_yaml: str) -> dict:
             "score": float(lca.score),
             "unit": bd.methods[method_tuple].get("unit", ""),
         }
-        contributions[key] = _contributions(lca, top_n)
 
     fu_spec = spec["functional_unit"]
     return {
@@ -357,35 +329,80 @@ def run_analysis(recipe_card_yaml: str) -> dict:
         ),
         "lci": lci,
         "lcia": lcia_results,
-        "contributions": contributions,
         "scaling_vector": scaling_vector,
     }
 
 
-def get_contributions(recipe_card_yaml: str, method_name: str, top_n: int = 10) -> list:
+def get_contributions(recipe_card_yaml: str, method_name: str, top_n: int = 10) -> dict:
     """
     Run contribution analysis for a single named impact category.
 
-    method_name must match a substring of the full method key
-    (e.g. "climate change | global warming" or "acidification").
-    Returns a ranked list of {activity, location, score, fraction} dicts.
+    Runs a fresh LCA and returns the top processes driving impact for the
+    specified category, ranked by absolute score.
+
+    method_name must substring-match a key in the LCIA results
+    (e.g. "climate change", "acidification", "water use").
+    Returns {method, score, unit, processes: [{activity, location, score, fraction}]}.
     """
+    import bw2analyzer as ba
     _ensure_project()
-    result = run_analysis(recipe_card_yaml)
-    matched = {k: v for k, v in result["contributions"].items()
-               if method_name.lower() in k.lower()}
-    if not matched:
-        available = list(result["contributions"].keys())
+
+    spec = _load_spec(recipe_card_yaml)
+    method_name_full = spec["lcia"]["method_name"]
+    method_tuples = sorted(
+        [m for m in bd.methods if len(m) >= 2 and m[0] == method_name_full],
+        key=lambda m: m[-1],
+    )
+    if not method_tuples:
+        raise ValueError(f"LCIA method '{method_name_full}' not found.")
+
+    target = next(
+        (m for m in method_tuples if method_name.lower() in " | ".join(m[1:]).lower()),
+        None,
+    )
+    if target is None:
+        available = [" | ".join(m[1:]) for m in method_tuples]
         raise ValueError(
-            f"Method '{method_name}' not found in results. "
-            f"Available: {available}"
+            f"Method '{method_name}' not found. Available: {available}"
         )
-    key = next(iter(matched))
-    data = matched[key]
+
+    # Re-run full LCA to get the live lca object
+    result = run_analysis(recipe_card_yaml)
+
+    # Rebuild foreground reference activity
+    fg_db = bd.Database("foreground")
+    ref_proc_name = spec["reference_process"]
+    ref_act = next((a for a in fg_db if a["name"] == ref_proc_name), None)
+    if ref_act is None:
+        raise ValueError(f"Reference process '{ref_proc_name}' not found.")
+
+    fu_amount = float(spec["functional_unit"]["amount"])
+    lca = bc.LCA({ref_act: fu_amount}, target)
+    lca.lci(factorize=True)
+    lca.lcia()
+
+    total = lca.score
+    ca = ba.ContributionAnalysis()
+    processes = []
+    for score, _, act in ca.annotated_top_processes(lca, limit=top_n):
+        try:
+            name = act["name"]
+            location = act.get("location", "")
+        except Exception:
+            name = str(act)
+            location = ""
+        processes.append({
+            "activity": name,
+            "location": location,
+            "score": float(score),
+            "fraction": float(score / total) if total else 0.0,
+        })
+
     return {
-        "method": key,
-        "top_level": data["top_level"],
-        "processes": data["processes"][:top_n],
+        "method": " | ".join(target[1:]),
+        "score": float(total),
+        "unit": bd.methods[target].get("unit", ""),
+        "processes": processes,
     }
 
 
@@ -520,52 +537,36 @@ def top_emissions(recipe_card_yaml: str, method_name: str, top_n: int = 15) -> l
     """
     import bw2analyzer as ba
     _ensure_project()
-    result = run_analysis(recipe_card_yaml)
 
-    matched = {k: v for k, v in result["lcia"].items()
-               if method_name.lower() in k.lower()}
-    if not matched:
-        raise ValueError(
-            f"Method '{method_name}' not found. "
-            f"Available: {list(result['lcia'].keys())}"
-        )
-    key = next(iter(matched))
-    total = matched[key]["score"]
-
-    # Re-run LCA to get the live lca object
-    spec = yaml.safe_load(recipe_card_yaml.split("---")[1] if "---" in recipe_card_yaml else recipe_card_yaml)
+    spec = _load_spec(recipe_card_yaml)
     method_name_full = spec["lcia"]["method_name"]
     method_tuples = sorted(
         [m for m in bd.methods if len(m) >= 2 and m[0] == method_name_full],
         key=lambda m: m[-1],
     )
-    target = next((m for m in method_tuples if method_name.lower() in " | ".join(m[1:]).lower()), None)
-    if target is None:
-        raise ValueError(f"Could not resolve method tuple for '{method_name}'")
-
-    # Need to rebuild foreground for LCA object — use get_contributions path
-    contributions = get_contributions(recipe_card_yaml, method_name, top_n=1)
-
-    # Re-derive lca from scratch (cheapest path: re-run run_analysis internals)
-    # We already have the score; rebuild lca for the emission breakdown
-    spec_full = yaml.safe_load(
-        recipe_card_yaml.split("---")[1] if "---" in recipe_card_yaml else recipe_card_yaml
+    target = next(
+        (m for m in method_tuples if method_name.lower() in " | ".join(m[1:]).lower()),
+        None,
     )
-    ref_proc_name = spec_full["reference_process"]
+    if target is None:
+        available = [" | ".join(m[1:]) for m in method_tuples]
+        raise ValueError(f"Method '{method_name}' not found. Available: {available}")
 
+    # Build foreground and run LCA
+    run_analysis(recipe_card_yaml)  # populates foreground db
     fg_db = bd.Database("foreground")
-    ref_act = next((a for a in fg_db if a["name"] == ref_proc_name), None)
+    ref_act = next((a for a in fg_db if a["name"] == spec["reference_process"]), None)
     if ref_act is None:
-        raise ValueError(f"Reference process '{ref_proc_name}' not found in foreground database.")
+        raise ValueError(f"Reference process '{spec['reference_process']}' not found.")
 
-    fu_amount = float(spec_full["functional_unit"]["amount"])
-    lca = bc.LCA(demand={ref_act: fu_amount}, method=target)
+    fu_amount = float(spec["functional_unit"]["amount"])
+    lca = bc.LCA({ref_act: fu_amount}, target)
     lca.lci(factorize=True)
     lca.lcia()
 
+    total = lca.score
     ca = ba.ContributionAnalysis()
     rows = []
-    bio_db = bd.Database("biosphere3")
     for score, _, flow in ca.annotated_top_emissions(lca, limit=top_n):
         try:
             name = flow["name"]
