@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 535.0 224.0">
+<rect x="0" y="0" width="535.0" height="224.0" fill="#f8f8f8"/>
+<defs>
+  <marker id="arr"       viewBox="0 0 10 10" refX="9" refY="5"
+          markerWidth="5" markerHeight="5" orient="auto">
+    <path d="M0,0 L10,5 L0,10 z" fill="#555555"/>
+  </marker>
+  <marker id="arr-green" viewBox="0 0 10 10" refX="9" refY="5"
+          markerWidth="5" markerHeight="5" orient="auto">
+    <path d="M0,0 L10,5 L0,10 z" fill="#2d7a45"/>
+  </marker>
+  <marker id="arr-red"   viewBox="0 0 10 10" refX="9" refY="5"
+          markerWidth="5" markerHeight="5" orient="auto">
+    <path d="M0,0 L10,5 L0,10 z" fill="#c0392b"/>
+  </marker>
+</defs>
+<text x="267.5" y="15.0" text-anchor="middle" dominant-baseline="auto" font-family="Helvetica,Arial,sans-serif" font-size="13" font-weight="bold" fill="#222">Plastic broom assembly</text>
+<text x="267.5" y="30.0" text-anchor="middle" dominant-baseline="auto" font-family="Helvetica,Arial,sans-serif" font-size="12" font-weight="normal" fill="#666">Unit Process</text>
+<rect x="230.0" y="104.0" width="165" height="54" rx="8" fill="#3a7ebf"/>
+<text x="312.5" y="131.0" text-anchor="middle" dominant-baseline="auto" font-family="Helvetica,Arial,sans-serif" font-size="11" font-weight="normal" fill="white">Plastic broom assembly</text>
+<line x1="395.0" y1="131.0" x2="485.0" y2="131.0" stroke="#555555" stroke-width="1.6" marker-end="url(#arr)"/>
+<text text-anchor="middle" font-family="Helvetica,Arial,sans-serif" font-size="11" font-weight="bold" fill="#444">
+<tspan x="440.0" y="109.8" dominant-baseline="auto">Plastic broom</tspan>
+<tspan x="440.0" y="124.1" dominant-baseline="auto">1.0 unit</tspan>
+</text>
+<line x1="140.0" y1="95.0" x2="230.0" y2="95.0" stroke="#555555" stroke-width="1.6" marker-end="url(#arr)"/>
+<text text-anchor="middle" font-family="Helvetica,Arial,sans-serif" font-size="11" font-weight="bold" fill="#444">
+<tspan x="185.0" y="73.8" dominant-baseline="auto">Polylactide, granulate, a…</tspan>
+<tspan x="185.0" y="88.1" dominant-baseline="auto">0.52 </tspan>
+</text>
+<line x1="140.0" y1="131.0" x2="230.0" y2="131.0" stroke="#555555" stroke-width="1.6" marker-end="url(#arr)"/>
+<text text-anchor="middle" font-family="Helvetica,Arial,sans-serif" font-size="11" font-weight="bold" fill="#444">
+<tspan x="185.0" y="109.8" dominant-baseline="auto">Nylon 6, at plant</tspan>
+<tspan x="185.0" y="124.1" dominant-baseline="auto">0.03 </tspan>
+</text>
+<line x1="140.0" y1="167.0" x2="230.0" y2="167.0" stroke="#555555" stroke-width="1.6" marker-end="url(#arr)"/>
+<text text-anchor="middle" font-family="Helvetica,Arial,sans-serif" font-size="11" font-weight="bold" fill="#444">
+<tspan x="185.0" y="145.8" dominant-baseline="auto">Transport, freight, lorry…</tspan>
+<tspan x="185.0" y="160.2" dominant-baseline="auto">0.1055 </tspan>
+</text>
+</svg>

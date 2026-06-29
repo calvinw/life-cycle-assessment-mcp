@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 535.0 272.0">
+<rect x="0" y="0" width="535.0" height="272.0" fill="#f8f8f8"/>
+<defs>
+  <marker id="arr"       viewBox="0 0 10 10" refX="9" refY="5"
+          markerWidth="5" markerHeight="5" orient="auto">
+    <path d="M0,0 L10,5 L0,10 z" fill="#555555"/>
+  </marker>
+  <marker id="arr-green" viewBox="0 0 10 10" refX="9" refY="5"
+          markerWidth="5" markerHeight="5" orient="auto">
+    <path d="M0,0 L10,5 L0,10 z" fill="#2d7a45"/>
+  </marker>
+  <marker id="arr-red"   viewBox="0 0 10 10" refX="9" refY="5"
+          markerWidth="5" markerHeight="5" orient="auto">
+    <path d="M0,0 L10,5 L0,10 z" fill="#c0392b"/>
+  </marker>
+</defs>
+<text x="267.5" y="15.0" text-anchor="middle" dominant-baseline="auto" font-family="Helvetica,Arial,sans-serif" font-size="13" font-weight="bold" fill="#222">P2 — Cotton farming</text>
+<text x="267.5" y="30.0" text-anchor="middle" dominant-baseline="auto" font-family="Helvetica,Arial,sans-serif" font-size="12" font-weight="normal" fill="#666">Unit Process</text>
+<rect x="230.0" y="146.0" width="165" height="54" rx="8" fill="#3a7ebf"/>
+<text x="312.5" y="173.0" text-anchor="middle" dominant-baseline="auto" font-family="Helvetica,Arial,sans-serif" font-size="11" font-weight="normal" fill="white">P2 — Cotton farming</text>
+<line x1="395.0" y1="173.0" x2="485.0" y2="173.0" stroke="#555555" stroke-width="1.6" marker-end="url(#arr)"/>
+<text text-anchor="middle" font-family="Helvetica,Arial,sans-serif" font-size="11" font-weight="bold" fill="#444">
+<tspan x="440.0" y="151.8" dominant-baseline="auto">Cotton fiber</tspan>
+<tspan x="440.0" y="166.2" dominant-baseline="auto">1.0 kg</tspan>
+</text>
+<line x1="140.0" y1="173.0" x2="230.0" y2="173.0" stroke="#555555" stroke-width="1.6" marker-end="url(#arr)"/>
+<text text-anchor="middle" font-family="Helvetica,Arial,sans-serif" font-size="11" font-weight="bold" fill="#444">
+<tspan x="185.0" y="151.8" dominant-baseline="auto">N-fertilizer</tspan>
+<tspan x="185.0" y="166.2" dominant-baseline="auto">0.2 kg</tspan>
+</text>
+<text x="312.5" y="82.0" text-anchor="middle" dominant-baseline="auto" font-family="Helvetica,Arial,sans-serif" font-size="9" font-weight="bold" fill="#2d7a45">from Nature</text>
+<line x1="312.5" y1="96.0" x2="312.5" y2="146.0" stroke="#2d7a45" stroke-width="1.6" marker-end="url(#arr-green)"/>
+<text x="307.5" y="118.5" text-anchor="end" dominant-baseline="auto" font-family="Helvetica,Arial,sans-serif" font-size="11" font-weight="bold" fill="#2d7a45">H<tspan baseline-shift="sub" font-size="0.75em">2</tspan>O</text>
+<text x="307.5" y="132.5" text-anchor="end" dominant-baseline="auto" font-family="Helvetica,Arial,sans-serif" font-size="11" font-weight="bold" fill="#2d7a45">8000 L</text>
+<line x1="250.6" y1="200.0" x2="250.6" y2="250.0" stroke="#c0392b" stroke-width="1.6" marker-end="url(#arr-red)"/>
+<text x="245.6" y="219.0" text-anchor="end" dominant-baseline="auto" font-family="Helvetica,Arial,sans-serif" font-size="11" font-weight="bold" fill="#c0392b">CO<tspan baseline-shift="sub" font-size="0.75em">2</tspan></text>
+<text x="245.6" y="233.0" text-anchor="end" dominant-baseline="auto" font-family="Helvetica,Arial,sans-serif" font-size="11" font-weight="bold" fill="#c0392b">0.8 kg</text>
+<text x="250.6" y="262.0" text-anchor="start" dominant-baseline="auto" font-family="Helvetica,Arial,sans-serif" font-size="9" font-weight="bold" fill="#c0392b">to Air</text>
+<line x1="312.5" y1="200.0" x2="312.5" y2="250.0" stroke="#c0392b" stroke-width="1.6" marker-end="url(#arr-red)"/>
+<text x="307.5" y="219.0" text-anchor="end" dominant-baseline="auto" font-family="Helvetica,Arial,sans-serif" font-size="11" font-weight="bold" fill="#c0392b">N<tspan baseline-shift="sub" font-size="0.75em">2</tspan>O</text>
+<text x="307.5" y="233.0" text-anchor="end" dominant-baseline="auto" font-family="Helvetica,Arial,sans-serif" font-size="11" font-weight="bold" fill="#c0392b">0.015 kg</text>
+<text x="312.5" y="262.0" text-anchor="start" dominant-baseline="auto" font-family="Helvetica,Arial,sans-serif" font-size="9" font-weight="bold" fill="#c0392b">to Air</text>
+<line x1="374.4" y1="200.0" x2="374.4" y2="250.0" stroke="#c0392b" stroke-width="1.6" marker-end="url(#arr-red)"/>
+<text x="369.4" y="219.0" text-anchor="end" dominant-baseline="auto" font-family="Helvetica,Arial,sans-serif" font-size="11" font-weight="bold" fill="#c0392b">NH<tspan baseline-shift="sub" font-size="0.75em">3</tspan></text>
+<text x="369.4" y="233.0" text-anchor="end" dominant-baseline="auto" font-family="Helvetica,Arial,sans-serif" font-size="11" font-weight="bold" fill="#c0392b">0.01 kg</text>
+<text x="374.4" y="262.0" text-anchor="start" dominant-baseline="auto" font-family="Helvetica,Arial,sans-serif" font-size="9" font-weight="bold" fill="#c0392b">to Air</text>
+</svg>

@@ -47,6 +47,7 @@ from pathlib import Path
 
 # ── Style constants ────────────────────────────────────────────────────────────
 COL_PROCESS   = '#3a7ebf'
+COL_BACKGROUND = '#888888'
 COL_FU        = '#7b4ea6'
 COL_TECH_EDGE = '#555555'
 COL_GREEN     = '#2d7a45'
@@ -111,15 +112,28 @@ def run_dot_plain(recipe: dict) -> str:
     fu_height = round(0.75 + (desc_lines - 1) * 0.18, 2)
     lines.append(f'  "Functional Unit" [width=1.8, height={fu_height}];')
 
-    # technosphere edges (process → process)
+    # background input nodes (database: bafu etc.) — rendered as grey boxes
+    # height grows to fit wrapped text
+    bg_nodes = set()
+    for p in recipe['processes']:
+        for inp in p.get('inputs', []):
+            if inp.get('database') and not _producer(recipe, inp['flow']):
+                node_id = inp['flow']
+                if node_id not in bg_nodes:
+                    bg_nodes.add(node_id)
+                    lines.append(f'  "{node_id}" [style=filled, fillcolor="#cccccc"];')
+
+    # technosphere edges (process → process, and background → process)
     ref = recipe['reference_process']
     for p in recipe['processes']:
         for inp in p.get('inputs', []):
-            # find which process produces this flow
             src = _producer(recipe, inp['flow'])
             if src:
                 label = inp["flow"]
                 lines.append(f'  "{src}" -> "{p["name"]}" [label="{label}"];')
+            elif inp.get('database'):
+                label = inp["flow"]
+                lines.append(f'  "{inp["flow"]}" -> "{p["name"]}" [label="{label}"];')
 
     # edge from reference process to functional unit
     ref = recipe['reference_process']
@@ -287,6 +301,13 @@ def svg_defs():
 </defs>'''
 
 
+def truncate_text(text: str, max_chars: int = 26) -> str:
+    """Truncate text to max_chars, adding ellipsis if needed."""
+    if len(text) <= max_chars:
+        return text
+    return text[:max_chars - 1].rstrip() + '…'
+
+
 def wrap_text(text: str, max_chars: int = 26) -> str:
     """Word-wrap text at max_chars per line, return lines joined by \\n."""
     words = text.split()
@@ -445,6 +466,51 @@ def elementary_flows(recipe: dict, nodes: dict, flip_y: float,
     return els
 
 
+def background_inputs(recipe: dict, nodes: dict, flip_y: float,
+                      show_quantities: bool = True,
+                      scaling: dict = {}) -> list[str]:
+    """
+    Draw background database inputs (database: bafu etc.) as labelled arrows
+    entering the left side of the receiving process box.
+    """
+    els = []
+    ARM = 90  # horizontal arm length
+
+    for p in recipe['processes']:
+        name = p['name']
+        if name not in nodes:
+            continue
+        cx, cy, nw, nh = nodes[name]
+        cy = flip_y - cy
+        box_left = cx - nw / 2
+
+        bg_inputs = [inp for inp in p.get('inputs', [])
+                     if inp.get('database') and not _producer(recipe, inp['flow'])]
+        if not bg_inputs:
+            continue
+
+        n = len(bg_inputs)
+        spacing = nh * 0.6 / (n - 1) if n > 1 else 0
+        proc_scaling = scaling.get(name, 1.0)
+
+        for i, inp in enumerate(bg_inputs):
+            iy = cy + (i - (n - 1) / 2) * spacing
+            start_x = box_left - ARM
+            els.append(svg_line(start_x, iy, box_left, iy, COL_TECH_EDGE))
+            mid_x = start_x + ARM * 0.5
+            els.append(svg_text(mid_x, iy - 6,
+                                _display_name(inp['flow']),
+                                anchor='middle', size=10, fill='#444', weight='bold'))
+            if show_quantities:
+                scaled = inp['amount'] * proc_scaling
+                unit = inp.get('unit', '')
+                els.append(svg_text(mid_x, iy + 8,
+                                    f"{scaled:.4g} {unit}",
+                                    anchor='middle', size=10, fill='#444'))
+
+    return els
+
+
 def _res_unit(recipe, flow_name):
     for f in recipe.get('elementary_flows', {}).get('resources', []):
         if f['name'] == flow_name:
@@ -462,14 +528,15 @@ def _em_unit(recipe, flow_name):
 # ── Process & FU box rendering ─────────────────────────────────────────────────
 def process_boxes(recipe: dict, nodes: dict, flip_y: float,
                   scaling: dict = {},
-                  show_quantities: bool = True) -> list[str]:
+                  show_quantities: bool = True,
+                  bg_nodes: set = set()) -> list[str]:
     els = []
-    process_names = {p['name'] for p in recipe['processes']}
 
     for name, (cx, cy, nw, nh) in nodes.items():
         cy = flip_y - cy
         is_fu = name == 'Functional Unit'
-        fill  = COL_FU if is_fu else COL_PROCESS
+        is_bg = name in bg_nodes
+        fill  = COL_FU if is_fu else (COL_BACKGROUND if is_bg else COL_PROCESS)
         bx    = cx - nw / 2
         by    = cy - nh / 2
 
@@ -479,16 +546,16 @@ def process_boxes(recipe: dict, nodes: dict, flip_y: float,
             fu = recipe['functional_unit']
             desc = wrap_text(fu['description'])
             n_desc_lines = len(desc.split('\n'))
-            # push label up, description centred in remaining space
             els.append(svg_text(cx, cy - nh * 0.28, 'Functional Unit',
                                 size=11, fill='white'))
             els.append(svg_text(cx, cy + nh * (0.05 + 0.07 * (n_desc_lines - 1)),
                                 desc, size=10, fill='white'))
+        elif is_bg:
+            els.append(svg_text(cx, cy, truncate_text(name), size=11, fill='white'))
         else:
             idx = next((i+1 for i, p in enumerate(recipe['processes'])
                         if p['name'] == name), '?')
-            els.append(svg_text(cx, cy - 8,
-                                name, size=11, fill='white'))
+            els.append(svg_text(cx, cy - 8, name, size=11, fill='white'))
             if show_quantities:
                 sc = scaling.get(name, 1.0)
                 els.append(svg_text(cx, cy + 8,
@@ -636,7 +703,7 @@ def generate_unit_process(recipe: dict, proc_name: str, out_path: str):
         parts.append(svg_line(x1l, y_in, x2l, y_in, COL_TECH_EDGE))
         u = _flow_unit(recipe, inp['flow'])
         parts.append(svg_text((x1l + x2l) / 2, y_in - 14,
-                              f"{inp['flow']}\n{inp['amount']} {u}",
+                              f"{truncate_text(inp['flow'])}\n{inp['amount']} {u}",
                               anchor='middle', size=11, fill='#444', weight='bold'))
 
     # ── Resources (green, entering from above) ────────────────────────────────
@@ -715,6 +782,14 @@ def generate(recipe_path: str, out_path: str, show_quantities: bool = True):
 
     scaling = compute_scaling(recipe) if show_quantities else {}
 
+    # Collect background input node names for colour differentiation
+    fg_names = {p['name'] for p in recipe.get('processes', [])}
+    bg_node_names = set()
+    for p in recipe.get('processes', []):
+        for inp in p.get('inputs', []):
+            if inp.get('database') and inp['flow'] not in fg_names:
+                bg_node_names.add(inp['flow'])
+
     svg_parts = []
     svg_parts.append('<!--HEADER-->')
     svg_parts.append('<!--BG-->')
@@ -734,7 +809,7 @@ def generate(recipe_path: str, out_path: str, show_quantities: bool = True):
     svg_parts.extend(tech_edges(shifted_edges, flip_y, recipe, shifted_nodes,
                                 show_quantities, scaling))
     svg_parts.extend(process_boxes(recipe, shifted_nodes, flip_y, scaling,
-                                   show_quantities))
+                                   show_quantities, bg_nodes=bg_node_names))
     svg_parts.append('</svg>')
 
     # compute content bounding box in SVG coordinates (post-flip)

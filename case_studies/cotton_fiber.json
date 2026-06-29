@@ -11,24 +11,24 @@
     "method": "TRACI v2.1",
     "functional_unit": "1.0 kg — 1 kg of ginned cotton fiber, ready for spinning",
     "lci": {
+      "Ammonia": {
+        "amount": 0.009999999776482582,
+        "unit": "kilogram",
+        "type": "emission"
+      },
       "Dinitrogen monoxide": {
         "amount": 0.014999999664723873,
         "unit": "kilogram",
         "type": "emission"
       },
-      "Ammonia": {
-        "amount": 0.009999999776482582,
+      "Carbon dioxide, fossil": {
+        "amount": 1.5000000223517418,
         "unit": "kilogram",
         "type": "emission"
       },
       "Water": {
         "amount": 8000.0,
         "unit": "cubic meter",
-        "type": "emission"
-      },
-      "Carbon dioxide, fossil": {
-        "amount": 1.5000000223517418,
-        "unit": "kilogram",
         "type": "emission"
       }
     },

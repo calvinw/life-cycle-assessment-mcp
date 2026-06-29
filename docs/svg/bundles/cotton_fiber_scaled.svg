@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 -76.9 859.8 199.0">
+<rect x="0" y="-76.9" width="859.8" height="199.0" fill="#f8f8f8"/>
+<defs>
+  <marker id="arr"       viewBox="0 0 10 10" refX="9" refY="5"
+          markerWidth="5" markerHeight="5" orient="auto">
+    <path d="M0,0 L10,5 L0,10 z" fill="#555555"/>
+  </marker>
+  <marker id="arr-green" viewBox="0 0 10 10" refX="9" refY="5"
+          markerWidth="5" markerHeight="5" orient="auto">
+    <path d="M0,0 L10,5 L0,10 z" fill="#2d7a45"/>
+  </marker>
+  <marker id="arr-red"   viewBox="0 0 10 10" refX="9" refY="5"
+          markerWidth="5" markerHeight="5" orient="auto">
+    <path d="M0,0 L10,5 L0,10 z" fill="#c0392b"/>
+  </marker>
+</defs>
+<text x="429.9" y="-50.3" text-anchor="middle" dominant-baseline="auto" font-family="Helvetica,Arial,sans-serif" font-size="14" font-weight="bold" fill="#222">Cotton Fiber — 1 kg</text>
+<line x1="142.5" y1="70.1" x2="142.5" y2="100.1" stroke="#c0392b" stroke-width="1.6" marker-end="url(#arr-red)"/>
+<text x="137.5" y="81.5" text-anchor="end" dominant-baseline="auto" font-family="Helvetica,Arial,sans-serif" font-size="11" font-weight="bold" fill="#c0392b">CO<tspan baseline-shift="sub" font-size="0.75em">2</tspan></text>
+<text x="137.5" y="95.5" text-anchor="end" dominant-baseline="auto" font-family="Helvetica,Arial,sans-serif" font-size="11" font-weight="bold" fill="#c0392b">0.7 kg</text>
+<text x="142.5" y="112.1" text-anchor="start" dominant-baseline="auto" font-family="Helvetica,Arial,sans-serif" font-size="9" font-weight="bold" fill="#c0392b">to Air</text>
+<text x="428.4" y="-24.9" text-anchor="start" dominant-baseline="auto" font-family="Helvetica,Arial,sans-serif" font-size="9" font-weight="bold" fill="#2d7a45">from Nature</text>
+<line x1="428.4" y1="-14.9" x2="428.4" y2="15.1" stroke="#2d7a45" stroke-width="1.6" marker-end="url(#arr-green)"/>
+<text x="423.4" y="-3.5" text-anchor="end" dominant-baseline="auto" font-family="Helvetica,Arial,sans-serif" font-size="11" font-weight="bold" fill="#2d7a45">H<tspan baseline-shift="sub" font-size="0.75em">2</tspan>O</text>
+<text x="423.4" y="10.5" text-anchor="end" dominant-baseline="auto" font-family="Helvetica,Arial,sans-serif" font-size="11" font-weight="bold" fill="#2d7a45">8000 L</text>
+<line x1="366.6" y1="70.1" x2="366.6" y2="100.1" stroke="#c0392b" stroke-width="1.6" marker-end="url(#arr-red)"/>
+<text x="361.6" y="81.5" text-anchor="end" dominant-baseline="auto" font-family="Helvetica,Arial,sans-serif" font-size="11" font-weight="bold" fill="#c0392b">CO<tspan baseline-shift="sub" font-size="0.75em">2</tspan></text>
+<text x="361.6" y="95.5" text-anchor="end" dominant-baseline="auto" font-family="Helvetica,Arial,sans-serif" font-size="11" font-weight="bold" fill="#c0392b">0.8 kg</text>
+<text x="366.6" y="112.1" text-anchor="start" dominant-baseline="auto" font-family="Helvetica,Arial,sans-serif" font-size="9" font-weight="bold" fill="#c0392b">to Air</text>
+<line x1="428.4" y1="70.1" x2="428.4" y2="100.1" stroke="#c0392b" stroke-width="1.6" marker-end="url(#arr-red)"/>
+<text x="423.4" y="81.5" text-anchor="end" dominant-baseline="auto" font-family="Helvetica,Arial,sans-serif" font-size="11" font-weight="bold" fill="#c0392b">N<tspan baseline-shift="sub" font-size="0.75em">2</tspan>O</text>
+<text x="423.4" y="95.5" text-anchor="end" dominant-baseline="auto" font-family="Helvetica,Arial,sans-serif" font-size="11" font-weight="bold" fill="#c0392b">0.015 kg</text>
+<text x="428.4" y="112.1" text-anchor="start" dominant-baseline="auto" font-family="Helvetica,Arial,sans-serif" font-size="9" font-weight="bold" fill="#c0392b">to Air</text>
+<line x1="490.3" y1="70.1" x2="490.3" y2="100.1" stroke="#c0392b" stroke-width="1.6" marker-end="url(#arr-red)"/>
+<text x="485.3" y="81.5" text-anchor="end" dominant-baseline="auto" font-family="Helvetica,Arial,sans-serif" font-size="11" font-weight="bold" fill="#c0392b">NH<tspan baseline-shift="sub" font-size="0.75em">3</tspan></text>
+<text x="485.3" y="95.5" text-anchor="end" dominant-baseline="auto" font-family="Helvetica,Arial,sans-serif" font-size="11" font-weight="bold" fill="#c0392b">0.01 kg</text>
+<text x="490.3" y="112.1" text-anchor="start" dominant-baseline="auto" font-family="Helvetica,Arial,sans-serif" font-size="9" font-weight="bold" fill="#c0392b">to Air</text>
+<line x1="225.0" y1="42.6" x2="345.9" y2="42.6" stroke="#555555" stroke-width="1.6" marker-end="url(#arr)"/>
+<text text-anchor="middle" font-family="Helvetica,Arial,sans-serif" font-size="11" font-weight="bold" fill="#444">
+<tspan x="285.5" y="21.5" dominant-baseline="auto">N-fertilizer</tspan>
+<tspan x="285.5" y="35.8" dominant-baseline="auto">0.2 kg</tspan>
+</text>
+<line x1="510.9" y1="42.6" x2="634.8" y2="42.6" stroke="#555555" stroke-width="1.6" marker-end="url(#arr)"/>
+<text text-anchor="middle" font-family="Helvetica,Arial,sans-serif" font-size="11" font-weight="bold" fill="#444">
+<tspan x="572.9" y="21.5" dominant-baseline="auto">Cotton fiber</tspan>
+<tspan x="572.9" y="35.8" dominant-baseline="auto">1 kg</tspan>
+</text>
+<rect x="60.0" y="15.1" width="165.0" height="55.0" rx="8" fill="#3a7ebf"/>
+<text x="142.5" y="34.6" text-anchor="middle" dominant-baseline="auto" font-family="Helvetica,Arial,sans-serif" font-size="11" font-weight="normal" fill="white">P1 — Fertilizer production</text>
+<text x="142.5" y="50.6" text-anchor="middle" dominant-baseline="auto" font-family="Helvetica,Arial,sans-serif" font-size="11" font-weight="normal" fill="white">s1 = 0.2</text>
+<rect x="345.9" y="15.1" width="165.0" height="55.0" rx="8" fill="#3a7ebf"/>
+<text x="428.4" y="34.6" text-anchor="middle" dominant-baseline="auto" font-family="Helvetica,Arial,sans-serif" font-size="11" font-weight="normal" fill="white">P2 — Cotton farming</text>
+<text x="428.4" y="50.6" text-anchor="middle" dominant-baseline="auto" font-family="Helvetica,Arial,sans-serif" font-size="11" font-weight="normal" fill="white">s2 = 1</text>
+<rect x="634.8" y="-0.0" width="165.0" height="85.25000000000001" rx="8" fill="#7b4ea6"/>
+<text x="717.3" y="18.8" text-anchor="middle" dominant-baseline="auto" font-family="Helvetica,Arial,sans-serif" font-size="11" font-weight="normal" fill="white">Functional Unit</text>
+<text text-anchor="middle" font-family="Helvetica,Arial,sans-serif" font-size="10" font-weight="normal" fill="white">
+<tspan x="717.3" y="46.4" dominant-baseline="auto">1 kg of ginned cotton</tspan>
+<tspan x="717.3" y="59.4" dominant-baseline="auto">fiber, ready for spinning</tspan>
+</text>
+</svg>
