@@ -1,10 +1,11 @@
 """
 scripts/rebuild_case_studies.py — Regenerate all case study JSON bundles.
 
-Reads each case_studies/*.md, runs the full LCA + SVG generation,
+Reads each case_studies/*.md, runs SVG generation,
 and writes the result back to case_studies/*.json.
+LCA results are not pre-computed — call run_lca() with the recipe card to compute them.
 
-Run after any change to lca_engine, lca_svg_engine, or the biosphere/LCIA data:
+Run after any change to lca_svg_engine or the recipe cards:
     uv run python scripts/rebuild_case_studies.py
 """
 
@@ -22,7 +23,6 @@ if "BRIGHTWAY2_DIR" not in os.environ:
 CASE_STUDIES_DIR = pathlib.Path(__file__).parent.parent / "case_studies"
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent.parent))
-from lca_engine import run_analysis
 from lca_svg_engine import generate_svg, generate_unit_process_svg
 
 
@@ -33,9 +33,6 @@ def _process_names_from_spec(spec: dict) -> list[str]:
 def rebuild(md_path: pathlib.Path):
     name = md_path.stem
     recipe_card = md_path.read_text()
-
-    print(f"  Running LCA for {name}...")
-    result = run_analysis(recipe_card)
 
     print(f"  Generating SVGs...")
     svg_scaled    = generate_svg(recipe_card, "scaled")
@@ -58,13 +55,11 @@ def rebuild(md_path: pathlib.Path):
         "svg_structure": svg_structure,
         "svg_scaled": svg_scaled,
         "unit_process_svgs": unit_process_svgs,
-        "lca_results": result,
     }
 
     out_path = md_path.with_suffix(".json")
     out_path.write_text(json.dumps(bundle, indent=2))
-    gwp = result['lcia'].get('global warming potential (GWP100)', result['lcia'].get('Global warming', {})).get('score', '?')
-    print(f"  Wrote {out_path.name}  (global warming: {gwp})")
+    print(f"  Wrote {out_path.name}")
 
 
 def main():

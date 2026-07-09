@@ -5,9 +5,9 @@ For each recipe card in case_studies/*.md, generates:
   - svg_structure  : supply chain diagram (flow names only)
   - svg_scaled     : supply chain diagram (with amounts and scaling factors)
   - unit_process_svgs : one SVG per process
-  - lca_results    : lci, lcia, scaling_vector
 
 Saves each bundle as case_studies/<name>.json.
+LCA results are not pre-computed — run run_lca() against the recipe card instead.
 
 Run once whenever a recipe card changes or the engine changes:
     python3 generate_bundles.py
@@ -25,7 +25,6 @@ os.environ.setdefault("BRIGHTWAY2_DIR", str(pathlib.Path(__file__).parent / "bri
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
 
 from lca_svg_engine import generate_svg, generate_unit_process_svg
-from lca_engine import run_analysis
 
 CASE_STUDIES_DIR = pathlib.Path(__file__).parent / "case_studies"
 
@@ -54,16 +53,11 @@ def generate_bundle(name: str) -> None:
         print(f"  generating unit process svg: {pname} ...")
         unit_process_svgs[pname] = generate_unit_process_svg(recipe_card, pname)
 
-    print("  running lca analysis ...")
-    lca_results = run_analysis(recipe_card)
-    lca_results.pop("system_id", None)
-
     bundle = {
         "recipe_card":       recipe_card,
         "svg_structure":     svg_structure,
         "svg_scaled":        svg_scaled,
         "unit_process_svgs": unit_process_svgs,
-        "lca_results":       lca_results,
     }
 
     out_path = CASE_STUDIES_DIR / f"{name}.json"
