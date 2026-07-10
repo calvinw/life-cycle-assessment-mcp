@@ -8,9 +8,9 @@ The server already runs Stack 2 (EU/openLCA) minus one piece:
 - LCIA methods — 547 categories: EF 3.1, ReCiPe, CML, TRACI 2.2, etc. ✓
 - Background LCI database — **missing (BAFU)**
 
-No background LCI database means recipe cards can only model foreground
+No background LCI database means product graphs can only model foreground
 processes by hand. Every process's inputs and outputs must be written
-explicitly in the recipe card.
+explicitly in the product graph.
 
 ---
 
@@ -47,12 +47,12 @@ ReCiPe adds endpoint/damage assessment (DALYs, species·yr, USD).
 
 ## What Each Stack Unlocks
 
-Without a background LCI database, recipe cards must model every upstream
+Without a background LCI database, product graphs must model every upstream
 process by hand. With one:
 
-- A recipe card can reference "Electricity, at grid" or "Transport, lorry"
+- A product graph can reference "Electricity, at grid" or "Transport, lorry"
   and get the real upstream emissions without modelling them explicitly
-- Shorter, more realistic recipe cards
+- Shorter, more realistic product graphs
 - LCIA results include upstream impacts (e.g. electricity production's CO2)
 - Scenario comparison: change one input, see how upstream impacts shift
 
@@ -72,12 +72,12 @@ zero contributions — the same bug we fixed in June 2026 for N2O.
 | USLCI exchanges | ✓ 98.5% match | ✗ ~0% match |
 | BAFU exchanges | ✗ poor match | ✓ designed for this |
 
-Recipe cards declare their stack; the engine routes through the correct
+Product graphs declare their stack; the engine routes through the correct
 biosphere and LCIA methods automatically.
 
 ---
 
-## Recipe Card Changes
+## Product Graph Changes
 
 Add one field to the YAML:
 
@@ -87,7 +87,7 @@ stack: us   # Federal LCA Commons — TRACI 2.2 + USLCI
 stack: eu   # openLCA — EF 3.1 / ReCiPe + BAFU
 ```
 
-Existing recipe cards (cotton_fiber, polyester_tshirt, wool_yarn) default
+Existing product graphs (cotton_fiber, polyester_tshirt, wool_yarn) default
 to `eu` since they were built against the openLCA biosphere.
 
 ---
@@ -120,7 +120,7 @@ concerns since BAFU was designed for the openLCA biosphere.
 2. Import `Federal_LCA_Commons-TRACI_2_2.zip` matched against `fedefl_biosphere`
 3. Import USLCI JSON-LD with elementary flows matched to `fedefl_biosphere`
    by UUID (98.5% coverage) — no EcoSpold conversion needed
-4. Add `stack:` field to recipe card spec
+4. Add `stack:` field to product graph spec
 5. Engine changes: `BIOSPHERE_DB` becomes per-stack, `_FLOW_INDEX` becomes
    a dict keyed by stack name, LCIA method filtering uses stack to avoid
    cross-contamination
@@ -129,7 +129,7 @@ concerns since BAFU was designed for the openLCA biosphere.
 
 From `IMPLEMENT_database_backed_technosphere.md`:
 
-- **`lca_provider_search.py`** — `ProviderSearch` class resolves recipe card
+- **`lca_provider_search.py`** — `ProviderSearch` class resolves product graph
   technosphere inputs against background databases. Foreground links win;
   background database consulted if no foreground provider; cut-off (not
   crash) if nothing found, reported in `unlinked_flows`.
@@ -152,7 +152,7 @@ Phase 5): `Dockerfile.gdt`, `setup_olca.sh`, `start_olca.sh`,
    does it need a custom JSON-LD importer? Check openLCA Nexus for
    alternative export formats.
 
-2. **Stack default**: Should recipe cards without a `stack:` field default
+2. **Stack default**: Should product graphs without a `stack:` field default
    to `eu` (current biosphere) or require explicit declaration?
 
 3. **ReCiPe endpoint**: ReCiPe (endpoint: DALYs, species·yr, USD) is in

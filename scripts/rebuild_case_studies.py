@@ -1,11 +1,11 @@
 """
 scripts/rebuild_case_studies.py — Regenerate all case study JSON bundles.
 
-Reads each case_studies/*.md, runs SVG generation,
+Reads each case_studies/*.yaml, runs SVG generation,
 and writes the result back to case_studies/*.json.
-LCA results are not pre-computed — call run_lca() with the recipe card to compute them.
+LCA results are not pre-computed — call run_lca() with the product graph to compute them.
 
-Run after any change to lca_svg_engine or the recipe cards:
+Run after any change to lca_svg_engine or the product graphs:
     uv run python scripts/rebuild_case_studies.py
 """
 
@@ -30,34 +30,29 @@ def _process_names_from_spec(spec: dict) -> list[str]:
     return [p["name"] for p in spec.get("processes", [])]
 
 
-def rebuild(md_path: pathlib.Path):
-    name = md_path.stem
-    recipe_card = md_path.read_text()
+def rebuild(yaml_path: pathlib.Path):
+    name = yaml_path.stem
+    product_graph = yaml_path.read_text()
 
     print(f"  Generating SVGs...")
-    svg_scaled    = generate_svg(recipe_card, "scaled")
-    svg_structure = generate_svg(recipe_card, "structure")
+    svg_scaled    = generate_svg(product_graph, "scaled")
+    svg_structure = generate_svg(product_graph, "structure")
 
     import yaml
-    text = recipe_card.strip()
-    if text.startswith("---"):
-        _, fm, _ = text.split("---", 2)
-        spec = yaml.safe_load(fm)
-    else:
-        spec = yaml.safe_load(text)
+    spec = yaml.safe_load(product_graph)
 
     unit_process_svgs = {}
     for proc_name in _process_names_from_spec(spec):
-        unit_process_svgs[proc_name] = generate_unit_process_svg(recipe_card, proc_name)
+        unit_process_svgs[proc_name] = generate_unit_process_svg(product_graph, proc_name)
 
     bundle = {
-        "recipe_card": recipe_card,
+        "product_graph": product_graph,
         "svg_structure": svg_structure,
         "svg_scaled": svg_scaled,
         "unit_process_svgs": unit_process_svgs,
     }
 
-    out_path = md_path.with_suffix(".json")
+    out_path = yaml_path.with_suffix(".json")
     out_path.write_text(json.dumps(bundle, indent=2))
     print(f"  Wrote {out_path.name}")
 
@@ -68,15 +63,15 @@ def main():
     bd.projects.set_current(project)
     print(f"Brightway project: {project}")
 
-    md_files = sorted(CASE_STUDIES_DIR.glob("*.md"))
-    if not md_files:
-        print("No .md files found in case_studies/")
+    yaml_files = sorted(CASE_STUDIES_DIR.glob("*.yaml"))
+    if not yaml_files:
+        print("No .yaml files found in case_studies/")
         return
 
-    for md_path in md_files:
-        print(f"\n{md_path.name}")
+    for yaml_path in yaml_files:
+        print(f"\n{yaml_path.name}")
         try:
-            rebuild(md_path)
+            rebuild(yaml_path)
         except Exception as exc:
             print(f"  ERROR: {exc}")
 

@@ -2,7 +2,7 @@
 lca_server.py — Life Cycle Assessment MCP server (Brightway 2.5 engine).
 
 MCP Tools:
-    run_lca              — full LCA from a recipe card YAML string
+    run_lca              — full LCA from a product graph YAML string
     get_lca_svg          — supply chain diagram (scaled or structure)
     get_unit_process_svg — single-process card SVG
     list_impact_methods  — list all LCIA methods loaded in Brightway
@@ -50,31 +50,30 @@ _CASE_STUDIES_DIR = pathlib.Path(__file__).parent / "case_studies"
 # ── MCP tools ─────────────────────────────────────────────────────────────────
 
 @mcp.tool()
-def run_lca(recipe_card: str) -> dict:
+def run_lca(product_graph: str) -> dict:
     """
-    Run a full LCA from a recipe card YAML string.
+    Run a full LCA from a product graph YAML string.
 
     Returns LCI totals, LCIA impact scores, scaling vector, and two SVG
-    supply chain diagrams (svg_scaled and svg_structure). The recipe card
-    is the YAML frontmatter from a recipe_card.md file (with or without
-    the --- fence markers).
+    supply chain diagrams (svg_scaled and svg_structure). The product graph
+    is the contents of a product_graph.yaml file.
     """
-    result = run_analysis(recipe_card)
-    result["svg_scaled"]    = generate_svg(recipe_card, "scaled")
-    result["svg_structure"] = generate_svg(recipe_card, "structure")
+    result = run_analysis(product_graph)
+    result["svg_scaled"]    = generate_svg(product_graph, "scaled")
+    result["svg_structure"] = generate_svg(product_graph, "structure")
     return result
 
 
 @mcp.tool()
-def get_lca_svg(recipe_card: str, graph_type: str = "scaled") -> str:
+def get_lca_svg(product_graph: str, graph_type: str = "scaled") -> str:
     """
-    Generate a supply chain SVG diagram from a recipe card YAML string.
+    Generate a supply chain SVG diagram from a product graph YAML string.
 
     graph_type: "scaled"    — shows flow amounts and scaling factors
                 "structure" — shows flow names only
     Returns SVG as a string.
     """
-    return generate_svg(recipe_card, graph_type)
+    return generate_svg(product_graph, graph_type)
 
 
 @mcp.tool()
@@ -164,15 +163,15 @@ def query_lca_database(sql: str, limit: int = 100) -> dict:
 
 
 @mcp.tool()
-def get_unit_process_svg(recipe_card: str, process_name: str) -> str:
+def get_unit_process_svg(product_graph: str, process_name: str) -> str:
     """
     Generate a unit process card SVG for one named process in the supply chain.
 
-    process_name must match a process name in the recipe card exactly,
+    process_name must match a process name in the product graph exactly,
     e.g. "P1 — Sheep farming" or "P2 — Wool yarn production".
     Returns SVG as a string.
     """
-    return generate_unit_process_svg(recipe_card, process_name)
+    return generate_unit_process_svg(product_graph, process_name)
 
 
 @mcp.tool()
@@ -181,7 +180,7 @@ def list_case_studies() -> list:
     List the bundled teaching case studies available on this server.
     Each name can be passed to get_case_study() to retrieve the full bundle.
     """
-    return [p.stem for p in sorted(_CASE_STUDIES_DIR.glob("*.md"))]
+    return [p.stem for p in sorted(_CASE_STUDIES_DIR.glob("*.yaml"))]
 
 
 @mcp.tool()
@@ -190,22 +189,22 @@ def get_case_study(name: str) -> dict:
     Return the pre-computed bundle for a named case study.
 
     The bundle contains:
-        recipe_card       — full recipe card YAML text
+        product_graph       — full product graph YAML text
         svg_structure     — supply chain diagram (flow names only) as SVG string
         svg_scaled        — supply chain diagram (with amounts) as SVG string
         unit_process_svgs — dict of process_name → SVG string
 
-    LCA results are not pre-computed here — pass recipe_card to run_lca() to compute them.
+    LCA results are not pre-computed here — pass product_graph to run_lca() to compute them.
 
     Use list_case_studies() to see available names.
     """
     bundle_path = _CASE_STUDIES_DIR / f"{name}.json"
     if bundle_path.exists():
         return json.loads(bundle_path.read_text())
-    md_path = _CASE_STUDIES_DIR / f"{name}.md"
-    if md_path.exists():
-        return {"recipe_card": md_path.read_text()}
-    available = [p.stem for p in _CASE_STUDIES_DIR.glob("*.md")]
+    yaml_path = _CASE_STUDIES_DIR / f"{name}.yaml"
+    if yaml_path.exists():
+        return {"product_graph": yaml_path.read_text()}
+    available = [p.stem for p in _CASE_STUDIES_DIR.glob("*.yaml")]
     raise ValueError(f"Case study '{name}' not found. Available: {available}")
 
 
@@ -258,7 +257,7 @@ async def api_list_methods(request: Request) -> Response:
 
 @mcp.custom_route("/api/case-studies", methods=["GET"])
 async def api_list_case_studies(request: Request) -> Response:
-    return JSONResponse([p.stem for p in sorted(_CASE_STUDIES_DIR.glob("*.md"))])
+    return JSONResponse([p.stem for p in sorted(_CASE_STUDIES_DIR.glob("*.yaml"))])
 
 
 @mcp.custom_route("/api/case-studies/{name}", methods=["GET"])
@@ -267,10 +266,10 @@ async def api_get_case_study(request: Request) -> Response:
     bundle_path = _CASE_STUDIES_DIR / f"{name}.json"
     if bundle_path.exists():
         return JSONResponse(json.loads(bundle_path.read_text()))
-    md_path = _CASE_STUDIES_DIR / f"{name}.md"
-    if md_path.exists():
-        return JSONResponse({"recipe_card": md_path.read_text()})
-    available = [p.stem for p in _CASE_STUDIES_DIR.glob("*.md")]
+    yaml_path = _CASE_STUDIES_DIR / f"{name}.yaml"
+    if yaml_path.exists():
+        return JSONResponse({"product_graph": yaml_path.read_text()})
+    available = [p.stem for p in _CASE_STUDIES_DIR.glob("*.yaml")]
     return JSONResponse(
         {"detail": f"Case study '{name}' not found. Available: {available}"},
         status_code=404,
@@ -281,10 +280,10 @@ async def api_get_case_study(request: Request) -> Response:
 async def api_run_lca(request: Request) -> Response:
     try:
         body = await request.json()
-        recipe_card = body["recipe_card"]
-        result = run_analysis(recipe_card)
-        result["svg_scaled"]    = generate_svg(recipe_card, "scaled")
-        result["svg_structure"] = generate_svg(recipe_card, "structure")
+        product_graph = body["product_graph"]
+        result = run_analysis(product_graph)
+        result["svg_scaled"]    = generate_svg(product_graph, "scaled")
+        result["svg_structure"] = generate_svg(product_graph, "structure")
         return JSONResponse(result)
     except Exception as exc:
         return JSONResponse({"detail": str(exc)}, status_code=400)
@@ -294,7 +293,7 @@ async def api_run_lca(request: Request) -> Response:
 async def api_get_svg(request: Request) -> Response:
     try:
         body = await request.json()
-        return JSONResponse({"svg": generate_svg(body["recipe_card"], body.get("graph_type", "scaled"))})
+        return JSONResponse({"svg": generate_svg(body["product_graph"], body.get("graph_type", "scaled"))})
     except Exception as exc:
         return JSONResponse({"detail": str(exc)}, status_code=400)
 
@@ -303,7 +302,7 @@ async def api_get_svg(request: Request) -> Response:
 async def api_get_unit_process_svg(request: Request) -> Response:
     try:
         body = await request.json()
-        return JSONResponse({"svg": generate_unit_process_svg(body["recipe_card"], body["process_name"])})
+        return JSONResponse({"svg": generate_unit_process_svg(body["product_graph"], body["process_name"])})
     except Exception as exc:
         return JSONResponse({"detail": str(exc)}, status_code=400)
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-lca_svg.py  —  Generate an LCA product-system SVG from a recipe_card.md file.
+lca_svg.py  —  Generate an LCA product-system SVG from a product_graph.yaml file.
 
 This script produces two types of supply chain diagrams:
   • Scaled graph    — shows flow amounts and scaling factors (default)
@@ -15,17 +15,17 @@ analysis workflow.
 ├─────────────────────────────────────────────────────────────────────┤
 │                                                                     │
 │   # Scaled graph (with amounts + scaling factors)                   │
-│   python3 lca_svg.py lca_analysis/coffee/recipe_card.md             │
+│   python3 lca_svg.py lca_analysis/coffee/product_graph.yaml           │
 │                                                                     │
 │   # Structure graph (flow names only)                               │
-│   python3 lca_svg.py lca_analysis/coffee/recipe_card.md --structure │
+│   python3 lca_svg.py lca_analysis/coffee/product_graph.yaml --structure │
 │                                                                     │
 │   # Specify output path                                             │
-│   python3 lca_svg.py recipe_card.md my_graph.svg                    │
+│   python3 lca_svg.py product_graph.yaml my_graph.svg                  │
 │                                                                     │
-│   # Or the default — just pass the recipe card path:                │
-│   #   python3 lca_svg.py lca_analysis/coffee/recipe_card.md         │
-│   #   →  writes lca_analysis/coffee/recipe_card.svg                 │
+│   # Or the default — just pass the product graph path:                │
+│   #   python3 lca_svg.py lca_analysis/coffee/product_graph.yaml       │
+│   #   →  writes lca_analysis/coffee/product_graph.svg                 │
 │                                                                     │
 └─────────────────────────────────────────────────────────────────────┘
 
@@ -860,8 +860,8 @@ def generate(recipe_path: str, out_path: str, show_quantities: bool = True):
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(
-        description="Generate an LCA product-system SVG from a recipe card.")
-    parser.add_argument('recipe', help='Path to recipe_card.md')
+        description="Generate an LCA product-system SVG from a product graph.")
+    parser.add_argument('recipe', help='Path to product_graph.yaml')
     parser.add_argument('output', nargs='?', default=None,
                         help='Output SVG path (default: same dir as recipe)')
     parser.add_argument('--structure', action='store_true',

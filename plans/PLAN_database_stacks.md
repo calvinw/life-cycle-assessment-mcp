@@ -63,7 +63,7 @@ Rather than selecting a tarball at deploy time, the server can download stack
 components on first use:
 
 ```
-run_lca(recipe_card=..., stack="swiss")
+run_lca(product_graph=..., stack="swiss")
   → _ensure_stack("swiss")
       → if "bafu" not in bd.databases:
             download bafu tarball (~8 sec on DO droplet)
@@ -145,7 +145,7 @@ STACK_CONFIG = {
 _FLOW_INDEX: dict[str, dict] = {}   # biosphere_name → {(name, compartment) → key}
 ```
 
-### Recipe card changes
+### Product graph changes
 
 One optional new field:
 
@@ -153,7 +153,7 @@ One optional new field:
 stack: swiss   # default if omitted: "default"
 ```
 
-Existing recipe cards without `stack:` continue to work unchanged.
+Existing product graphs without `stack:` continue to work unchanged.
 
 ---
 
@@ -194,7 +194,7 @@ search_database("cotton", database="bafu")         # BAFU processes
 3. **Add `_ensure_stack()`** to `lca_engine.py` with lazy download
 4. **Parameterise `BIOSPHERE_DB`** — thread `stack` arg through
    `run_analysis()`, `_find_biosphere_flow()`, `_FLOW_INDEX`
-5. **Add `stack:` field** to recipe card spec and engine parser
+5. **Add `stack:` field** to product graph spec and engine parser
 6. **Update `run_lca` MCP tool** — expose `stack` parameter
 7. **Add USLCI stack** — same pattern, different tarball
 
@@ -202,7 +202,7 @@ search_database("cotton", database="bafu")         # BAFU processes
 
 ## Open Questions
 
-1. Should the `stack` field be in the recipe card YAML or passed as a separate
+1. Should the `stack` field be in the product graph YAML or passed as a separate
    `run_lca()` argument? Separate arg is more flexible; YAML is more
    reproducible/self-contained.
 

@@ -1,4 +1,4 @@
-# Plan: Database-Backed Process Inputs in Recipe Cards
+# Plan: Database-Backed Process Inputs in Product Graphs
 
 ## Decision: Replace gdt-server with Brightway 2.5
 
@@ -38,14 +38,14 @@ bw_processing, matrix_utils). Do not confuse with the experimental
 
 ## Problem Statement
 
-Currently, every number in a recipe card — all flows, emissions, and resource
+Currently, every number in a product graph — all flows, emissions, and resource
 extractions — is hand-authored directly in the YAML. For a production LCA
 server we want process inputs to optionally link to real background inventory
 databases (USLCI and others) so that upstream supply chains are resolved
 accurately by the solver.
 
 The system supports a **hybrid model**: if an input has explicit amounts in the
-recipe card, use them; if an input has no amounts, look it up in the database
+product graph, use them; if an input has no amounts, look it up in the database
 and resolve its upstream supply chain recursively. This matches how openLCA
 desktop works when mixing foreground unit processes with background database
 processes.
@@ -55,7 +55,7 @@ processes.
 ## Current Architecture (How Numbers Flow Today)
 
 ```
-Recipe Card (YAML)
+Product Graph (YAML)
   └─ processes[i]
        ├─ reference_output: { flow, amount }
        ├─ inputs: [{ flow, amount }]         ← foreground links only (A-matrix)
@@ -71,7 +71,7 @@ lca_engine.py
 ## Target Architecture
 
 ```
-Recipe Card (YAML)
+Product Graph (YAML)
   └─ processes[i]
        ├─ reference_output: { flow, amount }
        ├─ inputs: [{ flow, amount }]              ← foreground (hand-authored)
@@ -113,10 +113,10 @@ runs reuse the Brightway project from disk (SQLite, stored in
 
 ### Decision Tree for Each Input
 
-For every input entry in a recipe card process:
+For every input entry in a product graph process:
 
 ```
-Does the input have explicit emission/resource amounts in the recipe card?
+Does the input have explicit emission/resource amounts in the product graph?
   YES → use those amounts directly (foreground, unchanged behaviour)
   NO  → does the input have a db_ref?
           YES → fetch the pinned process from the named database
@@ -125,7 +125,7 @@ Does the input have explicit emission/resource amounts in the recipe card?
                   NOT FOUND → cut-off with warning in unlinked_flows
 ```
 
-### Recipe Card Syntax
+### Product Graph Syntax
 
 ```yaml
 inputs:
@@ -151,7 +151,7 @@ inputs:
 
 ---
 
-## Schema Changes to Recipe Cards
+## Schema Changes to Product Graphs
 
 ### Modified `inputs` entry
 
@@ -244,7 +244,7 @@ Every result includes `unlinked_flows`:
 
 ### Gap Filling Options (explicit, never automatic)
 
-1. Add a foreground process to the recipe card modelling the missing upstream
+1. Add a foreground process to the product graph modelling the missing upstream
 2. Load an additional database that contains the missing process
 3. Add a `db_ref` override on the specific input pointing to a proxy process
 
@@ -276,7 +276,7 @@ Every result includes `unlinked_flows`:
 Replace all `RestClient` / openLCA object construction with Brightway
 equivalents.
 
-**Foreground process construction (from recipe card):**
+**Foreground process construction (from product graph):**
 ```python
 import bw2data as bd
 
@@ -411,7 +411,7 @@ database: `"Electricity, at grid/US [uslci]": 0.45`.
 
 ---
 
-## Recipe Card Example (Hybrid Mode)
+## Product Graph Example (Hybrid Mode)
 
 ```yaml
 name: "Cotton Fiber — 1 kg"
@@ -475,9 +475,9 @@ reference_process: P2 — Cotton farming
 
 ## What Does NOT Change
 
-- Recipe card YAML format is backward compatible — existing cards with all
+- Product graph YAML format is backward compatible — existing graphs with all
   amounts hand-authored work without modification
-- LCIA method names in recipe cards (`TRACI 2.2`, etc.) are unchanged
+- LCIA method names in product graphs (`TRACI 2.2`, etc.) are unchanged
 - Output keys (`lci`, `lcia`, `scaling_vector`) are unchanged in structure
 - `lca_svg.py` SVG generation is largely unchanged
 
@@ -494,7 +494,7 @@ reference_process: P2 — Cotton farming
    to `uslci → biosphere`.
 
 3. **SVG upstream depth cutoff**: how many levels to render before collapsing.
-   Recommendation: default 2, configurable per recipe card.
+   Recommendation: default 2, configurable per product graph.
 
 4. **UUID vs. name in `db_ref.process`**: Recommendation: if value parses as
    UUID use direct lookup; otherwise search by name, error if ambiguous.
@@ -513,4 +513,4 @@ reference_process: P2 — Cotton farming
 | `config.yml` | New: Brightway project name, database priority list |
 | `scripts/setup_databases.py` | New: first-run database import (biosphere, LCIA, USLCI) |
 | New: `lca_validator.py` | Parse-time and post-search validation |
-| `case_studies/*.md` | Add `db_ref` or implicit inputs as needed per case study |
+| `case_studies/*.yaml` | Add `db_ref` or implicit inputs as needed per case study |

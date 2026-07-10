@@ -1,0 +1,53 @@
+# ─────────────────────────────────────────────────────────────
+# LCA Teaching Reference — Wool Yarn
+# Skills reference: skills_references/wool_yarn/
+# ─────────────────────────────────────────────────────────────
+
+name: Wool Yarn — 1 kg
+goal: >
+  Calculate the climate impact of producing 1 kg of wool yarn,
+  tracing the supply chain from sheep farming through scouring and spinning.
+  This is a 2-process chain designed to show how methane (CH4) from livestock
+  completely dominates the climate impact once characterization factors are applied —
+  even though the raw kg of CH4 looks small compared to the CO2 from processing.
+
+functional_unit:
+  description: 1 kg of wool yarn, ready for knitting or weaving
+  amount: 1.0
+  unit: kg
+
+units:
+  kg: Mass
+  L: Volume
+
+products:
+  - { name: Raw wool,  unit: kg }
+  - { name: Wool yarn, unit: kg }
+
+elementary_flows:
+  emissions:
+    - { name: Carbon dioxide, compartment: air,   unit: kg }
+    - { name: Methane,        compartment: air,   unit: kg }
+  resources:
+    - { name: Water,          compartment: water, unit: L  }
+
+processes:
+  - name: P1 — Sheep farming
+    reference_output: { flow: Raw wool, amount: 1.0 }
+    emissions:
+      - { flow: Carbon dioxide, amount: 0.5 }
+      - { flow: Methane,        amount: 0.4 }
+
+  - name: P2 — Wool yarn production
+    reference_output: { flow: Wool yarn, amount: 1.0 }
+    inputs:
+      - { flow: Raw wool, amount: 1.1 }
+    emissions:
+      - { flow: Carbon dioxide, amount: 2.0 }
+    resources:
+      - { flow: Water, amount: 30 }
+
+reference_process: "P2 — Wool yarn production"
+
+lcia:
+  method_name: "TRACI v2.1"

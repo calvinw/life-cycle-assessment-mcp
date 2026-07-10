@@ -1,0 +1,59 @@
+# ─────────────────────────────────────────────────────────────
+# LCA Teaching Reference — Cotton Fiber
+# Skills reference: skills_references/cotton_fiber/
+# ─────────────────────────────────────────────────────────────
+
+name: Cotton Fiber — 1 kg
+goal: >
+  Calculate the climate and eutrophication impact of producing 1 kg of cotton
+  fiber, tracing the supply chain from synthetic fertilizer production through
+  cotton farming. This is a 2-process chain that introduces two impact
+  categories at once — climate change (GWP100) and terrestrial eutrophication
+  (EP-terrestrial) — and shows how the same emission (N2O from fertilised soil)
+  contributes to both categories simultaneously. The key teaching moment is
+  that cotton's "natural" reputation hides a chemistry problem in the field:
+  N2O is 273 times more potent than CO2, and NH3 damages waterways and
+  ecosystems independently of its climate contribution.
+
+functional_unit:
+  description: 1 kg of ginned cotton fiber, ready for spinning
+  amount: 1.0
+  unit: kg
+
+units:
+  kg: Mass
+  L: Volume
+
+products:
+  - { name: N-fertilizer,  unit: kg }
+  - { name: Cotton fiber,  unit: kg }
+
+elementary_flows:
+  emissions:
+    - { name: Carbon dioxide, compartment: air, unit: kg }
+    - { name: Nitrous oxide,  compartment: air, unit: kg }
+    - { name: Ammonia,        compartment: air, unit: kg }
+  resources:
+    - { name: Water,          compartment: water, unit: L }
+
+processes:
+  - name: P1 — Fertilizer production
+    reference_output: { flow: N-fertilizer, amount: 1.0 }
+    emissions:
+      - { flow: Carbon dioxide, amount: 3.5 }
+
+  - name: P2 — Cotton farming
+    reference_output: { flow: Cotton fiber, amount: 1.0 }
+    inputs:
+      - { flow: N-fertilizer, amount: 0.2 }
+    emissions:
+      - { flow: Carbon dioxide, amount: 0.8   }
+      - { flow: Nitrous oxide,  amount: 0.015 }
+      - { flow: Ammonia,        amount: 0.010 }
+    resources:
+      - { flow: Water, amount: 8000 }
+
+reference_process: "P2 — Cotton farming"
+
+lcia:
+  method_name: "TRACI v2.1"

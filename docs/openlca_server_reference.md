@@ -36,12 +36,12 @@ released 2026-06-18) and contains:
   CML-IA, EF 3.1, IPCC 2021, USEtox 2, and more (full list below)
 - **FEDEFL elementary flows** — the US EPA's Federal Elementary Flow List,
   which provides the standard names for emissions (Carbon dioxide, Sulfur
-  dioxide, etc.) and resources that recipe cards must use
+  dioxide, etc.) and resources that product graphs must use
 - **Unit groups and flow properties** — the conversion factors that allow the
   server to understand units like kg, kWh, and m³
 
 It does **not** contain ecoinvent background inventory data. All supply chain
-processes are defined in the recipe cards themselves.
+processes are defined in the product graphs themselves.
 
 ### How the database gets installed
 
@@ -229,8 +229,8 @@ USEtox 2 (recommended + interim)
    `result.get_total_impacts()` for the LCIA scores (Step 12 and 14)
 5. Calls `result.dispose()` to free server memory when done
 
-The `lcia:` section of a recipe card controls which method is used at step 4.
-Changing `method_name` in the recipe card is the only thing you need to do to
+The `lcia:` section of a product graph controls which method is used at step 4.
+Changing `method_name` in the product graph is the only thing you need to do to
 switch methods — the script looks up the method by name and passes it to the
 calculation.
 
@@ -242,5 +242,5 @@ calculation.
 |---|---|---|
 | `Connection refused` on port 8080 | Server is not running | `bash start_olca.sh` |
 | `404 Not Found` on POST requests | Using `ipc.Client` instead of `RestClient` | Switch to `RestClient` |
-| LCIA scores all zero for a category | Flow name does not match FEDEFL | Check spelling in recipe card (e.g. `Carbon dioxide` not `CO2`) |
-| `method not found` warning | Method name typo in recipe card | Copy the name exactly from the list above |
+| LCIA scores all zero for a category | Flow name does not match FEDEFL | Check spelling in product graph (e.g. `Carbon dioxide` not `CO2`) |
+| `method not found` warning | Method name typo in product graph | Copy the name exactly from the list above |

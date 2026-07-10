@@ -1,7 +1,7 @@
 """
 lca_engine.py — Brightway 2.5 LCA engine.
 
-Accepts a recipe card as a YAML string.
+Accepts a product graph as a YAML string.
 Returns a structured dict with LCI totals, LCIA scores, and scaling vector.
 No external server required — all computation runs in-process via Brightway.
 
@@ -78,8 +78,8 @@ def _ensure_project():
     bd.projects.set_current(BRIGHTWAY_PROJECT)
 
 
-def _load_spec(recipe_card_yaml: str) -> dict:
-    text = recipe_card_yaml.strip()
+def _load_spec(product_graph_yaml: str) -> dict:
+    text = product_graph_yaml.strip()
     if text.startswith("---"):
         _, fm, _ = text.split("---", 2)
         return yaml.safe_load(fm)
@@ -210,7 +210,7 @@ def _build_foreground_db(spec: dict) -> tuple[dict, dict]:
                 if provider is None:
                     raise ValueError(
                         f"Input flow '{inp['flow']}' in process '{proc['name']}' "
-                        f"has no provider in this recipe card."
+                        f"has no provider in this product graph."
                     )
             act.new_exchange(
                 input=provider,
@@ -225,7 +225,7 @@ def _build_foreground_db(spec: dict) -> tuple[dict, dict]:
                 raise ValueError(
                     f"Emission flow '{em['flow']}' (compartment: {compartment}) "
                     f"not found in '{BIOSPHERE_DB}'. "
-                    f"Check the flow name and compartment in your recipe card."
+                    f"Check the flow name and compartment in your product graph."
                 )
             act.new_exchange(
                 input=flow,
@@ -240,7 +240,7 @@ def _build_foreground_db(spec: dict) -> tuple[dict, dict]:
                 raise ValueError(
                     f"Resource flow '{res['flow']}' (compartment: {compartment}) "
                     f"not found in '{BIOSPHERE_DB}'. "
-                    f"Check the flow name and compartment in your recipe card."
+                    f"Check the flow name and compartment in your product graph."
                 )
             act.new_exchange(
                 input=flow,
@@ -251,9 +251,9 @@ def _build_foreground_db(spec: dict) -> tuple[dict, dict]:
     return activities, product_to_activity
 
 
-def run_analysis(recipe_card_yaml: str) -> dict:
+def run_analysis(product_graph_yaml: str) -> dict:
     _ensure_project()
-    spec = _load_spec(recipe_card_yaml)
+    spec = _load_spec(product_graph_yaml)
 
     activities, _ = _build_foreground_db(spec)
 
@@ -339,7 +339,7 @@ def run_analysis(recipe_card_yaml: str) -> dict:
     }
 
 
-def get_contributions(recipe_card_yaml: str, method_name: str, top_n: int = 10) -> dict:
+def get_contributions(product_graph_yaml: str, method_name: str, top_n: int = 10) -> dict:
     """
     Run contribution analysis for a single named impact category.
 
@@ -353,7 +353,7 @@ def get_contributions(recipe_card_yaml: str, method_name: str, top_n: int = 10) 
     import bw2analyzer as ba
     _ensure_project()
 
-    spec = _load_spec(recipe_card_yaml)
+    spec = _load_spec(product_graph_yaml)
     method_name_full = spec["lcia"]["method_name"]
     method_tuples = sorted(
         [m for m in bd.methods if len(m) >= 2 and m[0] == method_name_full],
@@ -528,7 +528,7 @@ def search_database(query: str, database: str = "biosphere3", limit: int = 25) -
     ]
 
 
-def top_emissions(recipe_card_yaml: str, method_name: str, top_n: int = 15) -> list:
+def top_emissions(product_graph_yaml: str, method_name: str, top_n: int = 15) -> list:
     """
     Return the top biosphere flows (emissions/resources) driving impact for one
     LCIA category, ranked by absolute direct impact score.
@@ -541,7 +541,7 @@ def top_emissions(recipe_card_yaml: str, method_name: str, top_n: int = 15) -> l
     import bw2analyzer as ba
     _ensure_project()
 
-    spec = _load_spec(recipe_card_yaml)
+    spec = _load_spec(product_graph_yaml)
     method_name_full = spec["lcia"]["method_name"]
     method_tuples = sorted(
         [m for m in bd.methods if len(m) >= 2 and m[0] == method_name_full],

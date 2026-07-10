@@ -1,14 +1,14 @@
-# Plan: Unified SVG Engine for Recipe Cards and BAFU Background Processes
+# Plan: Unified SVG Engine for Product Graphs and BAFU Background Processes
 
 ## Current State
 
 There are currently **two separate SVG pipelines** that work differently:
 
-### Pipeline 1 — `lca_svg.py` (recipe cards)
+### Pipeline 1 — `lca_svg.py` (product graphs)
 
 Used by `lca_svg_engine.py` and the MCP tools `get_lca_svg` and `get_unit_process_svg`.
 
-**Input:** Recipe card YAML (foreground-only, hand-authored)
+**Input:** Product graph YAML (foreground-only, hand-authored)
 
 **Approach:**
 1. Parse YAML to get processes, flows, emissions, resources
@@ -29,7 +29,7 @@ Used by `lca_svg_engine.py` and the MCP tools `get_lca_svg` and `get_unit_proces
 - Scaling factors shown on each process box (s1 = 0.52 etc.)
 - "to Air", "from Nature" labels on biosphere arrows
 
-**Limitation:** Only works for explicitly-authored foreground recipe cards.
+**Limitation:** Only works for explicitly-authored foreground product graphs.
 Cannot handle background BAFU processes automatically.
 
 ---
@@ -63,7 +63,7 @@ Cannot handle background BAFU processes automatically.
 
 Replace both pipelines with a single engine that:
 
-1. Accepts **either** a recipe card YAML **or** a Brightway activity as input
+1. Accepts **either** a product graph YAML **or** a Brightway activity as input
 2. Uses `bw_graph_tools` traversal for the actual LCA computation in both cases
 3. Uses `dot -Tplain` + hand-rendered SVG (Pipeline 1's approach) for all output
 4. Adds elementary flow arms to BAFU background processes by reading biosphere
@@ -73,7 +73,7 @@ Replace both pipelines with a single engine that:
 
 ```
 Input (one of):
-  A) Recipe card YAML  →  build foreground db  →  run LCA
+  A) Product graph YAML  →  build foreground db  →  run LCA
   B) Brightway activity  →  run LCA directly
 
          ↓
@@ -121,12 +121,12 @@ Input (one of):
    traversal, build_graph_data, dot, render_svg.
 
 5. **Adapt `lca_svg.py:generate()`** to use the same render_svg path for
-   recipe cards, replacing the current parallel implementation.
+   product graphs, replacing the current parallel implementation.
 
 ### What stays the same
 - `lca_svg_engine.py` — thin wrapper, no changes needed
 - `lca_server.py` MCP tools — no changes needed
-- Recipe card YAML format — no changes needed
+- Product graph YAML format — no changes needed
 - `generate_unit_process()` — can stay as-is (single process card, different layout)
 
 ### SVG visual additions for BAFU graphs
