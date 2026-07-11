@@ -5,3 +5,12 @@ lca_debug/
 brightway_data/
 data/
 .claude/
+
+# Generated local agent and Skillshare state
+.agents/
+.codex/config.toml
+.crush/
+.github/skills/
+.opencode/skills/
+.skillshare/.gitignore
+.skillshare/skills/.metadata.json
