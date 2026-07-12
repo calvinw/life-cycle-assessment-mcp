@@ -24,7 +24,7 @@ occurs during scouring (washing the fleece) and carding (combing the fibers).
 
 ### LCIA method
 
-IPCC Sixth Assessment Report (AR6), GWP100. Characterization factors:
+TRACI v2.1, climate change (GWP100). Characterization factors:
 - CO2: 1.0 kg CO2 eq per kg
 - CH4: 25.0 kg CO2-Eq per kg (fossil methane, TRACI v2.1; 20-year GWP is 81.2)
 
@@ -32,7 +32,7 @@ IPCC Sixth Assessment Report (AR6), GWP100. Characterization factors:
 
 The raw CH4 emitted at the sheep farm (0.4 kg × 1.1 scaling = 0.44 kg) looks
 modest compared to the CO2 from processing (2.0 kg). But once the GWP100
-characterization factor of 27.9 is applied:
+characterization factor of 25.0 is applied:
 
 - CH4 contribution: 0.44 × 25.0 = **11.0 kg CO2-Eq**
 - CO2 from farming: 0.55 kg CO2-Eq

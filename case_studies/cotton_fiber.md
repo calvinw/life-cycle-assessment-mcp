@@ -4,7 +4,7 @@ A cradle-to-gate LCA for 1 kg of ginned cotton fiber, covering the production
 of synthetic nitrogen fertilizer and the cotton farm. Numbers are illustrative,
 calibrated to published ranges for irrigated cotton systems. The chain is kept
 to two processes so the focus stays on the LCIA step — specifically the
-surprising dominance of N2O and the dual-category role of nitrogen emissions.
+surprising dominance of N2O and the different impacts of nitrogen emissions.
 
 ### Supply chain
 
@@ -69,7 +69,7 @@ Two impact categories:
 
 The raw N2O emission from the cotton field (0.015 kg) looks tiny compared to
 the CO2 from the farm (0.8 kg) and fertilizer factory (0.2 × 3.5 = 0.7 kg).
-But the GWP100 characterization factor of 273 transforms it:
+But the TRACI v2.1 GWP100 characterization factor of 298 transforms it:
 - 0.015 kg N2O → 4.47 kg CO2-Eq
 - All CO2 combined → 1.50 kg CO2-Eq
 - **N2O accounts for 75% of the total climate impact**
@@ -77,12 +77,13 @@ But the GWP100 characterization factor of 273 transforms it:
 Cotton has a natural reputation. The problem is not the factory — it is the
 field chemistry caused by synthetic nitrogen fertilizer.
 
-**2. N2O appears in both impact categories**
+**2. Different nitrogen emissions matter in different impact categories**
 
-N2O contributes to GWP100 (as a greenhouse gas) AND to EP-terrestrial (because
-it contains nitrogen that eventually deposits in ecosystems). The same emission
-causes two different types of environmental damage simultaneously. This is why
-studying only one impact category gives an incomplete picture.
+N2O is the climate-change hotspot in this example, while NH3 is the
+eutrophication hotspot. TRACI v2.1 assigns N2O no eutrophication
+characterization factor here, and assigns NH3 no climate-change
+characterization factor. Studying only one impact category would therefore
+miss an important part of the environmental picture.
 
 **3. NH3 causes eutrophication but not climate change**
 

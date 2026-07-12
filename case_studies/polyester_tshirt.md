@@ -36,7 +36,14 @@ teaching moment for the scaling vector concept.
 | P2 Polyester fiber | CO2 to air | 5.50 kg / kg fiber | Polymerisation, high-temp energy |
 | P3 T-shirt assembly | CO2 to air | 1.00 kg / shirt | Cutting, sewing, factory electricity |
 
-### LCIA results (GWP100, IPCC AR6)
+### LCIA method
+
+TRACI v2.1, climate change (GWP100). Characterization factors used here:
+
+- CO2: 1.0 kg CO2-Eq per kg
+- CH4 (fossil): 25.0 kg CO2-Eq per kg
+
+### LCIA results
 
 | Process | s | CO2 direct | CH4 (×25.0) | Contribution |
 |---|---|---|---|---|
