@@ -139,11 +139,15 @@ def get_bafu_svg(
 @mcp.tool()
 def get_lca_database_schema() -> dict:
     """
-    Return the schema and freshness of the searchable SQLite projection.
+    Return the exact public DDL, freshness, and query contract of the searchable
+    SQLite projection.
 
-    Call this before writing SQL queries with query_lca_database() to understand
-    the available typed columns, views, and endpoint direction. This tool does
-    not expose Brightway's internal databases.db file.
+    The schema_objects list contains the live CREATE statements for every
+    supported table, virtual FTS table, view, and explicit index. Call this
+    before writing SQL with query_lca_database(). This tool describes the
+    separate search.sqlite3 projection, never Brightway's internal databases.db
+    file. FTS5 shadow tables and SQLite auto-indexes are excluded because they
+    are storage internals, not supported query surfaces.
     """
     return get_database_schema()
 
