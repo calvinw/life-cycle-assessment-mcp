@@ -904,36 +904,111 @@ def get_activity_inputs(
 
 
 def get_search_schema(project: str | None = None) -> dict[str, Any]:
-    """Return projection schema documentation and freshness."""
+    """Return the exact public SQLite schema and its query contract.
+
+    The DDL comes from the live projection's ``sqlite_schema`` table. FTS5
+    shadow tables and SQLite auto-indexes are intentionally omitted: they are
+    storage internals, not supported query surfaces.
+    """
     path, status = _require_fresh_projection(project=project)
     uri = f"{path.resolve().as_uri()}?mode=ro"
-    tables: dict[str, Any] = {}
     with contextlib.closing(sqlite3.connect(uri, uri=True)) as conn:
-        for name in (*PUBLIC_TABLES, *PUBLIC_VIEWS):
-            escaped = name.replace('"', '""')
-            columns = conn.execute(f'PRAGMA table_info("{escaped}")').fetchall()
-            tables[name] = {
-                "kind": "view" if name in PUBLIC_VIEWS else "table",
-                "columns": {
-                    row[1]: {"type": row[2] or "FTS5", "not_null": bool(row[3])}
-                    for row in columns
-                },
-            }
+        schema_objects = _public_schema_objects(conn)
     return {
         "schema_version": SCHEMA_VERSION,
-        "tables": tables,
+        "schema_scope": "public searchable SQLite projection",
+        "schema_objects": schema_objects,
         "freshness": {
             key: status.get(key)
             for key in ("fresh", "built_at", "source_databases", "activity_count", "exchange_count")
         },
-        "notes": [
-            "This is a read-only search projection; Brightway remains authoritative.",
-            "Exchange output is the consuming activity; exchange input is the supplied activity or biosphere flow.",
-            "Exchange amounts are direct inventory values, not LCIA results.",
-            "Use exchange_details for readable endpoint joins.",
-        ],
+        "query_contract": {
+            "read_only": True,
+            "allowed_statements": ["SELECT", "WITH ... SELECT"],
+            "default_result_limit": 100,
+            "result_limit_range": [1, 10_000],
+            "timeout_seconds": 3,
+            "denied": [
+                "mutations",
+                "multiple statements",
+                "PRAGMA",
+                "ATTACH",
+                "extension loading",
+            ],
+        },
+        "semantics": {
+            "source_of_truth": "Brightway; this projection is disposable and read-only",
+            "foreground_included": False,
+            "exchange_direction": (
+                "output_* identifies the consuming activity; input_* identifies "
+                "the supplied activity or biosphere flow"
+            ),
+            "amount_meaning": (
+                "Direct inventory quantity in the exchange unit; not an LCIA "
+                "score or impact contribution"
+            ),
+            "recommended_exchange_view": "exchange_details",
+        },
         "examples": {
-            "activity_search": "SELECT database, code, name, location FROM activities WHERE name LIKE '%cotton%'",
-            "direct_inputs": "SELECT input_name, amount, unit FROM exchange_details WHERE output_database='bafu' AND output_code='<code>' AND exchange_type='technosphere'",
+            "activity_search": (
+                "SELECT database, code, name, location, unit FROM activities "
+                "WHERE database='bafu' AND name LIKE '%cotton%'"
+            ),
+            "full_text_search": (
+                "SELECT database, code, name FROM activities_fts "
+                "WHERE activities_fts MATCH '\"polylactide\"'"
+            ),
+            "direct_technosphere_inputs": (
+                "SELECT input_database, input_code, input_name, input_location, "
+                "amount, unit FROM exchange_details WHERE output_database='bafu' "
+                "AND output_code='<code>' AND exchange_type='technosphere' "
+                "ORDER BY ABS(amount) DESC"
+            ),
+            "direct_biosphere_exchanges": (
+                "SELECT input_name, amount, unit FROM exchange_details "
+                "WHERE output_database='bafu' AND output_code='<code>' "
+                "AND exchange_type='biosphere' ORDER BY ABS(amount) DESC"
+            ),
+            "reverse_consumers": (
+                "SELECT output_database, output_code, consumer_name, amount, unit "
+                "FROM exchange_details WHERE input_database='bafu' "
+                "AND input_code='<code>' AND exchange_type='technosphere'"
+            ),
+            "exchange_type_audit": (
+                "SELECT exchange_type, COUNT(*) AS exchange_count FROM "
+                "exchange_details WHERE output_database='bafu' "
+                "AND output_code='<code>' GROUP BY exchange_type"
+            ),
         },
     }
+
+
+def _public_schema_objects(conn: sqlite3.Connection) -> list[dict[str, Any]]:
+    """Return exact DDL for supported public relations and their indexes."""
+    public_relations = (*PUBLIC_TABLES, *PUBLIC_VIEWS)
+    placeholders = ",".join("?" for _ in public_relations)
+    rows = conn.execute(
+        f"""
+        SELECT type, name, tbl_name, sql
+        FROM sqlite_schema
+        WHERE sql IS NOT NULL
+          AND (
+            name IN ({placeholders})
+            OR (type = 'index' AND tbl_name IN ({placeholders}))
+          )
+        ORDER BY
+          CASE type WHEN 'table' THEN 1 WHEN 'view' THEN 2 WHEN 'index' THEN 3 ELSE 4 END,
+          name
+        """,
+        (*public_relations, *public_relations),
+    ).fetchall()
+
+    objects = []
+    for object_type, name, table_name, sql in rows:
+        if object_type == "table" and sql.lstrip().upper().startswith("CREATE VIRTUAL TABLE"):
+            object_type = "virtual_table"
+        item = {"type": object_type, "name": name, "sql": sql}
+        if object_type == "index":
+            item["table"] = table_name
+        objects.append(item)
+    return objects

@@ -8,6 +8,7 @@ from lca_search import (
     _create_schema,
     _fts_expression,
     _json_text,
+    _public_schema_objects,
     query_search_database,
 )
 
@@ -107,6 +108,26 @@ class SearchProjectionTests(unittest.TestCase):
             "SELECT consumer_name, input_name, amount, unit FROM exchange_details"
         )
         self.assertEqual(result["rows"], [["Cotton yarn", "Wool yarn", 2.5, "kg"]])
+
+    def test_public_schema_objects_return_exact_supported_ddl(self):
+        conn = sqlite3.connect(self.path)
+        try:
+            objects = _public_schema_objects(conn)
+        finally:
+            conn.close()
+
+        by_name = {item["name"]: item for item in objects}
+        self.assertIn("activities", by_name)
+        self.assertIn("exchanges", by_name)
+        self.assertIn("activities_fts", by_name)
+        self.assertIn("exchange_details", by_name)
+        self.assertIn("exchange_output", by_name)
+        self.assertEqual(by_name["activities_fts"]["type"], "virtual_table")
+        self.assertIn("PRIMARY KEY (database, code)", by_name["activities"]["sql"])
+        self.assertIn("FOREIGN KEY (output_database, output_code)", by_name["exchanges"]["sql"])
+        self.assertIn("CREATE VIEW exchange_details", by_name["exchange_details"]["sql"])
+        self.assertEqual(by_name["exchange_output"]["table"], "exchanges")
+        self.assertFalse(any(item["name"].startswith("activities_fts_") for item in objects))
 
 
 if __name__ == "__main__":
