@@ -15,7 +15,7 @@ COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev --no-install-project
 
 # Application code
-COPY sse_server.py lca_server.py lca_engine.py lca_svg_engine.py lca_svg.py ./
+COPY sse_server.py lca_server.py lca_engine.py lca_search.py lca_svg_engine.py lca_svg.py ./
 COPY case_studies/ ./case_studies/
 COPY scripts/ ./scripts/
 

@@ -32,12 +32,16 @@ import zipfile
 
 import numpy as np
 
+ROOT = pathlib.Path(__file__).resolve().parent.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 if "BRIGHTWAY2_DIR" not in os.environ:
-    _bw_dir = pathlib.Path(__file__).parent.parent / "brightway_data"
+    _bw_dir = ROOT / "brightway_data"
     _bw_dir.mkdir(exist_ok=True)
     os.environ["BRIGHTWAY2_DIR"] = str(_bw_dir)
 
-DATA_DIR = pathlib.Path(__file__).parent.parent / "data"
+DATA_DIR = ROOT / "data"
 BAFU_DB_NAME = "bafu"
 
 # ── unit normalisation (EcoSpold abbreviations → Brightway names) ─────────────
@@ -471,6 +475,11 @@ def main():
     for name in bd.databases:
         print(f"  DB  {name}: {len(bd.Database(name))} entries")
     print(f"  Methods: {len(list(bd.methods))}")
+
+    print(f"\n── Search projection ──")
+    from lca_search import build_search_database
+
+    build_search_database(databases=[BAFU_DB_NAME], project=project)
     print("\nDone.")
 
 

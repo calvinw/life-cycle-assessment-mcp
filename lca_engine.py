@@ -37,25 +37,56 @@ TARBALL_URL = (
 )
 
 _db_lock = threading.Lock()
+_startup_databases_ready = False
+
+
+def _ensure_search_projection():
+    """Build the disposable search database when it is missing or stale."""
+    from lca_search import build_search_database, get_projection_status
+
+    status = get_projection_status(project=BRIGHTWAY_PROJECT)
+    if status.get("fresh"):
+        return status
+
+    reason = status.get("reason", "Search projection is unavailable")
+    print(f"[lca_engine] {reason} — rebuilding search projection...")
+    build_search_database(databases=["bafu"], project=BRIGHTWAY_PROJECT)
+    status = get_projection_status(project=BRIGHTWAY_PROJECT)
+    if not status.get("fresh"):
+        raise RuntimeError(
+            "Search projection build completed but freshness validation failed: "
+            f"{status.get('reason', 'unknown reason')}"
+        )
+    return status
 
 
 def _ensure_databases():
-    """Download and extract the pre-built database tarball if bafu is missing."""
-    bd.projects.set_current(BRIGHTWAY_PROJECT)
-    if "bafu" in bd.databases:
+    """Ensure Brightway data and its searchable projection are production-ready."""
+    global _startup_databases_ready
+    if _startup_databases_ready:
         return
+
     with _db_lock:
-        if "bafu" in bd.databases:
+        if _startup_databases_ready:
             return
-        bw_dir = pathlib.Path(os.environ["BRIGHTWAY2_DIR"])
-        tarball = bw_dir / "brightway_bafu_v1.tar.gz"
-        print(f"[lca_engine] bafu database not found — downloading from GitHub releases...")
-        urllib.request.urlretrieve(TARBALL_URL, tarball)
-        print(f"[lca_engine] Downloaded {tarball.stat().st_size // 1024 // 1024} MB — extracting...")
-        with tarfile.open(tarball, "r:gz") as tf:
-            tf.extractall(bw_dir.parent)
-        tarball.unlink()
-        print(f"[lca_engine] Database ready — {len(bd.Database('bafu'))} bafu processes.")
+
+        bd.projects.set_current(BRIGHTWAY_PROJECT)
+        if "bafu" not in bd.databases:
+            bw_dir = pathlib.Path(os.environ["BRIGHTWAY2_DIR"])
+            tarball = bw_dir / "brightway_bafu_v1.tar.gz"
+            print(f"[lca_engine] bafu database not found — downloading from GitHub releases...")
+            urllib.request.urlretrieve(TARBALL_URL, tarball)
+            print(
+                f"[lca_engine] Downloaded {tarball.stat().st_size // 1024 // 1024} MB "
+                "— extracting..."
+            )
+            with tarfile.open(tarball, "r:gz") as tf:
+                tf.extractall(bw_dir.parent)
+            tarball.unlink()
+            print(f"[lca_engine] Database ready — {len(bd.Database('bafu'))} bafu processes.")
+
+        _ensure_search_projection()
+        _startup_databases_ready = True
 
 # Index: (lowercase name, compartment) → activity key — built once on first lookup
 _FLOW_INDEX: dict | None = None
@@ -410,87 +441,19 @@ def get_contributions(product_graph_yaml: str, method_name: str, top_n: int = 10
 
 
 def query_database(sql: str, limit: int = 100) -> dict:
-    """
-    Run a read-only SQL query against the Brightway SQLite database.
-
-    The main tables are:
-      activitydataset  — columns: id, code, database, location, name, product, type
-      exchangedataset  — columns: id, input_code, input_database, output_code, output_database, type
-
-    Only SELECT statements are allowed.
-    Returns {columns, rows, count}.
-    """
-    import sqlite3
-    sql_stripped = sql.strip().lstrip(";").strip()
-    if not sql_stripped.upper().startswith("SELECT"):
-        raise ValueError("Only SELECT queries are allowed.")
-
+    """Run read-only SQL against the searchable projection, never databases.db."""
     _ensure_project()
-    db_path = (
-        pathlib.Path(os.environ["BRIGHTWAY2_DIR"])
-        / f"lca_server.{bd.projects.dir.name.split('.')[-1]}"
-        / "lci"
-        / "databases.db"
-    )
-    # Find the actual databases.db path
-    bw_dir = pathlib.Path(os.environ["BRIGHTWAY2_DIR"])
-    matches = list(bw_dir.glob("lca_server.*/lci/databases.db"))
-    if not matches:
-        raise FileNotFoundError("Brightway databases.db not found.")
-    db_path = matches[0]
+    from lca_search import query_search_database
 
-    conn = sqlite3.connect(str(db_path))
-    conn.row_factory = sqlite3.Row
-    cur = conn.cursor()
-    cur.execute(sql_stripped)
-    rows = cur.fetchmany(limit)
-    columns = [d[0] for d in cur.description] if cur.description else []
-    conn.close()
-
-    return {
-        "columns": columns,
-        "rows": [list(row) for row in rows],
-        "count": len(rows),
-    }
+    return query_search_database(sql, limit=limit, project=BRIGHTWAY_PROJECT)
 
 
 def get_database_schema() -> dict:
-    """Return the SQLite schema for the Brightway database tables."""
-    return {
-        "tables": {
-            "activitydataset": {
-                "description": "One row per activity/process in any Brightway database",
-                "columns": {
-                    "id":       "integer primary key",
-                    "code":     "text — unique process code within its database",
-                    "database": "text — database name e.g. 'bafu', 'biosphere3'",
-                    "location": "text — location code e.g. 'CH', 'RER', 'GLO'",
-                    "name":     "text — process name",
-                    "product":  "text — reference product name",
-                    "type":     "text — 'processwithreferenceproduct' or 'emission'",
-                },
-                "example_query": "SELECT name, location FROM activitydataset WHERE database='bafu' AND name LIKE '%cotton%'",
-            },
-            "exchangedataset": {
-                "description": "One row per exchange (input/output) between activities",
-                "columns": {
-                    "id":               "integer primary key",
-                    "input_code":       "text — code of the input activity",
-                    "input_database":   "text — database of the input activity",
-                    "output_code":      "text — code of the receiving activity",
-                    "output_database":  "text — database of the receiving activity",
-                    "type":             "text — 'technosphere', 'biosphere', or 'production'",
-                },
-                "example_query": "SELECT DISTINCT a.name, a.location FROM activitydataset a JOIN exchangedataset e ON e.output_code=a.code AND e.output_database=a.database WHERE e.input_code='273090' AND e.input_database='bafu' AND e.type='technosphere'",
-            },
-        },
-        "notes": [
-            "Only SELECT queries are permitted via query_lca_database()",
-            "The 'data' column (pickle blob) is not SQL-queryable — use the extracted columns above",
-            "Join activitydataset to exchangedataset on (code, database) = (input_code, input_database) to find who uses a process",
-            "Join on (code, database) = (output_code, output_database) to find inputs to a process",
-        ],
-    }
+    """Return the schema and freshness of the searchable projection."""
+    _ensure_project()
+    from lca_search import get_search_schema
+
+    return get_search_schema(project=BRIGHTWAY_PROJECT)
 
 
 def list_databases() -> list:
@@ -509,22 +472,29 @@ def list_databases() -> list:
 
 
 def search_database(query: str, database: str = "biosphere3", limit: int = 25) -> list:
-    """Search for flows or activities in a named Brightway database."""
+    """Search projection activities without querying Brightway's SQLite file."""
     _ensure_project()
-    if database not in bd.databases:
-        available = list(bd.databases)
-        raise ValueError(f"Database '{database}' not found. Available: {available}")
-    db = bd.Database(database)
-    results = db.search(query, limit=limit)
+    from lca_search import search_activities
+
+    results = search_activities(
+        query,
+        database=database,
+        limit=limit,
+        project=BRIGHTWAY_PROJECT,
+    )
     return [
         {
-            "name": r["name"],
-            "categories": list(r.get("categories", [])),
-            "unit": r.get("unit", ""),
-            "type": r.get("type", ""),
-            "key": list(r.key),
+            "name": result["name"],
+            "reference_product": result.get("reference_product"),
+            "location": result.get("location"),
+            "categories": (result.get("categories_text") or "").split("::")
+            if result.get("categories_text")
+            else [],
+            "unit": result.get("unit") or "",
+            "type": result.get("type") or "",
+            "key": [result["database"], result["code"]],
         }
-        for r in results
+        for result in results
     ]
 
 
@@ -677,12 +647,16 @@ def check_brightway() -> dict:
     """Return Brightway project status."""
     try:
         _ensure_project()
-        return {
+        result = {
             "running": True,
             "engine": "brightway2.5",
             "project": BRIGHTWAY_PROJECT,
             "databases": list(bd.databases),
             "methods": len(list(bd.methods)),
         }
+        from lca_search import get_projection_status
+
+        result["search_database"] = get_projection_status(project=BRIGHTWAY_PROJECT)
+        return result
     except Exception as exc:
         return {"running": False, "error": str(exc)}

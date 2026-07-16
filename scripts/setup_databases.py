@@ -12,10 +12,15 @@ Idempotent — safe to re-run; skips steps already completed.
 
 import os
 import pathlib
+import sys
+
+ROOT = pathlib.Path(__file__).resolve().parent.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 # Must be set before bw2data is imported; directory must exist
 if "BRIGHTWAY2_DIR" not in os.environ:
-    _bw_dir = pathlib.Path(__file__).parent.parent / "brightway_data"
+    _bw_dir = ROOT / "brightway_data"
     _bw_dir.mkdir(exist_ok=True)
     os.environ["BRIGHTWAY2_DIR"] = str(_bw_dir)
 
@@ -55,6 +60,10 @@ def setup():
     else:
         print(f"LCIA methods already present ({len(list(bd.methods))}) — skipping.")
 
+    print("Building searchable SQLite projection")
+    from lca_search import build_search_database
+
+    build_search_database(project=project)
     print("Setup complete.")
 
 

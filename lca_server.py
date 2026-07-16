@@ -6,6 +6,9 @@ MCP Tools:
     get_lca_svg          — supply chain diagram (scaled or structure)
     get_unit_process_svg — single-process card SVG
     list_impact_methods  — list all LCIA methods loaded in Brightway
+    search_database      — full-text search of the inventory projection
+    query_lca_database   — safe read-only SQL on the inventory projection
+    get_lca_activity_inputs — typed direct exchanges for one activity
     check_server         — Brightway engine health check
     list_case_studies    — list bundled teaching case studies
     get_case_study       — return the pre-computed bundle for a named case study
@@ -36,6 +39,7 @@ from fastmcp import FastMCP
 from lca_engine import run_analysis, list_methods, check_brightway, _ensure_databases, query_database, get_database_schema
 from lca_engine import list_databases as _list_databases
 from lca_engine import search_database as _search_database
+from lca_search import get_activity_inputs as _get_activity_inputs
 from lca_svg_engine import generate_svg, generate_unit_process_svg
 from scripts.bafu_graph_svg import generate_bafu_svg as _generate_bafu_svg
 
@@ -135,10 +139,11 @@ def get_bafu_svg(
 @mcp.tool()
 def get_lca_database_schema() -> dict:
     """
-    Return the schema of the Brightway SQLite database tables.
+    Return the schema and freshness of the searchable SQLite projection.
 
     Call this before writing SQL queries with query_lca_database() to understand
-    the available tables, columns, and join patterns.
+    the available typed columns, views, and endpoint direction. This tool does
+    not expose Brightway's internal databases.db file.
     """
     return get_database_schema()
 
@@ -146,18 +151,21 @@ def get_lca_database_schema() -> dict:
 @mcp.tool()
 def query_lca_database(sql: str, limit: int = 100) -> dict:
     """
-    Run a read-only SQL SELECT query against the Brightway SQLite database.
+    Run read-only SQL against the searchable inventory projection.
 
     Available tables:
-      activitydataset  — id, code, database, location, name, product, type
-      exchangedataset  — id, input_code, input_database, output_code, output_database, type
+      activities        — processes and flows with searchable metadata
+      exchanges         — typed amounts, units, endpoints, and uncertainty
+      exchange_details  — exchanges joined to readable endpoint metadata
+      activities_fts    — FTS5 index over names, products, comments, and tags
 
     Example queries:
-      SELECT location, COUNT(*) as n FROM activitydataset WHERE database='bafu' GROUP BY location ORDER BY n DESC
-      SELECT name, location FROM activitydataset WHERE database='bafu' AND name LIKE '%cotton%'
-      SELECT DISTINCT output_code FROM exchangedataset WHERE input_database='bafu' AND input_code='273090'
+      SELECT name, location FROM activities WHERE database='bafu' AND name LIKE '%cotton%'
+      SELECT input_name, amount, unit FROM exchange_details WHERE output_database='bafu' AND output_code='<code>' AND exchange_type='technosphere'
+      SELECT consumer_name, amount, unit FROM exchange_details WHERE input_database='bafu' AND input_code='<code>'
 
-    Only SELECT statements are permitted. Returns {columns, rows, count}.
+    Exchange amounts are direct inventory values, not LCIA scores. Only one
+    SELECT/CTE statement is permitted. Results include freshness and truncation.
     """
     return query_database(sql, limit=limit)
 
@@ -220,12 +228,35 @@ def list_databases() -> list:
 @mcp.tool()
 def search_database(query: str, database: str = "biosphere3", limit: int = 25) -> list:
     """
-    Search for flows or activities in a named Brightway database.
+    Full-text search for flows or activities in the SQLite search projection.
 
-    Returns matching entries with name, categories, unit, type, and key.
-    Use list_databases() to see available database names.
+    Searches names, reference products, comments, categories, classifications,
+    and synonyms. Returns the Brightway (database, code) key for authoritative
+    lookup by run_lca. It never queries Brightway's internal databases.db file.
     """
     return _search_database(query, database=database, limit=limit)
+
+
+@mcp.tool()
+def get_lca_activity_inputs(
+    database: str,
+    code: str,
+    exchange_type: str | None = None,
+    limit: int = 500,
+) -> list:
+    """
+    Return one activity's direct inputs from the SQLite search projection.
+
+    database/code are the key returned by search_database(). exchange_type can
+    be "technosphere", "biosphere", or "production"; omit it for all direct
+    exchanges. Amounts are inventory quantities, not LCIA scores.
+    """
+    return _get_activity_inputs(
+        database,
+        code,
+        exchange_type=exchange_type,
+        limit=limit,
+    )
 
 
 @mcp.tool()
