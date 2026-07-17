@@ -9,6 +9,8 @@ from typing import Any
 from . import engine as _engine
 from . import search as _search
 from .background_svg import generate_bafu_svg
+from .imported_activity import calculate_activity
+from .jsonld import import_jsonld
 from .visualization import generate_svg, generate_unit_process_svg
 
 
@@ -32,6 +34,48 @@ class LCAEngine:
             result["svg_scaled"] = generate_svg(product_graph, "scaled")
             result["svg_structure"] = generate_svg(product_graph, "structure")
         return result
+
+    def import_jsonld(
+        self,
+        source: str | pathlib.Path,
+        database: str,
+        *,
+        project: str,
+        replace_project_data: bool = False,
+    ) -> dict[str, Any]:
+        """Import an openLCA JSON-LD directory or ZIP into Brightway."""
+        return import_jsonld(
+            source,
+            database,
+            project,
+            replace_project_data=replace_project_data,
+        )
+
+    def calculate_imported_activity(
+        self,
+        database: str,
+        method_name: str,
+        impact_category: str,
+        *,
+        project: str,
+        amount: float = 1.0,
+        product_name: str | None = None,
+        code: str | None = None,
+        location: str | None = None,
+        activity_type: str | None = "product",
+    ) -> dict[str, Any]:
+        """Calculate an activity already imported into a Brightway project."""
+        return calculate_activity(
+            database,
+            method_name,
+            impact_category,
+            project=project,
+            amount=amount,
+            product_name=product_name,
+            code=code,
+            location=location,
+            activity_type=activity_type,
+        )
 
     def contributions(
         self, product_graph: str, method_name: str, top_n: int = 10

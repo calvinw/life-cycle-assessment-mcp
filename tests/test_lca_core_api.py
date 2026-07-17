@@ -35,6 +35,53 @@ class LCAEngineApiTests(unittest.TestCase):
             ("name: example", "scaled"),
         )
 
+    def test_jsonld_import_delegates_to_core_importer(self):
+        engine = LCAEngine()
+        imported = {"project": "mock", "database": "fixture"}
+        with patch("lca_core.api.import_jsonld", return_value=imported) as importer:
+            result = engine.import_jsonld(
+                "fixture.zip",
+                "fixture",
+                project="mock",
+                replace_project_data=True,
+            )
+
+        self.assertIs(result, imported)
+        importer.assert_called_once_with(
+            "fixture.zip",
+            "fixture",
+            "mock",
+            replace_project_data=True,
+        )
+
+    def test_imported_activity_calculation_delegates_to_core_calculator(self):
+        engine = LCAEngine()
+        calculated = {"score": 42.0, "unit": "kg CO2-Eq"}
+        with patch(
+            "lca_core.api.calculate_activity", return_value=calculated
+        ) as calculate:
+            result = engine.calculate_imported_activity(
+                "fixture",
+                "TRACI 2.1",
+                "global warming",
+                project="mock",
+                product_name="Jacket",
+                amount=2,
+            )
+
+        self.assertIs(result, calculated)
+        calculate.assert_called_once_with(
+            "fixture",
+            "TRACI 2.1",
+            "global warming",
+            project="mock",
+            amount=2,
+            product_name="Jacket",
+            code=None,
+            location=None,
+            activity_type="product",
+        )
+
     def test_core_package_does_not_import_transport_frameworks(self):
         forbidden = {"fastapi", "fastmcp", "starlette", "uvicorn"}
         imported = set()
