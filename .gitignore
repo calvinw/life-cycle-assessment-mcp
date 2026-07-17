@@ -6,6 +6,12 @@ brightway_data/
 data/
 .claude/
 
+# Local OS, Java database, and nested-repository artifacts
+.DS_Store
+._*
+derby.log
+/lca-mock-tests/
+
 # Generated local agent and Skillshare state
 .agents/
 .codex/config.toml
