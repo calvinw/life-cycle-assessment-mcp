@@ -1,0 +1,21 @@
+name: Polyester T-shirt (bafu-linked) — 1 unit
+goal: >
+  Calculate the climate impact of a polyester T-shirt using real bafu
+  background processes for PET resin and fleece fabric production.
+functional_unit:
+  description: 1 polyester T-shirt, ready for sale (approximately 200 g of fabric)
+  amount: 1.0
+  unit: unit
+products:
+  - { name: T-shirt, unit: unit }
+processes:
+  - name: T-shirt assembly
+    reference_output: { flow: T-shirt, amount: 1.0, unit: unit }
+    inputs:
+      - { flow: "Polyethylene terephthalate, granulate, bottle grade, at plant", location: RER, database: bafu, amount: 0.2, unit: kg }
+      - { flow: "Fleece production, polyethylene terephthalate", location: RER, database: bafu, amount: 0.2, unit: kg }
+    emissions:
+      - { flow: Carbon dioxide, amount: 1.0 }
+reference_process: "T-shirt assembly"
+lcia:
+  method_name: "TRACI v2.1"

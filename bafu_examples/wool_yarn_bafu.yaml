@@ -1,0 +1,22 @@
+name: Wool Yarn (bafu-linked) — 1 kg
+goal: >
+  Calculate the climate impact of 1 kg of wool yarn, linking sheep farming
+  to a real bafu background process for raw wool.
+functional_unit:
+  description: 1 kg of wool yarn, ready for knitting or weaving
+  amount: 1.0
+  unit: kg
+products:
+  - { name: Wool yarn, unit: kg }
+processes:
+  - name: Wool yarn production
+    reference_output: { flow: Wool yarn, amount: 1.0, unit: kg }
+    inputs:
+      - { flow: "xx Wool, sheep, at farm", location: US, database: bafu, amount: 1.1, unit: kg }
+    emissions:
+      - { flow: Carbon dioxide, amount: 2.0 }
+    resources:
+      - { flow: Water, amount: 30 }
+reference_process: "Wool yarn production"
+lcia:
+  method_name: "TRACI v2.1"

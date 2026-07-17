@@ -1,0 +1,25 @@
+name: Cotton Fiber (bafu-linked) — 1 kg
+goal: >
+  Calculate the climate change impact of producing 1 kg of cotton fiber,
+  linking the fertilizer input to a real bafu background process instead of
+  a hand-modeled one.
+functional_unit:
+  description: 1 kg of ginned cotton fiber, ready for spinning
+  amount: 1.0
+  unit: kg
+products:
+  - { name: Cotton fiber, unit: kg }
+processes:
+  - name: Cotton farming
+    reference_output: { flow: Cotton fiber, amount: 1.0, unit: kg }
+    inputs:
+      - { flow: "Average mineral fertiliser, as N, at regional storehouse", location: RER, database: bafu, amount: 0.2, unit: kg }
+    emissions:
+      - { flow: Carbon dioxide, amount: 0.8 }
+      - { flow: Nitrous oxide, amount: 0.015 }
+      - { flow: Ammonia, amount: 0.010 }
+    resources:
+      - { flow: Water, amount: 8000 }
+reference_process: "Cotton farming"
+lcia:
+  method_name: "TRACI v2.1"
