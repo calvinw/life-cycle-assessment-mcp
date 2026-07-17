@@ -1,5 +1,4 @@
-"""
-lca_server.py — Life Cycle Assessment MCP server (Brightway 2.5 engine).
+"""MCP and HTTP adapter for the transport-independent :mod:`lca_core` engine.
 
 MCP Tools:
     run_lca              — full LCA from a product graph YAML string
@@ -36,17 +35,13 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 from fastmcp import FastMCP
 
-from lca_engine import run_analysis, list_methods, check_brightway, _ensure_databases, query_database, get_database_schema
-from lca_engine import list_databases as _list_databases
-from lca_engine import search_database as _search_database
-from lca_search import get_activity_inputs as _get_activity_inputs
-from lca_svg_engine import generate_svg, generate_unit_process_svg
-from scripts.bafu_graph_svg import generate_bafu_svg as _generate_bafu_svg
+from lca_core import LCAEngine
 
 mcp = FastMCP("Life Cycle Assessment MCP")
+engine = LCAEngine()
 
 # Download BAFU database tarball on startup if not already present
-_ensure_databases()
+engine.ensure_ready()
 
 _CASE_STUDIES_DIR = pathlib.Path(__file__).parent / "case_studies"
 
@@ -62,10 +57,7 @@ def run_lca(product_graph: str) -> dict:
     supply chain diagrams (svg_scaled and svg_structure). The product graph
     is the contents of a product_graph.yaml file.
     """
-    result = run_analysis(product_graph)
-    result["svg_scaled"]    = generate_svg(product_graph, "scaled")
-    result["svg_structure"] = generate_svg(product_graph, "structure")
-    return result
+    return engine.run(product_graph, include_visuals=True)
 
 
 @mcp.tool()
@@ -77,7 +69,7 @@ def get_lca_svg(product_graph: str, graph_type: str = "scaled") -> str:
                 "structure" — shows flow names only
     Returns SVG as a string.
     """
-    return generate_svg(product_graph, graph_type)
+    return engine.generate_svg(product_graph, graph_type)
 
 
 @mcp.tool()
@@ -106,34 +98,15 @@ def get_bafu_svg(
 
     Returns SVG as a string.
     """
-    import bw2data as bd
-    import tempfile, pathlib
-
-    bd.projects.set_current("lca_server")
-    matches = [m for m in bd.methods
-               if m[0] == method_name and method_category.lower() in m[1].lower()]
-    if not matches:
-        raise ValueError(
-            f"No method found for '{method_name}' / '{method_category}'. "
-            f"Use list_impact_methods() to browse available methods."
-        )
-    method = matches[0]
-
-    with tempfile.NamedTemporaryFile(suffix=".svg", delete=False) as f:
-        out_path = f.name
-
-    _generate_bafu_svg(
+    return engine.generate_background_svg(
         activity_name=activity_name,
         location=location,
-        method=method,
-        output_path=out_path,
+        method_name=method_name,
+        method_category=method_category,
         max_depth=max_depth,
         cutoff=cutoff,
         database=database,
     )
-    svg = pathlib.Path(out_path).read_text()
-    pathlib.Path(out_path).unlink()
-    return svg
 
 
 @mcp.tool()
@@ -149,7 +122,7 @@ def get_lca_database_schema() -> dict:
     file. FTS5 shadow tables and SQLite auto-indexes are excluded because they
     are storage internals, not supported query surfaces.
     """
-    return get_database_schema()
+    return engine.get_database_schema()
 
 
 @mcp.tool()
@@ -171,7 +144,7 @@ def query_lca_database(sql: str, limit: int = 100) -> dict:
     Exchange amounts are direct inventory values, not LCIA scores. Only one
     SELECT/CTE statement is permitted. Results include freshness and truncation.
     """
-    return query_database(sql, limit=limit)
+    return engine.query_database(sql, limit=limit)
 
 
 @mcp.tool()
@@ -183,7 +156,7 @@ def get_unit_process_svg(product_graph: str, process_name: str) -> str:
     e.g. "P1 — Sheep farming" or "P2 — Wool yarn production".
     Returns SVG as a string.
     """
-    return generate_unit_process_svg(product_graph, process_name)
+    return engine.generate_unit_process_svg(product_graph, process_name)
 
 
 @mcp.tool()
@@ -226,7 +199,7 @@ def list_databases() -> list:
     List all databases installed in the current Brightway project,
     with size, backend, and dependencies.
     """
-    return _list_databases()
+    return engine.list_databases()
 
 
 @mcp.tool()
@@ -238,7 +211,7 @@ def search_database(query: str, database: str = "biosphere3", limit: int = 25) -
     and synonyms. Returns the Brightway (database, code) key for authoritative
     lookup by run_lca. It never queries Brightway's internal databases.db file.
     """
-    return _search_database(query, database=database, limit=limit)
+    return engine.search_activities(query, database=database, limit=limit)
 
 
 @mcp.tool()
@@ -255,7 +228,7 @@ def get_lca_activity_inputs(
     be "technosphere", "biosphere", or "production"; omit it for all direct
     exchanges. Amounts are inventory quantities, not LCIA scores.
     """
-    return _get_activity_inputs(
+    return engine.get_activity_inputs(
         database,
         code,
         exchange_type=exchange_type,
@@ -269,25 +242,25 @@ def list_impact_methods() -> list:
     List all LCIA methods available in the Brightway project.
     Returns a list of dicts with name and categories.
     """
-    return list_methods()
+    return engine.list_methods()
 
 
 @mcp.tool()
 def check_server() -> dict:
     """Check that the Brightway LCA engine is initialised and ready."""
-    return check_brightway()
+    return engine.check()
 
 
 # ── REST API (custom routes — available when running via HTTP transport) ───────
 
 @mcp.custom_route("/api/health", methods=["GET"])
 async def api_health(request: Request) -> Response:
-    return JSONResponse(check_brightway())
+    return JSONResponse(engine.check())
 
 
 @mcp.custom_route("/api/methods", methods=["GET"])
 async def api_list_methods(request: Request) -> Response:
-    return JSONResponse(list_methods())
+    return JSONResponse(engine.list_methods())
 
 
 @mcp.custom_route("/api/case-studies", methods=["GET"])
@@ -316,10 +289,7 @@ async def api_run_lca(request: Request) -> Response:
     try:
         body = await request.json()
         product_graph = body["product_graph"]
-        result = run_analysis(product_graph)
-        result["svg_scaled"]    = generate_svg(product_graph, "scaled")
-        result["svg_structure"] = generate_svg(product_graph, "structure")
-        return JSONResponse(result)
+        return JSONResponse(engine.run(product_graph, include_visuals=True))
     except Exception as exc:
         return JSONResponse({"detail": str(exc)}, status_code=400)
 
@@ -328,7 +298,11 @@ async def api_run_lca(request: Request) -> Response:
 async def api_get_svg(request: Request) -> Response:
     try:
         body = await request.json()
-        return JSONResponse({"svg": generate_svg(body["product_graph"], body.get("graph_type", "scaled"))})
+        return JSONResponse({
+            "svg": engine.generate_svg(
+                body["product_graph"], body.get("graph_type", "scaled")
+            )
+        })
     except Exception as exc:
         return JSONResponse({"detail": str(exc)}, status_code=400)
 
@@ -337,7 +311,11 @@ async def api_get_svg(request: Request) -> Response:
 async def api_get_unit_process_svg(request: Request) -> Response:
     try:
         body = await request.json()
-        return JSONResponse({"svg": generate_unit_process_svg(body["product_graph"], body["process_name"])})
+        return JSONResponse({
+            "svg": engine.generate_unit_process_svg(
+                body["product_graph"], body["process_name"]
+            )
+        })
     except Exception as exc:
         return JSONResponse({"detail": str(exc)}, status_code=400)
 

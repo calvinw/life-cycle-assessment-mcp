@@ -12,10 +12,11 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 # Python deps — copy lockfile first for layer caching
 COPY pyproject.toml uv.lock ./
-RUN uv sync --frozen --no-dev --no-install-project
+RUN uv sync --frozen --no-dev --extra server --no-install-project
 
 # Application code
 COPY sse_server.py lca_server.py lca_engine.py lca_search.py lca_svg_engine.py lca_svg.py ./
+COPY lca_core/ ./lca_core/
 COPY case_studies/ ./case_studies/
 COPY scripts/ ./scripts/
 

@@ -1557,17 +1557,20 @@ wheels = [
 [[package]]
 name = "lca-mcp"
 version = "0.1.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "brightway25" },
     { name = "bw2calc" },
     { name = "bw2data" },
     { name = "bw2io" },
+    { name = "numpy" },
+    { name = "pyyaml" },
+]
+
+[package.optional-dependencies]
+server = [
     { name = "fastapi" },
     { name = "fastmcp" },
-    { name = "numpy" },
-    { name = "pydantic" },
-    { name = "pyyaml" },
     { name = "uvicorn", extra = ["standard"] },
 ]
 
@@ -1577,13 +1580,13 @@ requires-dist = [
     { name = "bw2calc", specifier = ">=2.0" },
     { name = "bw2data", specifier = ">=4.0" },
     { name = "bw2io", specifier = ">=0.9,<0.10" },
-    { name = "fastapi" },
-    { name = "fastmcp" },
+    { name = "fastapi", marker = "extra == 'server'" },
+    { name = "fastmcp", marker = "extra == 'server'" },
     { name = "numpy" },
-    { name = "pydantic" },
     { name = "pyyaml" },
-    { name = "uvicorn", extras = ["standard"] },
+    { name = "uvicorn", extras = ["standard"], marker = "extra == 'server'" },
 ]
+provides-extras = ["server"]
 
 [[package]]
 name = "loguru"
