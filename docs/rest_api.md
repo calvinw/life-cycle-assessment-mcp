@@ -1,8 +1,11 @@
 # REST API
 
 The REST API exposes the same 13 domain operations as the MCP server. Use
-`GET /api/tools` to discover each operation's description, JSON input and
-output schemas, and equivalent HTTP method and path.
+`GET /api/tools` to discover each operation's description, JSON input schema,
+MCP output schema, and equivalent HTTP method and path.
+
+For exact REST response bodies, endpoint-selection guidance, and complete
+examples intended for AI agents, see the [LLM REST API Guide](llm_rest_api_guide.md).
 
 ```bash
 curl -s https://lca-mcp.mathplosion.com/api/tools | jq
