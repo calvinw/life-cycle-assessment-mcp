@@ -13,12 +13,19 @@ MCP Tools:
     get_case_study       — return the pre-computed bundle for a named case study
 
 REST API (via @mcp.custom_route):
+    GET  /api/tools
     GET  /api/health
     GET  /api/methods
+    GET  /api/databases
+    GET  /api/database/schema
+    POST /api/database/query
+    POST /api/database/search
+    POST /api/database/activity-inputs
     GET  /api/case-studies
     GET  /api/case-studies/{name}
     POST /api/lca/run
     POST /api/lca/svg
+    POST /api/lca/svg/bafu
     POST /api/lca/svg/unit-process
 
 Run via HTTP (for Claude.ai / cloudflared):
@@ -44,6 +51,34 @@ engine = LCAEngine()
 engine.ensure_ready()
 
 _CASE_STUDIES_DIR = pathlib.Path(__file__).parent / "case_studies"
+
+# Every MCP tool has one REST equivalent. The discovery endpoint combines this
+# map with FastMCP's generated tool schemas so REST-only clients can discover
+# the same operations and argument contracts as MCP clients.
+REST_TOOL_ROUTES = {
+    "run_lca": {"method": "POST", "path": "/api/lca/run"},
+    "get_lca_svg": {"method": "POST", "path": "/api/lca/svg"},
+    "get_bafu_svg": {"method": "POST", "path": "/api/lca/svg/bafu"},
+    "get_lca_database_schema": {
+        "method": "GET",
+        "path": "/api/database/schema",
+    },
+    "query_lca_database": {"method": "POST", "path": "/api/database/query"},
+    "get_unit_process_svg": {
+        "method": "POST",
+        "path": "/api/lca/svg/unit-process",
+    },
+    "list_case_studies": {"method": "GET", "path": "/api/case-studies"},
+    "get_case_study": {"method": "GET", "path": "/api/case-studies/{name}"},
+    "list_databases": {"method": "GET", "path": "/api/databases"},
+    "search_database": {"method": "POST", "path": "/api/database/search"},
+    "get_lca_activity_inputs": {
+        "method": "POST",
+        "path": "/api/database/activity-inputs",
+    },
+    "list_impact_methods": {"method": "GET", "path": "/api/methods"},
+    "check_server": {"method": "GET", "path": "/api/health"},
+}
 
 
 # ── MCP tools ─────────────────────────────────────────────────────────────────
@@ -253,6 +288,24 @@ def check_server() -> dict:
 
 # ── REST API (custom routes — available when running via HTTP transport) ───────
 
+@mcp.custom_route("/api/tools", methods=["GET"])
+async def api_list_tools(request: Request) -> Response:
+    """Describe every MCP tool and its equivalent REST operation."""
+    tools = await mcp.list_tools()
+    return JSONResponse(
+        [
+            {
+                "name": tool.name,
+                "description": tool.description,
+                "input_schema": tool.parameters,
+                "output_schema": tool.output_schema,
+                "rest": REST_TOOL_ROUTES[tool.name],
+            }
+            for tool in tools
+        ]
+    )
+
+
 @mcp.custom_route("/api/health", methods=["GET"])
 async def api_health(request: Request) -> Response:
     return JSONResponse(engine.check())
@@ -261,6 +314,58 @@ async def api_health(request: Request) -> Response:
 @mcp.custom_route("/api/methods", methods=["GET"])
 async def api_list_methods(request: Request) -> Response:
     return JSONResponse(engine.list_methods())
+
+
+@mcp.custom_route("/api/databases", methods=["GET"])
+async def api_list_databases(request: Request) -> Response:
+    return JSONResponse(engine.list_databases())
+
+
+@mcp.custom_route("/api/database/schema", methods=["GET"])
+async def api_get_database_schema(request: Request) -> Response:
+    return JSONResponse(engine.get_database_schema())
+
+
+@mcp.custom_route("/api/database/query", methods=["POST"])
+async def api_query_database(request: Request) -> Response:
+    try:
+        body = await request.json()
+        return JSONResponse(
+            engine.query_database(body["sql"], limit=body.get("limit", 100))
+        )
+    except Exception as exc:
+        return JSONResponse({"detail": str(exc)}, status_code=400)
+
+
+@mcp.custom_route("/api/database/search", methods=["POST"])
+async def api_search_database(request: Request) -> Response:
+    try:
+        body = await request.json()
+        return JSONResponse(
+            engine.search_activities(
+                body["query"],
+                database=body.get("database", "biosphere3"),
+                limit=body.get("limit", 25),
+            )
+        )
+    except Exception as exc:
+        return JSONResponse({"detail": str(exc)}, status_code=400)
+
+
+@mcp.custom_route("/api/database/activity-inputs", methods=["POST"])
+async def api_get_activity_inputs(request: Request) -> Response:
+    try:
+        body = await request.json()
+        return JSONResponse(
+            engine.get_activity_inputs(
+                body["database"],
+                body["code"],
+                exchange_type=body.get("exchange_type"),
+                limit=body.get("limit", 500),
+            )
+        )
+    except Exception as exc:
+        return JSONResponse({"detail": str(exc)}, status_code=400)
 
 
 @mcp.custom_route("/api/case-studies", methods=["GET"])
@@ -303,6 +408,27 @@ async def api_get_svg(request: Request) -> Response:
                 body["product_graph"], body.get("graph_type", "scaled")
             )
         })
+    except Exception as exc:
+        return JSONResponse({"detail": str(exc)}, status_code=400)
+
+
+@mcp.custom_route("/api/lca/svg/bafu", methods=["POST"])
+async def api_get_bafu_svg(request: Request) -> Response:
+    try:
+        body = await request.json()
+        return JSONResponse(
+            {
+                "svg": engine.generate_background_svg(
+                    activity_name=body["activity_name"],
+                    location=body["location"],
+                    method_name=body.get("method_name", "EF v3.1"),
+                    method_category=body.get("method_category", "climate change"),
+                    max_depth=body.get("max_depth", 4),
+                    cutoff=body.get("cutoff", 0.01),
+                    database=body.get("database", "bafu"),
+                )
+            }
+        )
     except Exception as exc:
         return JSONResponse({"detail": str(exc)}, status_code=400)
 

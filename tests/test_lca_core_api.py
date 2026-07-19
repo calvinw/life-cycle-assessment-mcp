@@ -107,6 +107,47 @@ class LCAEngineApiTests(unittest.TestCase):
         self.assertFalse(imported & {"bw2calc", "bw2data"})
         self.assertIn("lca_core", imported)
 
+    def test_every_mcp_tool_has_a_registered_rest_equivalent(self):
+        tree = ast.parse((ROOT / "lca_server.py").read_text())
+        rest_tool_routes = None
+        mcp_tools = set()
+        custom_routes = set()
+
+        for node in tree.body:
+            if isinstance(node, ast.Assign) and any(
+                isinstance(target, ast.Name)
+                and target.id == "REST_TOOL_ROUTES"
+                for target in node.targets
+            ):
+                rest_tool_routes = ast.literal_eval(node.value)
+            if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                continue
+            for decorator in node.decorator_list:
+                if not isinstance(decorator, ast.Call):
+                    continue
+                function = decorator.func
+                if not (
+                    isinstance(function, ast.Attribute)
+                    and isinstance(function.value, ast.Name)
+                    and function.value.id == "mcp"
+                ):
+                    continue
+                if function.attr == "tool":
+                    mcp_tools.add(node.name)
+                elif function.attr == "custom_route":
+                    route = ast.literal_eval(decorator.args[0])
+                    methods = next(
+                        ast.literal_eval(keyword.value)
+                        for keyword in decorator.keywords
+                        if keyword.arg == "methods"
+                    )
+                    custom_routes.update((method, route) for method in methods)
+
+        self.assertIsNotNone(rest_tool_routes)
+        self.assertEqual(mcp_tools, set(rest_tool_routes))
+        for route in rest_tool_routes.values():
+            self.assertIn((route["method"], route["path"]), custom_routes)
+
 
 if __name__ == "__main__":
     unittest.main()
