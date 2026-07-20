@@ -64,6 +64,20 @@ class ProductionStartupTests(unittest.TestCase):
         projects.set_current.assert_called_once_with(lca_engine.BRIGHTWAY_PROJECT)
         ensure_projection.assert_called_once_with()
 
+    def test_startup_removes_legacy_shared_foreground_database(self):
+        projects = Mock()
+        databases = {"bafu": {}, "foreground": {}}
+        fake_bd = types.SimpleNamespace(projects=projects, databases=databases)
+        lca_engine._startup_databases_ready = False
+
+        with (
+            patch.object(lca_engine, "bd", fake_bd),
+            patch.object(lca_engine, "_ensure_search_projection"),
+        ):
+            lca_engine._ensure_databases()
+
+        self.assertNotIn("foreground", databases)
+
     def test_docker_image_copies_projection_module(self):
         dockerfile = pathlib.Path(__file__).parents[1] / "Dockerfile"
         self.assertIn("lca_search.py", dockerfile.read_text())

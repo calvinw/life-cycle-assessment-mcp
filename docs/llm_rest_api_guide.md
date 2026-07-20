@@ -363,12 +363,34 @@ Response fields include:
     }
   },
   "scaling_vector": {},
+  "result_schema_version": 2,
+  "process_contributions": {
+    "categories": []
+  },
+  "sankey": {
+    "nodes": [],
+    "links": [],
+    "available_units": []
+  },
   "svg_scaled": "<svg ...>",
   "svg_structure": "<svg ...>"
 }
 ```
 
 Report impact values with their returned units. Never infer or replace units.
+
+The operation is stateless: `product_graph` is the complete input, and no
+session or result identifier is required. `process_contributions.categories`
+contains one entry per `lcia` category. Its exclusive foreground process scores
+plus `residual_score` reproduce the category total; background activity impact
+is aggregated into the residual. A null percentage means the category total is
+effectively zero. Negative scores and percentages are valid and must not be
+clamped.
+
+`sankey.links` contains scaled technosphere, extraction, emission, and
+final-product quantities. Every endpoint references an entry in
+`sankey.nodes`. Use `available_units` to select compatible links before mapping
+amounts to widths; never combine incompatible units into one width scale.
 
 ### Render a product graph
 

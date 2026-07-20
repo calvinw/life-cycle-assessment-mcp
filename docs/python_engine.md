@@ -48,6 +48,14 @@ matches = engine.search_activities("polypropylene", database="bafu")
 schema = engine.get_database_schema()
 ```
 
+`run()` is stateless with respect to product graphs and results. Each call
+creates an isolated temporary Brightway foreground database, calculates all
+LCI, LCIA, contribution, and Sankey fields from the supplied YAML, and removes
+that foreground database whether the call succeeds or fails. Installed
+background databases remain shared read-only reference data. Because Brightway
+project metadata is process-global, foreground calculations are serialized
+inside one Python process while keeping request data isolated.
+
 `ensure_ready()` initializes the selected Brightway project and ensures that
 the BAFU and searchable projection databases are available. Calculation and
 query methods also perform this check, so calling it explicitly is useful for

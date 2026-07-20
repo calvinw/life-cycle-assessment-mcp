@@ -42,7 +42,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 from fastmcp import FastMCP
 
-from lca_core import LCAEngine
+from lca_core import LCAEngine, LcaResult
 
 mcp = FastMCP("Life Cycle Assessment MCP")
 engine = LCAEngine()
@@ -84,13 +84,14 @@ REST_TOOL_ROUTES = {
 # ── MCP tools ─────────────────────────────────────────────────────────────────
 
 @mcp.tool()
-def run_lca(product_graph: str) -> dict:
+def run_lca(product_graph: str) -> LcaResult:
     """
     Run a full LCA from a product graph YAML string.
 
-    Returns LCI totals, LCIA impact scores, scaling vector, and two SVG
-    supply chain diagrams (svg_scaled and svg_structure). The product graph
-    is the contents of a product_graph.yaml file.
+    Returns LCI totals, LCIA impact scores, exclusive process contributions,
+    a scaled renderer-neutral Sankey graph, scaling vector, and two SVG supply
+    chain diagrams. The product graph is the contents of a product_graph.yaml
+    file. The operation is stateless: each response depends only on this input.
     """
     return engine.run(product_graph, include_visuals=True)
 

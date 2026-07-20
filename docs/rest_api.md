@@ -40,3 +40,52 @@ curl -s https://lca-mcp.mathplosion.com/api/database/search \
 
 Errors from POST operations are returned as HTTP 400 responses with a JSON
 body of the form `{"detail":"..."}`.
+
+## Stateless LCA calculations
+
+`POST /api/lca/run` is stateless. The YAML string in `product_graph` is the
+complete calculation input; the server does not create sessions, retain
+results, or require an identifier from an earlier request. Foreground
+Brightway data is isolated for the request and removed after both successful
+and failed calculations. Installed background databases are read-only
+reference data shared by all requests.
+
+The response retains the original LCI, LCIA, scaling-vector, and SVG fields and
+adds schema-versioned contribution and Sankey data:
+
+```json
+{
+  "result_schema_version": 2,
+  "process_contributions": {
+    "categories": [
+      {
+        "id": "impact:...",
+        "label": "climate change | global warming potential (GWP100)",
+        "unit": "kg CO2-Eq",
+        "total_score": 2.535,
+        "processes": [
+          {
+            "process_id": "process:...",
+            "process_name": "P1 — Oil extraction",
+            "direct_score": 0.435,
+            "percentage": 17.16,
+            "scope": "foreground"
+          }
+        ],
+        "residual_score": 0
+      }
+    ]
+  },
+  "sankey": {
+    "nodes": [],
+    "links": [],
+    "available_units": ["kg", "unit"]
+  }
+}
+```
+
+Process scores are exclusive, preserve their sign, and reconcile with the
+category total after adding `residual_score`. Background activity impact is
+included in `residual_score`. Sankey amounts use the same solved scaling vector
+as the rest of the response. Links retain their original units, so renderers
+must compare widths only within compatible units.
