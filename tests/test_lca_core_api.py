@@ -95,6 +95,17 @@ class LCAEngineApiTests(unittest.TestCase):
 
         self.assertFalse(imported & forbidden)
 
+    def test_result_models_use_python_311_compatible_typed_dict(self):
+        tree = ast.parse((ROOT / "lca_core/models.py").read_text())
+        imports = {
+            alias.name
+            for node in ast.walk(tree)
+            if isinstance(node, ast.ImportFrom)
+            and node.module == "typing_extensions"
+            for alias in node.names
+        }
+        self.assertIn("TypedDict", imports)
+
     def test_mcp_adapter_has_no_direct_brightway_import(self):
         tree = ast.parse((ROOT / "lca_server.py").read_text())
         imported = set()

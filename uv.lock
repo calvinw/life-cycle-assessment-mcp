@@ -1565,6 +1565,7 @@ dependencies = [
     { name = "bw2io" },
     { name = "numpy" },
     { name = "pyyaml" },
+    { name = "typing-extensions" },
 ]
 
 [package.optional-dependencies]
@@ -1584,6 +1585,7 @@ requires-dist = [
     { name = "fastmcp", marker = "extra == 'server'" },
     { name = "numpy" },
     { name = "pyyaml" },
+    { name = "typing-extensions", specifier = ">=4.12" },
     { name = "uvicorn", extras = ["standard"], marker = "extra == 'server'" },
 ]
 provides-extras = ["server"]
