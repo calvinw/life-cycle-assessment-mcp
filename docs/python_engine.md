@@ -57,9 +57,12 @@ project metadata is process-global, foreground calculations are serialized
 inside one Python process while keeping request data isolated.
 
 `ensure_ready()` initializes the selected Brightway project and ensures that
-the BAFU and searchable projection databases are available. Calculation and
-query methods also perform this check, so calling it explicitly is useful for
-startup validation but is not required before every operation.
+BAFU, the bundled `mock_background` teaching database, and the searchable
+projection are available. Calculation and query methods also perform this
+check, so calling it explicitly is useful for startup validation but is not
+required before every operation. See
+[Tiny Mock Background Database](mock_background_database.md) for its source,
+examples, and expected results.
 
 The public facade also exposes contribution analysis, top emissions,
 background activity comparison, method and database listing, read-only SQL,

@@ -102,7 +102,7 @@ Important response fields:
   "running": true,
   "engine": "brightway2.5",
   "project": "lca_server",
-  "databases": ["biosphere3", "bafu", "foreground"],
+  "databases": ["biosphere3", "bafu", "mock_background"],
   "methods": 1246,
   "search_database": {
     "exists": true,
@@ -149,6 +149,12 @@ Response:
   {
     "name": "bafu",
     "size": 11947,
+    "backend": "sqlite",
+    "depends": ["biosphere3"]
+  },
+  {
+    "name": "mock_background",
+    "size": 3,
     "backend": "sqlite",
     "depends": ["biosphere3"]
   }
@@ -292,7 +298,7 @@ Response:
   "truncated": false,
   "fresh": true,
   "built_at": "timestamp",
-  "source_databases": ["bafu", "biosphere3"]
+  "source_databases": ["bafu", "biosphere3", "mock_background"]
 }
 ```
 
@@ -303,13 +309,13 @@ read-only projection, not Brightway's internal database.
 
 ```http
 GET /api/case-studies
-GET /api/case-studies/cotton_fiber
+GET /api/case-studies/mock_plastic_broom
 ```
 
 The list endpoint returns names:
 
 ```json
-["cotton_fiber", "polyester_tshirt", "wool_yarn"]
+["cotton_fiber", "jacket", "mock_plastic_broom", "mock_storage_bin", "polyester_tshirt", "wool_yarn"]
 ```
 
 The detail endpoint returns a bundle containing:
@@ -326,7 +332,8 @@ The detail endpoint returns a bundle containing:
 ```
 
 Use case studies to obtain known-valid product graph YAML and exact foreground
-process names.
+process names. The two `mock_*` examples use the bundled fictional
+`mock_background` database and are appropriate for deterministic client tests.
 
 ### Run an LCA
 

@@ -1,0 +1,23 @@
+name: Mock Storage Bin — 1 unit
+goal: >
+  Demonstrate the simplest foreground product linked to one process in the
+  bundled tiny mock background database. All inventory values are fictional.
+
+functional_unit:
+  description: 1 mock storage bin
+  amount: 1.0
+  unit: unit
+
+products:
+  - { name: Mock storage bin, unit: unit }
+
+processes:
+  - name: Mock storage bin molding
+    reference_output: { flow: Mock storage bin, amount: 1.0, unit: unit }
+    inputs:
+      - { flow: "Mock polypropylene granulate, at plant", location: MOCK, database: mock_background, amount: 0.8, unit: kilogram }
+
+reference_process: Mock storage bin molding
+
+lcia:
+  method_name: "EF v3.1"

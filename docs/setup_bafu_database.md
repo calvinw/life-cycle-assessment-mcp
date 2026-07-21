@@ -26,6 +26,11 @@ is present. If not, it downloads the tarball from the GitHub release and
 extracts it into `brightway_data/`. This only happens once — subsequent boots
 skip it entirely.
 
+After the release data is ready, startup also installs the three-process
+`mock_background` teaching database from its small version-controlled YAML
+source. It is not part of the release tarball. See
+[Tiny Mock Background Database](mock_background_database.md).
+
 ---
 
 ## How to build a new tarball (local)

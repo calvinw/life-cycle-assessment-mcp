@@ -20,11 +20,10 @@ from contextlib import contextmanager
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 
-# Must be set before bw2data is imported; directory must exist
-if "BRIGHTWAY2_DIR" not in os.environ:
-    _bw_dir = ROOT / "brightway_data"
-    _bw_dir.mkdir(exist_ok=True)
-    os.environ["BRIGHTWAY2_DIR"] = str(_bw_dir)
+# Must be set before bw2data is imported; the configured directory must exist.
+_bw_dir = pathlib.Path(os.environ.get("BRIGHTWAY2_DIR", ROOT / "brightway_data"))
+_bw_dir.mkdir(parents=True, exist_ok=True)
+os.environ.setdefault("BRIGHTWAY2_DIR", str(_bw_dir))
 
 import yaml
 import numpy as np
@@ -32,6 +31,8 @@ import bw2data as bd
 import bw2calc as bc
 
 from .models import LcaCoreResult
+from .mock_database import DATABASE_NAME as MOCK_BACKGROUND_DB
+from .mock_database import ensure_mock_background_database
 
 BRIGHTWAY_PROJECT = os.environ.get("BRIGHTWAY_PROJECT", "lca_server")
 BIOSPHERE_DB = "biosphere3"
@@ -57,15 +58,18 @@ def _ensure_search_projection():
     """Build the disposable search database when it is missing or stale."""
     from .search import build_search_database, get_projection_status
 
+    database_names = ["bafu", MOCK_BACKGROUND_DB]
     status = get_projection_status(project=BRIGHTWAY_PROJECT)
-    if status.get("fresh"):
+    indexed_databases = set(status.get("source_databases", []))
+    if status.get("fresh") and set(database_names).issubset(indexed_databases):
         return status
 
     reason = status.get("reason", "Search projection is unavailable")
     print(f"[lca_engine] {reason} — rebuilding search projection...")
-    build_search_database(databases=["bafu"], project=BRIGHTWAY_PROJECT)
+    build_search_database(databases=database_names, project=BRIGHTWAY_PROJECT)
     status = get_projection_status(project=BRIGHTWAY_PROJECT)
-    if not status.get("fresh"):
+    indexed_databases = set(status.get("source_databases", []))
+    if not status.get("fresh") or not set(database_names).issubset(indexed_databases):
         raise RuntimeError(
             "Search projection build completed but freshness validation failed: "
             f"{status.get('reason', 'unknown reason')}"
@@ -84,11 +88,6 @@ def _ensure_databases():
             return
 
         bd.projects.set_current(BRIGHTWAY_PROJECT)
-        # Versions before result schema 2 reused this persistent scratch
-        # database. It contains no authoritative user data and must not survive
-        # startup now that foreground calculations are request-isolated.
-        if LEGACY_FOREGROUND_DB in bd.databases:
-            del bd.databases[LEGACY_FOREGROUND_DB]
         if "bafu" not in bd.databases:
             bw_dir = pathlib.Path(os.environ["BRIGHTWAY2_DIR"])
             tarball = bw_dir / "brightway_bafu_v1.tar.gz"
@@ -101,7 +100,29 @@ def _ensure_databases():
             with tarfile.open(tarball, "r:gz") as tf:
                 tf.extractall(bw_dir.parent)
             tarball.unlink()
+            # bw2data loaded its metadata stores before the release archive
+            # existed. Re-selecting the project reloads the extracted database
+            # and method metadata in this same process, so first boot does not
+            # rely on a container restart.
+            bd.projects.set_current(BRIGHTWAY_PROJECT)
             print(f"[lca_engine] Database ready — {len(bd.Database('bafu'))} bafu processes.")
+
+        # Versions before result schema 2 reused this persistent scratch
+        # database. The historical release archive can contain its metadata,
+        # so cleanup must run after a possible first-boot extraction. It holds
+        # no authoritative user data and must not survive now that foreground
+        # calculations are request-isolated.
+        if LEGACY_FOREGROUND_DB in bd.databases:
+            del bd.databases[LEGACY_FOREGROUND_DB]
+
+        mock_status = ensure_mock_background_database(
+            bd, biosphere_database=BIOSPHERE_DB
+        )
+        if mock_status["changed"]:
+            print(
+                "[lca_engine] Installed bundled mock background database — "
+                f"{mock_status['activities']} processes."
+            )
 
         _ensure_search_projection()
         _startup_databases_ready = True

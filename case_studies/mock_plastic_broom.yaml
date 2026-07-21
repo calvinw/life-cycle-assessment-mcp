@@ -1,0 +1,24 @@
+name: Mock Plastic Broom — 1 unit
+goal: >
+  Demonstrate a foreground product that uses two processes from the bundled
+  tiny mock background database. All inventory values are fictional.
+
+functional_unit:
+  description: 1 mock plastic broom
+  amount: 1.0
+  unit: unit
+
+products:
+  - { name: Mock plastic broom, unit: unit }
+
+processes:
+  - name: Mock plastic broom assembly
+    reference_output: { flow: Mock plastic broom, amount: 1.0, unit: unit }
+    inputs:
+      - { flow: "Mock polypropylene granulate, at plant", location: MOCK, database: mock_background, amount: 0.52, unit: kilogram }
+      - { flow: "Mock freight transport, small truck", location: MOCK, database: mock_background, amount: 0.1055, unit: ton kilometer }
+
+reference_process: Mock plastic broom assembly
+
+lcia:
+  method_name: "EF v3.1"

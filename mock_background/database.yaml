@@ -1,0 +1,43 @@
+database:
+  name: mock_background
+  version: 1
+  title: Tiny mock background database
+  description: >
+    Fictional, deterministic unit processes for examples, tests, and API
+    demonstrations. These inventories are teaching data and must not be used
+    for real environmental claims.
+
+activities:
+  - code: mock-grid-electricity
+    name: Mock grid electricity, medium voltage
+    reference_product: electricity, medium voltage
+    location: MOCK
+    unit: kilowatt hour
+    production_amount: 1.0
+    biosphere:
+      - { flow: "Carbon dioxide, fossil", compartment: air, amount: 0.4, unit: kilogram }
+      - { flow: Sulfur dioxide, compartment: air, amount: 0.0003, unit: kilogram }
+
+  - code: mock-polypropylene
+    name: Mock polypropylene granulate, at plant
+    reference_product: polypropylene granulate
+    location: MOCK
+    unit: kilogram
+    production_amount: 1.0
+    technosphere:
+      - { activity: mock-grid-electricity, amount: 2.0, unit: kilowatt hour }
+    biosphere:
+      - { flow: "Carbon dioxide, fossil", compartment: air, amount: 1.0, unit: kilogram }
+      - { flow: Sulfur dioxide, compartment: air, amount: 0.0005, unit: kilogram }
+
+  - code: mock-small-truck
+    name: Mock freight transport, small truck
+    reference_product: freight transport
+    location: MOCK
+    unit: ton kilometer
+    production_amount: 1.0
+    technosphere:
+      - { activity: mock-grid-electricity, amount: 0.08, unit: kilowatt hour }
+    biosphere:
+      - { flow: "Carbon dioxide, fossil", compartment: air, amount: 0.09, unit: kilogram }
+      - { flow: Sulfur dioxide, compartment: air, amount: 0.0001, unit: kilogram }
