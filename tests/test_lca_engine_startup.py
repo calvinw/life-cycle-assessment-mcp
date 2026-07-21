@@ -165,6 +165,7 @@ class ProductionStartupTests(unittest.TestCase):
         dockerfile = pathlib.Path(__file__).parents[1] / "Dockerfile"
         self.assertIn("lca_search.py", dockerfile.read_text())
         self.assertIn("COPY mock_background/ ./mock_background/", dockerfile.read_text())
+        self.assertIn("COPY mock_examples/ ./mock_examples/", dockerfile.read_text())
 
 
 if __name__ == "__main__":

@@ -309,13 +309,13 @@ read-only projection, not Brightway's internal database.
 
 ```http
 GET /api/case-studies
-GET /api/case-studies/mock_plastic_broom
+GET /api/case-studies/cotton_fiber
 ```
 
 The list endpoint returns names:
 
 ```json
-["cotton_fiber", "jacket", "mock_plastic_broom", "mock_storage_bin", "polyester_tshirt", "wool_yarn"]
+["cotton_fiber", "jacket", "polyester_tshirt", "wool_yarn"]
 ```
 
 The detail endpoint returns a bundle containing:
@@ -332,8 +332,8 @@ The detail endpoint returns a bundle containing:
 ```
 
 Use case studies to obtain known-valid product graph YAML and exact foreground
-process names. The two `mock_*` examples use the bundled fictional
-`mock_background` database and are appropriate for deterministic client tests.
+process names. Internal `mock_*` fixtures are intentionally excluded from this
+public teaching catalog.
 
 ### Run an LCA
 

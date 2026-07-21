@@ -19,6 +19,7 @@ COPY sse_server.py lca_server.py lca_engine.py lca_search.py lca_svg_engine.py l
 COPY lca_core/ ./lca_core/
 COPY case_studies/ ./case_studies/
 COPY mock_background/ ./mock_background/
+COPY mock_examples/ ./mock_examples/
 COPY scripts/ ./scripts/
 
 EXPOSE 9000

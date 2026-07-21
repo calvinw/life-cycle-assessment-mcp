@@ -50,9 +50,9 @@ Brightway data is isolated for the request and removed after both successful
 and failed calculations. Installed background databases are read-only
 reference data shared by all requests.
 
-The bundled `mock_background` database and the `mock_plastic_broom` and
-`mock_storage_bin` case studies provide small, fictional examples for testing
-this behavior. See [Tiny Mock Background Database](mock_background_database.md).
+The bundled `mock_background` database has small, fictional product graphs for
+internal testing, but these are intentionally excluded from the public case
+study catalog. See [Tiny Mock Background Database](mock_background_database.md).
 
 The response retains the original LCI, LCIA, scaling-vector, and SVG fields and
 adds schema-versioned contribution and Sankey data:

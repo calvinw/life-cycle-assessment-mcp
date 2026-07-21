@@ -41,22 +41,21 @@ generated database when that source changes. The search projection includes
 the mock database, so it is available through `/api/databases`,
 `/api/database/search`, `/api/database/activity-inputs`, and read-only SQL.
 
-## Bundled product graphs
+## Internal test product graphs
 
-- `case_studies/mock_storage_bin.yaml` references one background process.
-- `case_studies/mock_plastic_broom.yaml` references two background processes.
+- `mock_examples/mock_storage_bin.yaml` references one background process.
+- `mock_examples/mock_plastic_broom.yaml` references two background processes.
 
 Their expected EF v3.1 climate-change scores are 1.440000 and 0.948871 kg
 CO2-Eq, respectively.
 
-Both are exposed by `GET /api/case-studies`. Fetch and run the broom example:
+These fixtures are packaged for tests but intentionally excluded from
+`GET /api/case-studies`. Run the local broom fixture against an API:
 
 ```bash
 BASE_URL=http://localhost:9000
 
-curl -s "$BASE_URL/api/case-studies/mock_plastic_broom" \
-  | jq -r .product_graph \
-  | jq -Rs '{product_graph: .}' \
+jq -Rs '{product_graph: .}' mock_examples/mock_plastic_broom.yaml \
   | curl -s -X POST "$BASE_URL/api/lca/run" \
       -H 'Content-Type: application/json' \
       --data-binary @- \

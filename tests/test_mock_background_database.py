@@ -34,10 +34,10 @@ class MockBackgroundDatabaseTests(unittest.TestCase):
 
     def test_one_and_two_background_process_examples_calculate(self):
         storage = self.engine.run(
-            (ROOT / "case_studies/mock_storage_bin.yaml").read_text()
+            (ROOT / "mock_examples/mock_storage_bin.yaml").read_text()
         )
         broom = self.engine.run(
-            (ROOT / "case_studies/mock_plastic_broom.yaml").read_text()
+            (ROOT / "mock_examples/mock_plastic_broom.yaml").read_text()
         )
 
         storage_background = [
@@ -69,16 +69,23 @@ class MockBackgroundDatabaseTests(unittest.TestCase):
             )
         )
 
-    def test_bundled_mock_case_studies_match_their_yaml(self):
+    def test_bundled_mock_examples_match_their_yaml(self):
         for name in ("mock_plastic_broom", "mock_storage_bin"):
-            yaml_text = (ROOT / "case_studies" / f"{name}.yaml").read_text()
+            yaml_text = (ROOT / "mock_examples" / f"{name}.yaml").read_text()
             bundle = json.loads(
-                (ROOT / "case_studies" / f"{name}.json").read_text()
+                (ROOT / "mock_examples" / f"{name}.json").read_text()
             )
             self.assertEqual(bundle["product_graph"], yaml_text)
             self.assertTrue(bundle["svg_structure"].startswith("<svg"))
             self.assertTrue(bundle["svg_scaled"].startswith("<svg"))
             self.assertTrue(bundle["unit_process_svgs"])
+
+    def test_mock_examples_are_not_public_case_studies(self):
+        import lca_server
+
+        public_names = lca_server.list_case_studies()
+        self.assertNotIn("mock_plastic_broom", public_names)
+        self.assertNotIn("mock_storage_bin", public_names)
 
 
 if __name__ == "__main__":
