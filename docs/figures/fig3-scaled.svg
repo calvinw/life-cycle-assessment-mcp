@@ -23,35 +23,35 @@
 <text class="title" x="500" y="176" text-anchor="middle" dominant-baseline="central">Production of electricity</text>
 <text class="run" x="500" y="197" text-anchor="middle" dominant-baseline="central">s<tspan dy="3" font-size="10">2</tspan><tspan dy="-3" font-size="12"> = 100</tspan></text>
 
-<line class="flow" x1="100" y1="150" x2="100" y2="108" marker-end="url(#a)"/>
-<text class="new" x="100" y="58" text-anchor="middle">60 kg</text>
-<text class="old" x="100" y="78" text-anchor="middle">30 kg</text>
-<line class="strike" x1="78" y1="74" x2="122" y2="74"/>
-<text class="name" x="100" y="97" text-anchor="middle">CO2</text>
+<line class="flow" x1="100" y1="220" x2="100" y2="298" marker-end="url(#a)"/>
+<text class="new" x="100" y="314" text-anchor="middle">60 kg</text>
+<text class="old" x="100" y="333" text-anchor="middle">30 kg</text>
+<line class="strike" x1="78" y1="329" x2="122" y2="329"/>
+<text class="name" x="100" y="352" text-anchor="middle">CO2</text>
 
-<line class="flow" x1="185" y1="150" x2="185" y2="108" marker-end="url(#a)"/>
-<text class="new" x="185" y="58" text-anchor="middle">20 kg</text>
-<text class="old" x="185" y="78" text-anchor="middle">10 kg</text>
-<line class="strike" x1="164" y1="74" x2="206" y2="74"/>
-<text class="name" x="185" y="97" text-anchor="middle">CH4</text>
+<line class="flow" x1="185" y1="220" x2="185" y2="298" marker-end="url(#a)"/>
+<text class="new" x="185" y="314" text-anchor="middle">20 kg</text>
+<text class="old" x="185" y="333" text-anchor="middle">10 kg</text>
+<line class="strike" x1="164" y1="329" x2="206" y2="329"/>
+<text class="name" x="185" y="352" text-anchor="middle">CH4</text>
 
-<line class="flow" x1="455" y1="150" x2="455" y2="108" marker-end="url(#a)"/>
-<text class="new" x="455" y="58" text-anchor="middle">540 kg</text>
-<text class="old" x="455" y="78" text-anchor="middle">5.4 kg</text>
-<line class="strike" x1="430" y1="74" x2="480" y2="74"/>
-<text class="name" x="455" y="97" text-anchor="middle">CO2</text>
+<line class="flow" x1="455" y1="220" x2="455" y2="298" marker-end="url(#a)"/>
+<text class="new" x="455" y="314" text-anchor="middle">540 kg</text>
+<text class="old" x="455" y="333" text-anchor="middle">5.4 kg</text>
+<line class="strike" x1="430" y1="329" x2="480" y2="329"/>
+<text class="name" x="455" y="352" text-anchor="middle">CO2</text>
 
-<line class="flow" x1="545" y1="150" x2="545" y2="108" marker-end="url(#a)"/>
-<text class="new" x="545" y="58" text-anchor="middle">5 kg</text>
-<text class="old" x="545" y="78" text-anchor="middle">0.05 kg</text>
-<line class="strike" x1="516" y1="74" x2="574" y2="74"/>
-<text class="name" x="545" y="97" text-anchor="middle">CH4</text>
+<line class="flow" x1="545" y1="220" x2="545" y2="298" marker-end="url(#a)"/>
+<text class="new" x="545" y="314" text-anchor="middle">5 kg</text>
+<text class="old" x="545" y="333" text-anchor="middle">0.05 kg</text>
+<line class="strike" x1="516" y1="329" x2="574" y2="329"/>
+<text class="name" x="545" y="352" text-anchor="middle">CH4</text>
 
-<line class="flow" x1="145" y1="298" x2="145" y2="222" marker-end="url(#a)"/>
-<text class="new" x="145" y="314" text-anchor="middle">100 L</text>
-<text class="old" x="145" y="333" text-anchor="middle">50 L</text>
-<line class="strike" x1="128" y1="329" x2="162" y2="329"/>
-<text class="name" x="145" y="352" text-anchor="middle">Crude oil</text>
+<line class="flow" x1="145" y1="108" x2="145" y2="148" marker-end="url(#a)"/>
+<text class="new" x="145" y="58" text-anchor="middle">100 L</text>
+<text class="old" x="145" y="78" text-anchor="middle">50 L</text>
+<line class="strike" x1="128" y1="74" x2="162" y2="74"/>
+<text class="name" x="145" y="97" text-anchor="middle">Crude oil</text>
 
 <line class="flow" x1="247" y1="185" x2="300" y2="185" marker-end="url(#a)"/>
 <text class="new" x="285" y="132" text-anchor="middle">200 L</text>

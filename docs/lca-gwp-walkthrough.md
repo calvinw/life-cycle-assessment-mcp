@@ -14,7 +14,7 @@ Before any numbers, the shape of the system. Crude oil is drawn from nature and 
 
 ![System structure with no quantities](figures/fig1-structure.svg)
 
-*Fig. 1 — Structure only. Arrows into a box are inputs, arrows out are outputs, arrows to the top are emissions to air. Fuel is what links the two processes.*
+*Fig. 1 — Structure only. Extractions from nature are above the activities; emissions to air are below them. Arrows into a box are inputs and arrows out are outputs. Fuel is what links the two processes.*
 
 ---
 
