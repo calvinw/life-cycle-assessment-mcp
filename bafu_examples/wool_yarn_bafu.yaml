@@ -8,6 +8,11 @@ functional_unit:
   unit: kg
 products:
   - { name: Wool yarn, unit: kg }
+elementary_flows:
+  emissions:
+    - { name: Carbon dioxide, compartment: air, unit: kg }
+  resources:
+    - { name: Water,          compartment: water, unit: L }
 processes:
   - name: Wool yarn production
     reference_output: { flow: Wool yarn, amount: 1.0, unit: kg }

@@ -9,6 +9,13 @@ functional_unit:
   unit: kg
 products:
   - { name: Cotton fiber, unit: kg }
+elementary_flows:
+  emissions:
+    - { name: Carbon dioxide, compartment: air, unit: kg }
+    - { name: Nitrous oxide,  compartment: air, unit: kg }
+    - { name: Ammonia,        compartment: air, unit: kg }
+  resources:
+    - { name: Water,          compartment: water, unit: L }
 processes:
   - name: Cotton farming
     reference_output: { flow: Cotton fiber, amount: 1.0, unit: kg }

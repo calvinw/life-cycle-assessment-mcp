@@ -8,6 +8,9 @@ functional_unit:
   unit: unit
 products:
   - { name: T-shirt, unit: unit }
+elementary_flows:
+  emissions:
+    - { name: Carbon dioxide, compartment: air, unit: kg }
 processes:
   - name: T-shirt assembly
     reference_output: { flow: T-shirt, amount: 1.0, unit: unit }
