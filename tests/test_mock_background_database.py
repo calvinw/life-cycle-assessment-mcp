@@ -21,11 +21,11 @@ class MockBackgroundDatabaseTests(unittest.TestCase):
         cls.engine.ensure_ready()
         bd.projects.set_current(core_engine.BRIGHTWAY_PROJECT)
 
-    def test_installer_is_idempotent_and_database_has_three_processes(self):
+    def test_installer_is_idempotent_and_database_has_four_processes(self):
         status = ensure_mock_background_database(bd)
         self.assertFalse(status["changed"])
-        self.assertEqual(status["activities"], 3)
-        self.assertEqual(len(bd.Database(DATABASE_NAME)), 3)
+        self.assertEqual(status["activities"], 4)
+        self.assertEqual(len(bd.Database(DATABASE_NAME)), 4)
 
     def test_mock_database_is_searchable_through_public_api(self):
         results = self.engine.search_activities(
@@ -34,12 +34,15 @@ class MockBackgroundDatabaseTests(unittest.TestCase):
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0]["key"], [DATABASE_NAME, "mock-polypropylene"])
 
-    def test_one_and_two_background_process_examples_calculate(self):
+    def test_mock_background_examples_calculate(self):
         storage = self.engine.run(
             (ROOT / "mock_examples/mock_storage_bin.yaml").read_text()
         )
         broom = self.engine.run(
             (ROOT / "mock_examples/mock_plastic_broom.yaml").read_text()
+        )
+        simple_broom = self.engine.run(
+            (ROOT / "mock_examples/mock_plastic_broom_simple.yaml").read_text()
         )
 
         storage_background = [
@@ -50,8 +53,13 @@ class MockBackgroundDatabaseTests(unittest.TestCase):
             node for node in broom["sankey"]["nodes"]
             if node.get("scope") == "background"
         ]
+        simple_broom_background = [
+            node for node in simple_broom["sankey"]["nodes"]
+            if node.get("scope") == "background"
+        ]
         self.assertEqual(len(storage_background), 1)
         self.assertEqual(len(broom_background), 2)
+        self.assertEqual(len(simple_broom_background), 2)
         storage_climate = next(
             result["score"]
             for label, result in storage["lcia"].items()
@@ -62,8 +70,14 @@ class MockBackgroundDatabaseTests(unittest.TestCase):
             for label, result in broom["lcia"].items()
             if label == "climate change | global warming potential (GWP100)"
         )
+        simple_broom_climate = next(
+            result["score"]
+            for label, result in simple_broom["lcia"].items()
+            if label == "climate change | global warming potential (GWP100)"
+        )
         self.assertAlmostEqual(storage_climate, 1.44, places=6)
         self.assertAlmostEqual(broom_climate, 0.948871, places=6)
+        self.assertAlmostEqual(simple_broom_climate, 0.945495, places=6)
         self.assertFalse(
             any(
                 name.startswith(core_engine.FOREGROUND_DB_PREFIX)
@@ -72,7 +86,11 @@ class MockBackgroundDatabaseTests(unittest.TestCase):
         )
 
     def test_bundled_mock_examples_match_their_yaml(self):
-        for name in ("mock_plastic_broom", "mock_storage_bin"):
+        for name in (
+            "mock_plastic_broom",
+            "mock_plastic_broom_simple",
+            "mock_storage_bin",
+        ):
             yaml_text = (ROOT / "mock_examples" / f"{name}.yaml").read_text()
             bundle = json.loads(
                 (ROOT / "mock_examples" / f"{name}.json").read_text()
@@ -81,6 +99,33 @@ class MockBackgroundDatabaseTests(unittest.TestCase):
             self.assertTrue(bundle["svg_structure"].startswith("<svg"))
             self.assertTrue(bundle["svg_scaled"].startswith("<svg"))
             self.assertTrue(bundle["unit_process_svgs"])
+
+    def test_direct_only_freight_is_a_leaf_and_simple_broom_visits_grid_once(self):
+        freight = bd.get_node(
+            database=DATABASE_NAME,
+            code="mock-small-truck-direct",
+        )
+        self.assertEqual(list(freight.technosphere()), [])
+
+        source = (
+            ROOT / "mock_examples/mock_plastic_broom_simple.yaml"
+        ).read_text()
+        graph = self.engine.run(source)["contribution_graphs"][0]
+        process_names = [
+            node["process_name"]
+            for node in graph["nodes"]
+            if node["kind"] == "process"
+        ]
+        self.assertEqual(
+            process_names.count("Mock grid electricity, medium voltage"),
+            1,
+        )
+        self.assertEqual(
+            process_names.count(
+                "Mock freight transport, small truck, direct emissions only"
+            ),
+            1,
+        )
 
     def test_plastic_broom_returns_recursive_climate_contribution_graph(self):
         source = (ROOT / "mock_examples/mock_plastic_broom.yaml").read_text()
@@ -207,6 +252,7 @@ class MockBackgroundDatabaseTests(unittest.TestCase):
 
         public_names = lca_server.list_case_studies()
         self.assertNotIn("mock_plastic_broom", public_names)
+        self.assertNotIn("mock_plastic_broom_simple", public_names)
         self.assertNotIn("mock_storage_bin", public_names)
 
 

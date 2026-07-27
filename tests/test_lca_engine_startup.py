@@ -69,7 +69,7 @@ class ProductionStartupTests(unittest.TestCase):
             patch.object(
                 lca_engine,
                 "ensure_mock_background_database",
-                return_value={"changed": False, "activities": 3},
+                return_value={"changed": False, "activities": 4},
             ),
             patch.object(lca_engine, "_ensure_search_projection") as ensure_projection,
         ):
@@ -90,7 +90,7 @@ class ProductionStartupTests(unittest.TestCase):
             patch.object(
                 lca_engine,
                 "ensure_mock_background_database",
-                return_value={"changed": False, "activities": 3},
+                return_value={"changed": False, "activities": 4},
             ),
             patch.object(lca_engine, "_ensure_search_projection"),
         ):
@@ -108,7 +108,7 @@ class ProductionStartupTests(unittest.TestCase):
             patch.object(
                 lca_engine,
                 "ensure_mock_background_database",
-                return_value={"changed": False, "activities": 3},
+                return_value={"changed": False, "activities": 4},
             ) as install_mock,
             patch.object(lca_engine, "_ensure_search_projection"),
         ):
@@ -149,7 +149,7 @@ class ProductionStartupTests(unittest.TestCase):
             patch.object(
                 lca_engine,
                 "ensure_mock_background_database",
-                return_value={"changed": False, "activities": 3},
+                return_value={"changed": False, "activities": 4},
             ),
             patch.object(lca_engine, "_ensure_search_projection"),
         ):

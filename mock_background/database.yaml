@@ -1,6 +1,6 @@
 database:
   name: mock_background
-  version: 1
+  version: 2
   title: Tiny mock background database
   description: >
     Fictional, deterministic unit processes for examples, tests, and API
@@ -38,6 +38,16 @@ activities:
     production_amount: 1.0
     technosphere:
       - { activity: mock-grid-electricity, amount: 0.08, unit: kilowatt hour }
+    biosphere:
+      - { flow: "Carbon dioxide, fossil", compartment: air, amount: 0.09, unit: kilogram }
+      - { flow: Sulfur dioxide, compartment: air, amount: 0.0001, unit: kilogram }
+
+  - code: mock-small-truck-direct
+    name: Mock freight transport, small truck, direct emissions only
+    reference_product: freight transport
+    location: MOCK
+    unit: ton kilometer
+    production_amount: 1.0
     biosphere:
       - { flow: "Carbon dioxide, fossil", compartment: air, amount: 0.09, unit: kilogram }
       - { flow: Sulfur dioxide, compartment: air, amount: 0.0001, unit: kilogram }
