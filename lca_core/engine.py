@@ -31,6 +31,7 @@ import bw2data as bd
 import bw2calc as bc
 
 from .models import LcaCoreResult
+from .contribution_graph import build_contribution_graph
 from .mock_database import DATABASE_NAME as MOCK_BACKGROUND_DB
 from .mock_database import ensure_mock_background_database
 
@@ -235,6 +236,111 @@ def _validate_spec(spec: dict) -> None:
     lcia = spec.get("lcia")
     if not isinstance(lcia, dict) or not lcia.get("method_name"):
         raise ValueError("lcia.method_name is required.")
+    contribution_graph = lcia.get("contribution_graph")
+    if contribution_graph is not None:
+        if not isinstance(contribution_graph, dict):
+            raise ValueError("lcia.contribution_graph must be a mapping.")
+        categories = contribution_graph.get("categories")
+        if (
+            not isinstance(categories, list)
+            or not categories
+            or any(
+                not isinstance(category, str) or not category.strip()
+                for category in categories
+            )
+        ):
+            raise ValueError(
+                "lcia.contribution_graph.categories must be a non-empty list "
+                "of category names."
+            )
+        for key in ("cutoff", "biosphere_cutoff"):
+            if key in contribution_graph:
+                value = _require_finite(
+                    contribution_graph[key], f"lcia.contribution_graph.{key}"
+                )
+                if not 0 < value < 1:
+                    raise ValueError(
+                        f"lcia.contribution_graph.{key} must be between 0 and 1."
+                    )
+        for key in ("max_depth", "max_calculations"):
+            if key in contribution_graph:
+                value = contribution_graph[key]
+                if (
+                    isinstance(value, bool)
+                    or not isinstance(value, int)
+                    or value <= 0
+                ):
+                    raise ValueError(
+                        f"lcia.contribution_graph.{key} must be a positive integer."
+                    )
+        if "include_flows" in contribution_graph and not isinstance(
+            contribution_graph["include_flows"], bool
+        ):
+            raise ValueError(
+                "lcia.contribution_graph.include_flows must be true or false."
+            )
+
+
+def _contribution_graph_config(spec: dict) -> dict | None:
+    configured = spec["lcia"].get("contribution_graph")
+    if configured is None:
+        return None
+    return {
+        "categories": configured["categories"],
+        "cutoff": float(configured.get("cutoff", 0.005)),
+        "biosphere_cutoff": float(
+            configured.get("biosphere_cutoff", 0.0001)
+        ),
+        "max_depth": configured.get("max_depth"),
+        "max_calculations": configured.get("max_calculations", 1000),
+        "include_flows": configured.get("include_flows", True),
+    }
+
+
+def _resolve_contribution_graph_methods(
+    method_tuples: list[tuple], config: dict | None
+) -> set[tuple]:
+    if config is None:
+        return set()
+
+    resolved: set[tuple] = set()
+    labels = {
+        method_tuple: " | ".join(method_tuple[1:])
+        for method_tuple in method_tuples
+    }
+    for requested in config["categories"]:
+        query = requested.casefold().strip()
+        exact = [
+            method_tuple
+            for method_tuple, label in labels.items()
+            if label.casefold() == query
+        ]
+        component = [
+            method_tuple
+            for method_tuple, label in labels.items()
+            if label.split(" | ", 1)[0].casefold() == query
+        ]
+        substring = [
+            method_tuple
+            for method_tuple, label in labels.items()
+            if query in label.casefold()
+        ]
+        matches = exact or component or substring
+        if not matches:
+            available = ", ".join(labels.values())
+            raise ValueError(
+                f"Contribution graph category '{requested}' was not found "
+                f"in LCIA method '{method_tuples[0][0]}'. "
+                f"Available categories: {available}."
+            )
+        if len(matches) > 1:
+            options = ", ".join(labels[item] for item in matches)
+            raise ValueError(
+                f"Contribution graph category '{requested}' is ambiguous; "
+                f"matches: {options}."
+            )
+        resolved.add(matches[0])
+    return resolved
 
 
 def _stable_id(kind: str, *parts: object) -> str:
@@ -752,6 +858,10 @@ def run_analysis(product_graph_yaml: str) -> LcaCoreResult:
                     f"LCIA method '{method_name}' not found. "
                     f"Run scripts/setup_databases.py to load methods."
                 )
+            contribution_config = _contribution_graph_config(spec)
+            contribution_methods = _resolve_contribution_graph_methods(
+                method_tuples, contribution_config
+            )
 
             # Compute inventory and the scaling solution exactly once.
             lca = bc.LCA(demand={ref_act: fu_amount}, method=method_tuples[0])
@@ -790,6 +900,18 @@ def run_analysis(product_graph_yaml: str) -> LcaCoreResult:
 
             lcia_results: dict = {}
             contribution_categories: list[dict] = []
+            contribution_graphs: list[dict] = []
+            foreground_ids = _process_ids(spec)
+            foreground_metadata = {
+                activity.id: {
+                    "activity_id": foreground_ids[name],
+                    "process_name": name,
+                    "database": "foreground",
+                    "code": name,
+                    "location": activity.get("location"),
+                }
+                for name, activity in activities.items()
+            }
             for method_index, method_tuple in enumerate(method_tuples):
                 if method_index:
                     lca.switch_method(method_tuple)
@@ -797,11 +919,31 @@ def run_analysis(product_graph_yaml: str) -> LcaCoreResult:
                 label = " | ".join(method_tuple[1:])
                 unit = bd.methods[method_tuple].get("unit", "")
                 lcia_results[label] = {"score": float(lca.score), "unit": unit}
-                contribution_categories.append(
-                    _contribution_category(
-                        lca, spec, activities, label=label, unit=unit
-                    )
+                category = _contribution_category(
+                    lca, spec, activities, label=label, unit=unit
                 )
+                if method_tuple in contribution_methods:
+                    graph = build_contribution_graph(
+                        lca=lca,
+                        spec=spec,
+                        label=label,
+                        unit=unit,
+                        config=contribution_config,
+                        foreground_metadata=foreground_metadata,
+                    )
+                    contribution_graphs.append(graph)
+                    category["processes"] = [
+                        {
+                            "process_id": row["activity_id"],
+                            "process_name": row["process_name"],
+                            "direct_score": row["direct_score"],
+                            "percentage": row["percentage"],
+                            "scope": row["scope"],
+                        }
+                        for row in graph["activity_contributions"]
+                    ]
+                    category["residual_score"] = graph["unexpanded_score"]
+                contribution_categories.append(category)
 
             fu_spec = spec["functional_unit"]
             result: LcaCoreResult = {
@@ -813,10 +955,11 @@ def run_analysis(product_graph_yaml: str) -> LcaCoreResult:
                 "lci": lci,
                 "lcia": lcia_results,
                 "scaling_vector": scaling_vector,
-                "result_schema_version": 2,
+                "result_schema_version": 3,
                 "process_contributions": {
                     "categories": contribution_categories
                 },
+                "contribution_graphs": contribution_graphs,
                 "sankey": _build_sankey(
                     spec, scaling_vector, background_providers
                 ),

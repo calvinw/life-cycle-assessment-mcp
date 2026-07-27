@@ -32,10 +32,12 @@ class ExtendedLcaResultTests(unittest.TestCase):
             "scaling_vector",
             "result_schema_version",
             "process_contributions",
+            "contribution_graphs",
             "sankey",
         }
         self.assertTrue(expected.issubset(self.polyester))
-        self.assertEqual(self.polyester["result_schema_version"], 2)
+        self.assertEqual(self.polyester["result_schema_version"], 3)
+        self.assertEqual(self.polyester["contribution_graphs"], [])
 
     def test_contributions_cover_every_category_and_reconcile(self):
         categories = self.polyester["process_contributions"]["categories"]
@@ -218,9 +220,10 @@ class ExtendedLcaResultTests(unittest.TestCase):
 
         schema = asyncio.run(get_schema())
         self.assertEqual(
-            schema["properties"]["result_schema_version"]["const"], 2
+            schema["properties"]["result_schema_version"]["const"], 3
         )
         self.assertIn("process_contributions", schema["properties"])
+        self.assertIn("contribution_graphs", schema["properties"])
         self.assertIn("sankey", schema["properties"])
         self.assertIn("svg_scaled", schema["properties"])
         self.assertIn("svg_structure", schema["properties"])

@@ -1,6 +1,8 @@
 import json
+import math
 import pathlib
 import unittest
+from unittest import mock
 
 from lca_core import LCAEngine
 from lca_core import engine as core_engine
@@ -79,6 +81,126 @@ class MockBackgroundDatabaseTests(unittest.TestCase):
             self.assertTrue(bundle["svg_structure"].startswith("<svg"))
             self.assertTrue(bundle["svg_scaled"].startswith("<svg"))
             self.assertTrue(bundle["unit_process_svgs"])
+
+    def test_plastic_broom_returns_recursive_climate_contribution_graph(self):
+        source = (ROOT / "mock_examples/mock_plastic_broom.yaml").read_text()
+        original_lca = core_engine.bc.LCA
+        with mock.patch.object(core_engine.bc, "LCA", wraps=original_lca) as lca:
+            result = self.engine.run(source)
+        self.assertEqual(lca.call_count, 1)
+
+        self.assertEqual(result["result_schema_version"], 3)
+        self.assertEqual(len(result["contribution_graphs"]), 1)
+        graph = result["contribution_graphs"][0]
+        self.assertEqual(
+            graph["label"],
+            "climate change | global warming potential (GWP100)",
+        )
+        self.assertAlmostEqual(graph["total_score"], 0.9488709719424245)
+        self.assertEqual(graph["status"], "complete")
+        self.assertAlmostEqual(graph["coverage"], 1)
+        self.assertEqual(graph["unexpanded_score"], 0)
+
+        process_nodes = [
+            node for node in graph["nodes"] if node["kind"] == "process"
+        ]
+        names = [node["process_name"] for node in process_nodes]
+        self.assertEqual(names.count("Mock plastic broom assembly"), 1)
+        self.assertEqual(
+            names.count("Mock polypropylene granulate, at plant"), 1
+        )
+        self.assertEqual(
+            names.count("Mock freight transport, small truck"), 1
+        )
+        self.assertEqual(
+            names.count("Mock grid electricity, medium voltage"), 2
+        )
+        self.assertEqual(
+            [node["depth"] for node in graph["nodes"]],
+            [0, 1, 2, 2, 3, 3],
+        )
+
+        by_id = {node["id"]: node for node in graph["nodes"]}
+        self.assertTrue(
+            all(
+                flow["process_occurrence_id"] in by_id
+                for flow in graph["flows"]
+            )
+        )
+        children_by_consumer: dict[str, list[str]] = {}
+        for edge in graph["edges"]:
+            children_by_consumer.setdefault(edge["consumer_id"], []).append(
+                edge["producer_id"]
+            )
+        for node in graph["nodes"]:
+            child_score = sum(
+                by_id[child]["cumulative_score"]
+                for child in children_by_consumer.get(node["id"], [])
+            )
+            self.assertTrue(
+                math.isclose(
+                    node["direct_score"]
+                    + child_score
+                    + node["unexpanded_score"],
+                    node["cumulative_score"],
+                    rel_tol=core_engine.NUMERIC_REL_TOLERANCE,
+                    abs_tol=core_engine.NUMERIC_ABS_TOLERANCE,
+                )
+            )
+
+        grid = next(
+            row
+            for row in graph["activity_contributions"]
+            if row["process_name"] == "Mock grid electricity, medium voltage"
+        )
+        self.assertEqual(grid["occurrence_count"], 2)
+        self.assertAlmostEqual(grid["direct_score"], 0.41937599084246135)
+
+        climate = next(
+            category
+            for category in result["process_contributions"]["categories"]
+            if category["label"] == graph["label"]
+        )
+        self.assertEqual(climate["residual_score"], 0)
+        self.assertEqual(len(climate["processes"]), 4)
+
+        repeated = self.engine.run(source)
+        self.assertEqual(
+            repeated["contribution_graphs"], result["contribution_graphs"]
+        )
+
+    def test_contribution_graph_cutoff_is_reported_as_unexpanded_impact(self):
+        source = (ROOT / "mock_examples/mock_plastic_broom.yaml").read_text()
+        source = source.replace("cutoff: 0.001", "cutoff: 0.01")
+        graph = self.engine.run(source)["contribution_graphs"][0]
+
+        grid_nodes = [
+            node
+            for node in graph["nodes"]
+            if node["process_name"] == "Mock grid electricity, medium voltage"
+        ]
+        self.assertEqual(len(grid_nodes), 1)
+        freight = next(
+            node
+            for node in graph["nodes"]
+            if node["process_name"] == "Mock freight transport, small truck"
+        )
+        self.assertAlmostEqual(
+            freight["unexpanded_score"], 0.0033759999023675914
+        )
+        self.assertAlmostEqual(
+            graph["unexpanded_score"], 0.0033759999023675914
+        )
+        self.assertEqual(graph["status"], "partial")
+
+    def test_contribution_graph_configuration_is_validated(self):
+        source = (ROOT / "mock_examples/mock_plastic_broom.yaml").read_text()
+        with self.assertRaisesRegex(ValueError, "between 0 and 1"):
+            self.engine.run(source.replace("cutoff: 0.001", "cutoff: 1"))
+        with self.assertRaisesRegex(ValueError, "was not found"):
+            self.engine.run(
+                source.replace("- climate change", "- missing category")
+            )
 
     def test_mock_examples_are_not_public_case_studies(self):
         import lca_server

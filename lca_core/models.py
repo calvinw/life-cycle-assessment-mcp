@@ -39,6 +39,79 @@ class ProcessContributions(TypedDict):
     categories: list[ProcessContributionCategory]
 
 
+class ContributionGraphNode(TypedDict):
+    id: str
+    kind: Literal["functional_unit", "process"]
+    activity_id: str | None
+    process_name: str
+    database: str | None
+    code: str | None
+    location: str | None
+    scope: Literal["foreground", "background"] | None
+    depth: int
+    supply_amount: float
+    unit: str
+    direct_score: float
+    cumulative_score: float
+    cumulative_percentage: float | None
+    unexpanded_score: float
+    terminal: bool
+
+
+class ContributionGraphEdge(TypedDict):
+    id: str
+    source: str
+    target: str
+    consumer_id: str
+    producer_id: str
+    flow_name: str
+    amount: float
+    unit: str
+
+
+class ContributionGraphFlow(TypedDict):
+    id: str
+    process_occurrence_id: str
+    flow_name: str
+    categories: list[str]
+    kind: Literal["extraction", "emission"]
+    amount: float
+    unit: str
+    score: float
+    percentage: float | None
+
+
+class ContributionGraphActivity(TypedDict):
+    activity_id: str
+    process_name: str
+    database: str
+    code: str
+    location: str | None
+    scope: Literal["foreground", "background"]
+    direct_score: float
+    percentage: float | None
+    occurrence_count: int
+
+
+class ContributionGraph(TypedDict):
+    id: str
+    label: str
+    unit: str
+    total_score: float
+    cutoff: float
+    biosphere_cutoff: float
+    max_depth: int | None
+    max_calculations: int
+    calculation_count: int
+    coverage: float | None
+    unexpanded_score: float
+    status: Literal["complete", "partial", "zero_total"]
+    nodes: list[ContributionGraphNode]
+    edges: list[ContributionGraphEdge]
+    flows: list[ContributionGraphFlow]
+    activity_contributions: list[ContributionGraphActivity]
+
+
 class SankeyNode(TypedDict):
     id: str
     label: str
@@ -71,8 +144,9 @@ class LcaCoreResult(TypedDict):
     lci: dict[str, InventoryResult]
     lcia: dict[str, ImpactResult]
     scaling_vector: dict[str, float]
-    result_schema_version: Literal[2]
+    result_schema_version: Literal[3]
     process_contributions: ProcessContributions
+    contribution_graphs: list[ContributionGraph]
     sankey: SankeyResult
 
 
