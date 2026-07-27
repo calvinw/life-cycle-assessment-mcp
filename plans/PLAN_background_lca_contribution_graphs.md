@@ -2,14 +2,21 @@
 
 ## Status
 
-Proposed.
+Proposed — mock-background implementation first. Real BAFU validation is
+explicitly deferred to `PLAN_bafu_reimport_and_validation.md`.
 
 ## Summary
 
-Extend `run_lca` so a product graph that links to BAFU or another background
-database can return an impact contribution graph from the functional unit,
-through the foreground, and into the background supply chain until an
-impact-relative cutoff, depth limit, or calculation limit is reached.
+Extend `run_lca` so a product graph that links to a background database can
+return an impact contribution graph from the functional unit, through the
+foreground, and into the background supply chain until an impact-relative
+cutoff, depth limit, or calculation limit is reached.
+
+Implement and debug the feature against the version-controlled
+`mock_background` database first. The mock graph is small, deterministic, and
+already cross-engine testable, so graph traversal and web-app behavior can be
+validated independently of unresolved BAFU import and LCIA compatibility
+problems.
 
 The implementation must reuse the `LCA` object already created by
 `run_analysis`. It must not rebuild the temporary foreground database or invoke
@@ -26,15 +33,19 @@ performs one root inventory calculation.
 
 ## Problem Statement
 
-The plastic broom example contains one foreground assembly process and three
-BAFU inputs:
+The mock plastic broom contains one foreground assembly process and two
+`mock_background` inputs:
 
-- 0.52 kg of global PLA;
-- 0.03 kg of European Nylon 6; and
-- 0.1055 tonne-kilometres of European freight transport.
+- 0.52 kg of mock polypropylene; and
+- 0.1055 tonne-kilometres of mock freight transport.
 
-The numerical LCA includes the complete BAFU supply chains, but the current
-result contract does not expose their process contributions:
+Both background activities consume the same mock grid-electricity activity.
+This gives the test graph branching, shared upstream activity identity, and
+multiple visits to the same provider without relying on real database import
+correctness.
+
+The numerical LCA includes the complete mock background supply chains, but the
+current result contract does not expose their recursive process contributions:
 
 1. `_contribution_category` iterates only over processes declared in the YAML.
 2. All background impact is combined into `residual_score`.
@@ -48,20 +59,17 @@ result contract does not expose their process contributions:
 As a result, clients cannot ask one `run_lca` call for the contribution path:
 
 ```text
-1 plastic broom
-  -> Plastic broom assembly
-    -> PLA
-      -> natural gas
-      -> corn farming
-      -> electricity
-      -> ...
-    -> Nylon 6
-      -> ...
-    -> freight
-      -> ...
+1 mock plastic broom
+  -> Mock plastic broom assembly
+    -> Mock polypropylene
+      -> Mock grid electricity
+        -> CO2 and SO2
+    -> Mock freight transport
+      -> Mock grid electricity
+        -> CO2 and SO2
 ```
 
-The temporary workaround is to run isolated PLA, nylon, and freight models and
+The temporary workaround is to run isolated first-level background models and
 add their results. That is inefficient, loses the connected supply-chain
 structure, and should not be required.
 
@@ -69,9 +77,10 @@ structure, and should not be required.
 
 ## Diagnosis
 
-This is not a Brightway calculation error. The total inventory and LCIA scores
-are correct. It is a limitation of the application engine's result builder and
-public contract.
+For the mock fixture, this is not a Brightway calculation error. Its inventory,
+LCIA scores, and expected scaling are deterministic and already tested. The
+missing contribution graph is a limitation of the application engine's result
+builder and public contract.
 
 The existing implementation already computes the inventory and factorized
 scaling solution once:
@@ -108,14 +117,16 @@ change.
    retaining a stable activity identity for aggregation.
 8. Keep existing product graphs and clients working when contribution traversal
    is not requested.
-9. Make the plastic broom a regression fixture for background contribution
-   behavior.
+9. Make the mock plastic broom a regression fixture for background
+   contribution behavior.
 
 ---
 
 ## Non-Goals
 
-- Changing the underlying BAFU inventories or EF v3.1 characterization factors.
+- Repairing or validating the BAFU import.
+- Using BAFU totals as acceptance criteria before the separate BAFU reimport
+  plan is complete.
 - Replacing Brightway's matrix solver.
 - Treating cumulative node scores as additive.
 - Traversing every EF v3.1 category by default.
@@ -224,11 +235,11 @@ Example:
 ```json
 {
   "id": "occurrence:...",
-  "activity_id": "activity:bafu:273090",
-  "database": "bafu",
-  "code": "273090",
-  "process_name": "Polylactide, granulate, at plant",
-  "location": "GLO",
+  "activity_id": "activity:mock_background:mock-polypropylene",
+  "database": "mock_background",
+  "code": "mock-polypropylene",
+  "process_name": "Mock polypropylene granulate, at plant",
+  "location": "MOCK",
   "scope": "background",
   "depth": 2,
   "supply_amount": 0.52,
@@ -274,9 +285,9 @@ the same `activity_id`:
 
 ```json
 {
-  "activity_id": "activity:bafu:273090",
-  "process_name": "Polylactide, granulate, at plant",
-  "location": "GLO",
+  "activity_id": "activity:mock_background:mock-polypropylene",
+  "process_name": "Mock polypropylene granulate, at plant",
+  "location": "MOCK",
   "scope": "background",
   "direct_score": 0.18,
   "percentage": 10.5
@@ -455,9 +466,9 @@ is authoritative; rendering is a pure presentation step.
 
 ---
 
-## Plastic Broom Migration
+## Mock Plastic Broom Regression
 
-Update `bafu_examples/plastic_broom.yaml` to request:
+Update `mock_examples/mock_plastic_broom.yaml` to request:
 
 ```yaml
 lcia:
@@ -472,13 +483,15 @@ lcia:
 
 Expected behavior from one `run_lca` request:
 
-1. The functional unit is one plastic broom.
+1. The functional unit is one mock plastic broom.
 2. The graph includes the foreground assembly process.
-3. The graph includes PLA, Nylon 6, and freight as background nodes.
-4. The graph continues into their BAFU suppliers until the configured cutoff.
-5. The climate graph reports approximately 1.709 kg CO2-Eq in total for the
-   current database snapshot.
-6. PLA is the largest first-level cumulative contributor.
+3. The graph includes mock polypropylene and mock freight as first-level
+   background nodes.
+4. Both branches continue to mock grid electricity.
+5. The two visits to grid electricity have distinct occurrence IDs and one
+   shared activity ID.
+6. The climate graph reports the fixture baseline of approximately
+   0.948871 kg CO2-Eq.
 7. Direct visited process scores plus residual reconcile to the total.
 8. No isolated single-input LCA runs are required.
 
@@ -513,16 +526,18 @@ Expected behavior from one `run_lca` request:
 
 1. Refactor the BAFU SVG path to consume the common contribution graph.
 2. Add product-system contribution SVG generation.
-3. Verify Graphviz output and labels at multiple cutoffs and depths.
+3. Wire the web-app contribution view to the mock plastic broom fixture.
+4. Verify Graphviz and web-app output at multiple cutoffs and depths.
 
 ### Phase 5 — Examples and documentation
 
-1. Update the plastic broom example.
-2. Add a background-backed storage-bin or textile example with a different
-   supply-chain shape.
+1. Update the mock plastic broom example.
+2. Use the existing mock storage bin as the one-background-process comparison.
 3. Update the REST and MCP guides with one-request examples.
 4. Remove documentation that presents background impact only as an opaque
    residual for schema version 3.
+5. Keep BAFU examples out of contribution-graph acceptance tests until
+   `PLAN_bafu_reimport_and_validation.md` is complete.
 
 ---
 
@@ -531,8 +546,7 @@ Expected behavior from one `run_lca` request:
 ### Numerical correctness
 
 - Full LCIA totals remain unchanged with contribution graphs enabled.
-- Plastic broom climate total remains approximately 1.709 kg CO2-Eq for the
-  current BAFU snapshot.
+- Mock plastic broom climate total remains approximately 0.948871 kg CO2-Eq.
 - Visited direct scores plus residual reconcile for every requested category.
 - Negative direct and cumulative scores retain their signs.
 - Zero-total categories return `status: "zero_total"`.
@@ -582,7 +596,7 @@ Expected behavior from one `run_lca` request:
 | `lca_core/background_svg.py` | Consume shared graph data instead of owning traversal mapping |
 | `lca_core/api.py` | Unify flat contribution analysis with the graph adapter |
 | `lca_server.py` | Update MCP and REST schemas, routes, and tool documentation |
-| `bafu_examples/plastic_broom.yaml` | Request climate and acidification graphs |
+| `mock_examples/mock_plastic_broom.yaml` | Request climate and acidification graphs |
 | `tests/test_lca_results_extension.py` | Replace residual-only expectation with graph assertions |
 | `tests/test_background_contribution_graph.py` | New traversal, cutoff, reconciliation, and lifecycle tests |
 | `docs/llm_rest_api_guide.md` | Document the new result and one-request workflow |
@@ -628,10 +642,11 @@ cutoffs, and avoid generating graphs for unrequested categories.
 
 The work is complete when:
 
-1. One MCP `run_lca` call on the configured plastic broom YAML returns total
-   EF v3.1 results and recursive climate and acidification contribution graphs.
-2. No second `run_lca` call or isolated PLA, nylon, or freight model is used.
-3. Both foreground and BAFU background processes appear in the same graph.
+1. One MCP or REST `run_lca` call on the configured mock plastic broom YAML
+   returns total EF v3.1 results and recursive climate and acidification
+   contribution graphs.
+2. No second `run_lca` call or isolated background-input model is used.
+3. Both foreground and mock background processes appear in the same graph.
 4. Traversal honors cutoff, biosphere cutoff, maximum depth, and maximum
    calculation count.
 5. Direct scores plus residual reconcile to the LCIA total within numeric
@@ -645,3 +660,18 @@ The work is complete when:
    cleanup.
 10. MCP, REST, Python, and documentation all expose the same versioned result
     semantics.
+
+---
+
+## Sequencing with BAFU
+
+Do not make the contribution-graph implementation wait for BAFU, and do not
+use BAFU to debug graph semantics. The order is:
+
+1. Implement traversal, reconciliation, cutoff behavior, REST output, and the
+   web-app view with `mock_background`.
+2. Lock the mock behavior with deterministic tests, including the repeated
+   grid-electricity provider.
+3. Complete the separate BAFU import and cross-engine validation plan.
+4. Run the already-tested contribution graph against the validated BAFU
+   database as an integration exercise, not as the graph engine's first test.
