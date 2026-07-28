@@ -78,10 +78,11 @@ total_inv = np.asarray(lca.inventory.sum(axis=1)).ravel()
 
 One sparse reduction. Effectively free.
 
-### Step 5. Compute every impact category total
+### Step 5. Compute the impact category totals listed in the YAML
 
 ```python
-for i, method_tuple in enumerate(method_tuples):
+configured_methods = resolve_methods(spec["lcia"]["categories"])
+for i, method_tuple in enumerate(configured_methods):
     if i:
         lca.switch_method(method_tuple)
     lca.lcia()
@@ -90,12 +91,14 @@ for i, method_tuple in enumerate(method_tuples):
 
 `switch_method` swaps only **C**. `lcia()` forms `C · B · diag(s)` and sums.
 **Neither re-solves anything** — `s` is already known and is independent of the
-impact category. This is why all 25 categories cost barely more than one.
+impact category. Even so, the engine deliberately computes only the explicitly
+listed categories so it does not build, serialize, transfer, or display unused
+direct-contribution tables.
 
 Each iteration leaves `lca.characterized_inventory` available, which is the
 input to the next step.
 
-### Step 6. Direct scores for every activity, foreground and background, for every category
+### Step 6. Direct scores for every activity, foreground and background, for each listed category
 
 Inside the same loop, sum down the columns:
 
@@ -115,9 +118,9 @@ Two things to note. First, this is a complete, exact decomposition — the direc
 scores over all activities sum to the total, so we assert reconciliation and
 there is no residual to explain away. Second, and this is the important one:
 **this is a full contribution table that required no graph traversal at all.**
-"Which processes emit the most, directly" is answerable for all categories in
-Phase B. Only the *tree* — who consumed whom, and cumulative-through-the-chain
-numbers — needs Phase C.
+"Which processes emit the most, directly" is answerable for every category
+listed in the YAML in Phase B. Only the *tree* — who consumed whom, and
+cumulative-through-the-chain numbers — needs Phase C.
 
 ### Step 7. Physical flow Sankey from the scaling vector
 
@@ -142,9 +145,10 @@ honestly rather than implying completeness.
 
 ### Call 1 returns
 
-After step 8: inventory, all category totals, scaling vector, direct-score
-contributions for all categories, physical Sankey, bounded background topology,
-and a `result_id` = hash of the normalized YAML plus method name.
+After step 8: inventory, the YAML-listed category totals, scaling vector,
+direct-score contributions for those categories, physical Sankey, bounded
+background topology, and a `result_id` = hash of the normalized YAML plus
+method name.
 
 ---
 

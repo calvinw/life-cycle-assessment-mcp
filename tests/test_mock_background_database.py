@@ -79,6 +79,21 @@ class MockBackgroundDatabaseTests(unittest.TestCase):
         self.assertAlmostEqual(storage_climate, 1.44, places=6)
         self.assertAlmostEqual(broom_climate, 0.948871, places=6)
         self.assertAlmostEqual(simple_broom_climate, 0.945495, places=6)
+        self.assertEqual(
+            list(storage["lcia"]),
+            [
+                "acidification | accumulated exceedance (AE)",
+                "climate change | global warming potential (GWP100)",
+            ],
+        )
+        self.assertEqual(
+            list(broom["lcia"]),
+            ["climate change | global warming potential (GWP100)"],
+        )
+        self.assertEqual(
+            list(simple_broom["lcia"]),
+            ["climate change | global warming potential (GWP100)"],
+        )
         self.assertFalse(
             any(
                 name.startswith(core_engine.FOREGROUND_DB_PREFIX)
@@ -246,6 +261,16 @@ class MockBackgroundDatabaseTests(unittest.TestCase):
                 result_id="stale",
             )
 
+    def test_lazy_graph_rejects_category_not_listed_in_yaml(self):
+        source = (ROOT / "mock_examples/mock_plastic_broom.yaml").read_text()
+        base = self.engine.run_base(source)
+        with self.assertRaisesRegex(ValueError, "not listed in lcia.categories"):
+            self.engine.contribution_graphs(
+                source,
+                ["acidification"],
+                result_id=base["result_id"],
+            )
+
     def test_adjoint_graph_matches_legacy_product_solves(self):
         source = (
             ROOT / "mock_examples/mock_plastic_broom_simple.yaml"
@@ -295,6 +320,12 @@ class MockBackgroundDatabaseTests(unittest.TestCase):
             self.engine.run(
                 source.replace("- climate change", "- missing category")
             )
+        without_categories = source.replace(
+            "  categories:\n    - climate change\n",
+            "",
+        )
+        with self.assertRaisesRegex(ValueError, "lcia.categories"):
+            self.engine.run(without_categories)
 
     def test_mock_examples_are_not_public_case_studies(self):
         import lca_server

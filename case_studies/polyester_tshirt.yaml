@@ -56,3 +56,6 @@ reference_process: "P3 — T-shirt assembly"
 
 lcia:
   method_name: "TRACI v2.1"
+  categories:
+    - climate change
+    - acidification

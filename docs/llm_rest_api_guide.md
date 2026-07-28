@@ -432,8 +432,9 @@ Request:
 ```
 
 `categories` accepts full LCIA labels or unambiguous label
-components/substrings. The server performs one shared adjoint factorization for
-the requested batch and returns:
+components/substrings, and every requested category must also be listed in the
+product graph's `lcia.categories`. The server performs one shared adjoint
+factorization for the requested batch and returns:
 
 ```json
 {

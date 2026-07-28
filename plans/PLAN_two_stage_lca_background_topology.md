@@ -156,7 +156,7 @@ and deduplicates repeated submissions of the same revision.
 
 ### LCIA category resolution
 
-Separate total-score selection from contribution-graph selection.
+Use one explicit YAML list as the calculation boundary for both stages.
 
 Recommended YAML:
 
@@ -167,20 +167,16 @@ lcia:
     - climate change
     - acidification
   contribution_graph:
-    categories:
-      - climate change
+    cutoff: 0.001
 ```
 
 Semantics:
 
-- `lcia.categories`, when present, selects totals and direct activity scores
-  returned by Stage 1.
-- Omitting `lcia.categories` preserves current behavior and calculates every
-  category in the method family.
-- `lcia.contribution_graph.categories` remains the default Stage 2 category
-  selection.
-- A Stage 2 request can override the default category selection without
-  changing the YAML revision.
+- `lcia.categories` is required and selects the totals and direct activity
+  scores returned by Stage 1.
+- The engine does not calculate unlisted categories.
+- Stage 2 requests must be a subset of `lcia.categories`.
+- `lcia.contribution_graph` contains traversal limits only.
 
 ### Physical topology construction
 

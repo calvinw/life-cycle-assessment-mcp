@@ -39,6 +39,13 @@ class ExtendedLcaResultTests(unittest.TestCase):
         self.assertTrue(expected.issubset(self.polyester))
         self.assertEqual(self.polyester["result_schema_version"], 3)
         self.assertEqual(self.polyester["contribution_graphs"], [])
+        self.assertEqual(
+            list(self.polyester["lcia"]),
+            [
+                "acidification | acidification potential (AP)",
+                "climate change | global warming potential (GWP100)",
+            ],
+        )
 
     def test_contributions_cover_every_category_and_reconcile(self):
         categories = self.polyester["process_contributions"]["categories"]
@@ -73,9 +80,15 @@ class ExtendedLcaResultTests(unittest.TestCase):
             )
 
     def test_zero_total_categories_use_null_percentages(self):
+        result = self.engine.run(
+            self.polyester_yaml.replace(
+                "    - acidification",
+                "    - ozone depletion",
+            )
+        )
         category = next(
             item
-            for item in self.polyester["process_contributions"]["categories"]
+            for item in result["process_contributions"]["categories"]
             if item["total_score"] == 0
         )
         self.assertTrue(

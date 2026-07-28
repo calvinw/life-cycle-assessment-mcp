@@ -59,8 +59,10 @@ internal testing, but these are intentionally excluded from the public case
 study catalog. See [Tiny Mock Background Database](mock_background_database.md).
 
 The compact base response contains LCI, LCIA, scaling-vector,
-schema-versioned direct contribution, and Sankey data. SVGs are generated only
-by the dedicated SVG endpoints:
+schema-versioned direct contribution, and Sankey data. Only the impact
+categories explicitly listed in `lcia.categories` are calculated and returned.
+The lazy contribution endpoint rejects categories outside that YAML list.
+SVGs are generated only by the dedicated SVG endpoints:
 
 ```json
 {

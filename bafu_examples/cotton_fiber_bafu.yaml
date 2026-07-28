@@ -30,3 +30,6 @@ processes:
 reference_process: "Cotton farming"
 lcia:
   method_name: "TRACI v2.1"
+  categories:
+    - climate change
+    - acidification

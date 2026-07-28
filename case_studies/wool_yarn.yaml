@@ -51,3 +51,6 @@ reference_process: "P2 — Wool yarn production"
 
 lcia:
   method_name: "TRACI v2.1"
+  categories:
+    - climate change
+    - acidification

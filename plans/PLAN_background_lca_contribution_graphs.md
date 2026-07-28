@@ -153,15 +153,16 @@ Do not overload physical Sankey link widths with LCIA scores.
 
 ## Product Graph Configuration
 
-Add an optional contribution section under `lcia`:
+List the calculated categories under `lcia` and keep traversal limits in the
+optional contribution section:
 
 ```yaml
 lcia:
   method_name: "EF v3.1"
+  categories:
+    - climate change
+    - acidification
   contribution_graph:
-    categories:
-      - climate change
-      - acidification
     cutoff: 0.01
     biosphere_cutoff: 0.001
     max_depth: 6
@@ -170,8 +171,8 @@ lcia:
 
 Rules:
 
-- `categories` substring-matches the full category labels already returned in
-  `lcia`.
+- `lcia.categories` substring-matches available category labels and is the
+  authoritative calculation boundary.
 - An ambiguous or missing category match is a validation error with the
   available labels included in the message.
 - `cutoff` is a fraction of the absolute total category score and must be in
@@ -473,10 +474,10 @@ Update `mock_examples/mock_plastic_broom.yaml` to request:
 ```yaml
 lcia:
   method_name: "EF v3.1"
+  categories:
+    - climate change
+    - acidification
   contribution_graph:
-    categories:
-      - climate change
-      - acidification
     cutoff: 0.01
     max_depth: 6
 ```

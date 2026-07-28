@@ -237,22 +237,28 @@ def _validate_spec(spec: dict) -> None:
     if not isinstance(lcia, dict) or not lcia.get("method_name"):
         raise ValueError("lcia.method_name is required.")
     contribution_graph = lcia.get("contribution_graph")
-    if contribution_graph is not None:
-        if not isinstance(contribution_graph, dict):
-            raise ValueError("lcia.contribution_graph must be a mapping.")
+    if (
+        contribution_graph is not None
+        and not isinstance(contribution_graph, dict)
+    ):
+        raise ValueError("lcia.contribution_graph must be a mapping.")
+    categories = lcia.get("categories")
+    if categories is None and isinstance(contribution_graph, dict):
+        # Backwards compatibility for product graphs created before LCIA
+        # category selection was separated from graph traversal settings.
         categories = contribution_graph.get("categories")
-        if (
-            not isinstance(categories, list)
-            or not categories
-            or any(
-                not isinstance(category, str) or not category.strip()
-                for category in categories
-            )
-        ):
-            raise ValueError(
-                "lcia.contribution_graph.categories must be a non-empty list "
-                "of category names."
-            )
+    if (
+        not isinstance(categories, list)
+        or not categories
+        or any(
+            not isinstance(category, str) or not category.strip()
+            for category in categories
+        )
+    ):
+        raise ValueError(
+            "lcia.categories must be a non-empty list of impact category names."
+        )
+    if contribution_graph is not None:
         for key in ("cutoff", "biosphere_cutoff"):
             if key in contribution_graph:
                 value = _require_finite(
@@ -281,12 +287,24 @@ def _validate_spec(spec: dict) -> None:
             )
 
 
+def _configured_impact_categories(spec: dict) -> list[str]:
+    lcia = spec["lcia"]
+    configured = lcia.get("categories")
+    if configured is None:
+        configured = lcia["contribution_graph"]["categories"]
+    return configured
+
+
+def _impact_category_config(spec: dict) -> dict:
+    return {"categories": _configured_impact_categories(spec)}
+
+
 def _contribution_graph_config(spec: dict) -> dict | None:
     configured = spec["lcia"].get("contribution_graph")
     if configured is None:
         return None
     return {
-        "categories": configured["categories"],
+        "categories": _configured_impact_categories(spec),
         "cutoff": float(configured.get("cutoff", 0.005)),
         "biosphere_cutoff": float(
             configured.get("biosphere_cutoff", 0.0001)
@@ -603,6 +621,7 @@ def _contribution_category(
     activities: dict,
     label: str,
     unit: str,
+    background_metadata: dict[object, tuple[str, str, str]],
 ) -> dict:
     """Build exact, exclusive direct scores for all foreground/background activities."""
     column_totals = np.asarray(lca.characterized_inventory.sum(axis=0)).ravel()
@@ -645,15 +664,22 @@ def _contribution_category(
             node_id = lca.dicts.activity.reversed[column]
             if node_id in foreground_node_ids or abs(direct_score) <= NUMERIC_ABS_TOLERANCE:
                 continue
-            activity = bd.get_node(id=node_id)
-            database = activity.get("database", "")
-            code = activity.get("code", "")
+            metadata = background_metadata.get(node_id)
+            if metadata is None:
+                activity = bd.get_node(id=node_id)
+                metadata = (
+                    activity.get("database", ""),
+                    activity.get("code", ""),
+                    activity.get("name", str(activity.key)),
+                )
+                background_metadata[node_id] = metadata
+            database, code, process_name = metadata
             background_rows.append(
                 {
                     "process_id": _stable_id(
                         "background-process", database, code
                     ),
-                    "process_name": activity.get("name", str(activity.key)),
+                    "process_name": process_name,
                     "direct_score": direct_score,
                     "percentage": (
                         None
@@ -909,14 +935,25 @@ def _run_analysis(
                     f"Run scripts/setup_databases.py to load methods."
                 )
             contribution_config = _contribution_graph_config(spec)
-            contribution_methods = _resolve_contribution_graph_methods(
-                method_tuples, contribution_config
+            configured_methods = _resolve_contribution_graph_methods(
+                method_tuples, _impact_category_config(spec)
             )
-            if not include_contribution_graphs:
-                contribution_methods = set()
+            calculation_methods = [
+                method_tuple
+                for method_tuple in method_tuples
+                if method_tuple in configured_methods
+            ]
+            contribution_methods = (
+                configured_methods
+                if include_contribution_graphs and contribution_config is not None
+                else set()
+            )
 
             # Compute inventory and the scaling solution exactly once.
-            lca = bc.LCA(demand={ref_act: fu_amount}, method=method_tuples[0])
+            lca = bc.LCA(
+                demand={ref_act: fu_amount},
+                method=calculation_methods[0],
+            )
             lca.lci(factorize=True)
             transpose_lu = (
                 factorize_adjoint(lca) if contribution_methods else None
@@ -956,6 +993,7 @@ def _run_analysis(
             lcia_results: dict = {}
             contribution_categories: list[dict] = []
             contribution_graphs: list[dict] = []
+            background_metadata: dict[object, tuple[str, str, str]] = {}
             foreground_ids = _process_ids(spec)
             foreground_metadata = {
                 activity.id: {
@@ -967,7 +1005,7 @@ def _run_analysis(
                 }
                 for name, activity in activities.items()
             }
-            for method_index, method_tuple in enumerate(method_tuples):
+            for method_index, method_tuple in enumerate(calculation_methods):
                 if method_index:
                     lca.switch_method(method_tuple)
                 lca.lcia()
@@ -975,7 +1013,12 @@ def _run_analysis(
                 unit = bd.methods[method_tuple].get("unit", "")
                 lcia_results[label] = {"score": float(lca.score), "unit": unit}
                 category = _contribution_category(
-                    lca, spec, activities, label=label, unit=unit
+                    lca,
+                    spec,
+                    activities,
+                    label=label,
+                    unit=unit,
+                    background_metadata=background_metadata,
                 )
                 if method_tuple in contribution_methods:
                     graph = build_contribution_graph(
@@ -1081,9 +1124,23 @@ def run_contribution_analysis(
                     f"LCIA method '{method_name}' not found. "
                     "Run scripts/setup_databases.py to load methods."
                 )
+            configured_methods = _resolve_contribution_graph_methods(
+                method_tuples, _impact_category_config(spec)
+            )
             requested_methods = _resolve_contribution_graph_methods(
                 method_tuples, config
             )
+            if not requested_methods.issubset(configured_methods):
+                requested_labels = ", ".join(
+                    " | ".join(method_tuple[1:])
+                    for method_tuple in method_tuples
+                    if method_tuple in requested_methods - configured_methods
+                )
+                raise ValueError(
+                    "Requested contribution categories are not listed in "
+                    "lcia.categories: "
+                    f"{requested_labels}."
+                )
             first_requested_method = next(
                 method for method in method_tuples if method in requested_methods
             )

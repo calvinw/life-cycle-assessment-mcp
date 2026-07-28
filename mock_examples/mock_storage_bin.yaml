@@ -21,3 +21,6 @@ reference_process: Mock storage bin molding
 
 lcia:
   method_name: "EF v3.1"
+  categories:
+    - climate change
+    - acidification

@@ -67,3 +67,6 @@ reference_process: "P4 — Jacket assembly"
 
 lcia:
   method_name: "TRACI v2.1"
+  categories:
+    - climate change
+    - acidification

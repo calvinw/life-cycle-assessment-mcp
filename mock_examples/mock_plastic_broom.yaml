@@ -22,9 +22,9 @@ reference_process: Mock plastic broom assembly
 
 lcia:
   method_name: "EF v3.1"
+  categories:
+    - climate change
   contribution_graph:
-    categories:
-      - climate change
     cutoff: 0.001
     biosphere_cutoff: 0.0001
     max_depth: 6
