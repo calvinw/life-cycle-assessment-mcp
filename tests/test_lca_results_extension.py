@@ -24,6 +24,7 @@ class ExtendedLcaResultTests(unittest.TestCase):
 
     def test_existing_fields_and_versioned_extensions_are_present(self):
         expected = {
+            "result_id",
             "name",
             "method",
             "functional_unit",
@@ -192,7 +193,7 @@ class ExtendedLcaResultTests(unittest.TestCase):
             )
         )
 
-    def test_background_processes_are_explicit_in_sankey_and_impact_is_residual(self):
+    def test_background_processes_are_explicit_in_sankey_and_direct_scores(self):
         source = (ROOT / "bafu_examples/plastic_broom.yaml").read_text()
         result = self.engine.run(source)
         background_nodes = [
@@ -209,7 +210,13 @@ class ExtendedLcaResultTests(unittest.TestCase):
             for category in result["process_contributions"]["categories"]
             if "climate change" in category["label"]
         )
-        self.assertNotEqual(climate["residual_score"], 0)
+        self.assertEqual(climate["residual_score"], 0)
+        self.assertTrue(
+            any(
+                row["scope"] == "background"
+                for row in climate["processes"]
+            )
+        )
 
     def test_mcp_discovery_exposes_nested_result_schema(self):
         import lca_server
@@ -225,8 +232,8 @@ class ExtendedLcaResultTests(unittest.TestCase):
         self.assertIn("process_contributions", schema["properties"])
         self.assertIn("contribution_graphs", schema["properties"])
         self.assertIn("sankey", schema["properties"])
-        self.assertIn("svg_scaled", schema["properties"])
-        self.assertIn("svg_structure", schema["properties"])
+        self.assertNotIn("svg_scaled", schema["properties"])
+        self.assertNotIn("svg_structure", schema["properties"])
 
     def test_official_jacket_bundle_matches_yaml_and_contains_visuals(self):
         yaml_text = (ROOT / "case_studies/jacket.yaml").read_text()

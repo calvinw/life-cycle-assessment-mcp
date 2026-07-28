@@ -19,20 +19,36 @@ class LCAEngineApiTests(unittest.TestCase):
 
         run.assert_called_once_with("name: example")
 
-    def test_visuals_are_an_explicit_facade_option(self):
+    def test_base_run_delegates_without_generating_visuals(self):
         engine = LCAEngine()
-        with (
-            patch("lca_core.api._engine.run_analysis", return_value={}) as run,
-            patch("lca_core.api.generate_svg", side_effect=["scaled", "structure"]) as svg,
-        ):
-            result = engine.run("name: example", include_visuals=True)
+        base_result = {"result_id": "abc"}
+        with patch(
+            "lca_core.api._engine.run_base_analysis",
+            return_value=base_result,
+        ) as run:
+            result = engine.run_base("name: example")
 
+        self.assertIs(result, base_result)
         run.assert_called_once_with("name: example")
-        self.assertEqual(result["svg_scaled"], "scaled")
-        self.assertEqual(result["svg_structure"], "structure")
-        self.assertEqual(
-            svg.call_args_list[0].args,
-            ("name: example", "scaled"),
+
+    def test_contribution_batch_delegates_with_result_identity(self):
+        engine = LCAEngine()
+        graphs = {"result_id": "abc", "contribution_graphs": []}
+        with patch(
+            "lca_core.api._engine.run_contribution_analysis",
+            return_value=graphs,
+        ) as run:
+            result = engine.contribution_graphs(
+                "name: example",
+                ["climate change", "acidification"],
+                result_id="abc",
+            )
+
+        self.assertIs(result, graphs)
+        run.assert_called_once_with(
+            "name: example",
+            ["climate change", "acidification"],
+            result_id="abc",
         )
 
     def test_jsonld_import_delegates_to_core_importer(self):

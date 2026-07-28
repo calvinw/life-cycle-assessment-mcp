@@ -2,6 +2,8 @@
 
 MCP Tools:
     run_lca              — full LCA from a product graph YAML string
+    run_lca_base         — LCA totals and direct scores without cumulative graphs
+    get_lca_contribution_graphs — cumulative graphs for selected categories
     get_lca_svg          — supply chain diagram (scaled or structure)
     get_unit_process_svg — single-process card SVG
     list_impact_methods  — list all LCIA methods loaded in Brightway
@@ -24,6 +26,8 @@ REST API (via @mcp.custom_route):
     GET  /api/case-studies
     GET  /api/case-studies/{name}
     POST /api/lca/run
+    POST /api/lca/base
+    POST /api/lca/contribution
     POST /api/lca/svg
     POST /api/lca/svg/bafu
     POST /api/lca/svg/unit-process
@@ -42,7 +46,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 from fastmcp import FastMCP
 
-from lca_core import LCAEngine, LcaResult
+from lca_core import ContributionBatchResult, LCAEngine, LcaCoreResult
 
 mcp = FastMCP("Life Cycle Assessment MCP")
 engine = LCAEngine()
@@ -57,6 +61,11 @@ _CASE_STUDIES_DIR = pathlib.Path(__file__).parent / "case_studies"
 # the same operations and argument contracts as MCP clients.
 REST_TOOL_ROUTES = {
     "run_lca": {"method": "POST", "path": "/api/lca/run"},
+    "run_lca_base": {"method": "POST", "path": "/api/lca/base"},
+    "get_lca_contribution_graphs": {
+        "method": "POST",
+        "path": "/api/lca/contribution",
+    },
     "get_lca_svg": {"method": "POST", "path": "/api/lca/svg"},
     "get_bafu_svg": {"method": "POST", "path": "/api/lca/svg/bafu"},
     "get_lca_database_schema": {
@@ -84,16 +93,49 @@ REST_TOOL_ROUTES = {
 # ── MCP tools ─────────────────────────────────────────────────────────────────
 
 @mcp.tool()
-def run_lca(product_graph: str) -> LcaResult:
+def run_lca(product_graph: str) -> LcaCoreResult:
     """
     Run a full LCA from a product graph YAML string.
 
     Returns LCI totals, LCIA impact scores, exclusive process contributions,
-    a scaled renderer-neutral Sankey graph, scaling vector, and two SVG supply
-    chain diagrams. The product graph is the contents of a product_graph.yaml
-    file. The operation is stateless: each response depends only on this input.
+    a scaled renderer-neutral Sankey graph and scaling vector. SVG diagrams are
+    available independently through get_lca_svg. The product graph is the
+    contents of a product_graph.yaml file. The operation is stateless.
     """
-    return engine.run(product_graph, include_visuals=True)
+    return engine.run(product_graph)
+
+
+@mcp.tool()
+def run_lca_base(product_graph: str) -> LcaCoreResult:
+    """
+    Run the initial, compact LCA calculation for an interactive client.
+
+    Returns inventory, all LCIA totals, exact direct activity contributions,
+    the physical Sankey, and a deterministic result_id. It deliberately omits
+    cumulative contribution graphs; request those with
+    get_lca_contribution_graphs when the user opens an impact-detail view.
+    """
+    return engine.run_base(product_graph)
+
+
+@mcp.tool()
+def get_lca_contribution_graphs(
+    product_graph: str,
+    categories: list[str],
+    result_id: str | None = None,
+) -> ContributionBatchResult:
+    """
+    Return cumulative contribution graphs for selected impact categories.
+
+    Categories can be full labels or unambiguous label components/substrings.
+    One adjoint factorization is shared across the category batch. result_id is
+    optional, but when supplied it must match the normalized product graph.
+    """
+    return engine.contribution_graphs(
+        product_graph,
+        categories,
+        result_id=result_id,
+    )
 
 
 @mcp.tool()
@@ -395,7 +437,31 @@ async def api_run_lca(request: Request) -> Response:
     try:
         body = await request.json()
         product_graph = body["product_graph"]
-        return JSONResponse(engine.run(product_graph, include_visuals=True))
+        return JSONResponse(engine.run(product_graph))
+    except Exception as exc:
+        return JSONResponse({"detail": str(exc)}, status_code=400)
+
+
+@mcp.custom_route("/api/lca/base", methods=["POST"])
+async def api_run_lca_base(request: Request) -> Response:
+    try:
+        body = await request.json()
+        return JSONResponse(engine.run_base(body["product_graph"]))
+    except Exception as exc:
+        return JSONResponse({"detail": str(exc)}, status_code=400)
+
+
+@mcp.custom_route("/api/lca/contribution", methods=["POST"])
+async def api_get_lca_contribution_graphs(request: Request) -> Response:
+    try:
+        body = await request.json()
+        return JSONResponse(
+            engine.contribution_graphs(
+                body["product_graph"],
+                body["categories"],
+                result_id=body.get("result_id"),
+            )
+        )
     except Exception as exc:
         return JSONResponse({"detail": str(exc)}, status_code=400)
 

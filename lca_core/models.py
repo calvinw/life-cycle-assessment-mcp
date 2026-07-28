@@ -138,6 +138,7 @@ class SankeyResult(TypedDict):
 
 
 class LcaCoreResult(TypedDict):
+    result_id: str
     name: str
     method: str
     functional_unit: str
@@ -150,6 +151,7 @@ class LcaCoreResult(TypedDict):
     sankey: SankeyResult
 
 
-class LcaResult(LcaCoreResult):
-    svg_scaled: str
-    svg_structure: str
+class ContributionBatchResult(TypedDict):
+    result_id: str
+    method: str
+    contribution_graphs: list[ContributionGraph]

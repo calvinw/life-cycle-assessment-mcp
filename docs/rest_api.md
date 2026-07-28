@@ -1,6 +1,6 @@
 # REST API
 
-The REST API exposes the same 13 domain operations as the MCP server. Use
+The REST API exposes the same 15 domain operations as the MCP server. Use
 `GET /api/tools` to discover each operation's description, JSON input schema,
 MCP output schema, and equivalent HTTP method and path.
 
@@ -16,6 +16,8 @@ curl -s https://lca-mcp.mathplosion.com/api/tools | jq
 | MCP tool | REST operation |
 | --- | --- |
 | `run_lca` | `POST /api/lca/run` |
+| `run_lca_base` | `POST /api/lca/base` |
+| `get_lca_contribution_graphs` | `POST /api/lca/contribution` |
 | `get_lca_svg` | `POST /api/lca/svg` |
 | `get_bafu_svg` | `POST /api/lca/svg/bafu` |
 | `get_lca_database_schema` | `GET /api/database/schema` |
@@ -43,23 +45,27 @@ body of the form `{"detail":"..."}`.
 
 ## Stateless LCA calculations
 
-`POST /api/lca/run` is stateless. The YAML string in `product_graph` is the
-complete calculation input; the server does not create sessions, retain
-results, or require an identifier from an earlier request. Foreground
-Brightway data is isolated for the request and removed after both successful
-and failed calculations. Installed background databases are read-only
-reference data shared by all requests.
+All LCA calculation endpoints are stateless. The YAML string in
+`product_graph` is the complete calculation input; the server does not create
+sessions or retain results. `POST /api/lca/base` returns a deterministic
+`result_id`, which a client can send to `POST /api/lca/contribution` as a guard
+against attaching a graph to results from different YAML. Foreground Brightway
+data is isolated for each request and removed after both successful and failed
+calculations. Installed background databases are read-only reference data
+shared by all requests.
 
 The bundled `mock_background` database has small, fictional product graphs for
 internal testing, but these are intentionally excluded from the public case
 study catalog. See [Tiny Mock Background Database](mock_background_database.md).
 
-The response retains the original LCI, LCIA, scaling-vector, and SVG fields and
-adds schema-versioned contribution and Sankey data:
+The compact base response contains LCI, LCIA, scaling-vector,
+schema-versioned direct contribution, and Sankey data. SVGs are generated only
+by the dedicated SVG endpoints:
 
 ```json
 {
-  "result_schema_version": 2,
+  "result_id": "sha256-of-normalized-product-graph",
+  "result_schema_version": 3,
   "process_contributions": {
     "categories": [
       {
@@ -88,8 +94,8 @@ adds schema-versioned contribution and Sankey data:
 }
 ```
 
-Process scores are exclusive, preserve their sign, and reconcile with the
-category total after adding `residual_score`. Background activity impact is
-included in `residual_score`. Sankey amounts use the same solved scaling vector
-as the rest of the response. Links retain their original units, so renderers
-must compare widths only within compatible units.
+Process scores are exclusive, preserve their sign, include both foreground and
+background activities, and reconcile with the category total after adding
+`residual_score`. Sankey amounts use the same solved scaling vector as the rest
+of the response. Links retain their original units, so renderers must compare
+widths only within compatible units.

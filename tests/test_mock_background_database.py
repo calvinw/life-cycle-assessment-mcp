@@ -6,6 +6,7 @@ from unittest import mock
 
 from lca_core import LCAEngine
 from lca_core import engine as core_engine
+from lca_core.contribution_graph import build_contribution_graph
 from lca_core.mock_database import DATABASE_NAME, ensure_mock_background_database
 
 import bw2data as bd
@@ -213,6 +214,54 @@ class MockBackgroundDatabaseTests(unittest.TestCase):
         self.assertEqual(
             repeated["contribution_graphs"], result["contribution_graphs"]
         )
+
+    def test_base_plus_lazy_graph_matches_full_result(self):
+        source = (ROOT / "mock_examples/mock_plastic_broom.yaml").read_text()
+        full = self.engine.run(source)
+        base = self.engine.run_base(source)
+        lazy = self.engine.contribution_graphs(
+            source,
+            ["climate change"],
+            result_id=base["result_id"],
+        )
+
+        self.assertEqual(base["result_id"], full["result_id"])
+        self.assertEqual(base["contribution_graphs"], [])
+        self.assertEqual(base["lcia"], full["lcia"])
+        self.assertEqual(
+            base["process_contributions"],
+            full["process_contributions"],
+        )
+        self.assertEqual(
+            lazy["contribution_graphs"],
+            full["contribution_graphs"],
+        )
+
+    def test_lazy_graph_rejects_stale_result_identity(self):
+        source = (ROOT / "mock_examples/mock_plastic_broom.yaml").read_text()
+        with self.assertRaisesRegex(ValueError, "does not match"):
+            self.engine.contribution_graphs(
+                source,
+                ["climate change"],
+                result_id="stale",
+            )
+
+    def test_adjoint_graph_matches_legacy_product_solves(self):
+        source = (
+            ROOT / "mock_examples/mock_plastic_broom_simple.yaml"
+        ).read_text()
+        adjoint = self.engine.run(source)["contribution_graphs"]
+        with mock.patch.object(
+            core_engine,
+            "build_contribution_graph",
+            side_effect=lambda **kwargs: build_contribution_graph(
+                **kwargs,
+                use_adjoint=False,
+            ),
+        ):
+            legacy = self.engine.run(source)["contribution_graphs"]
+
+        self.assertEqual(adjoint, legacy)
 
     def test_contribution_graph_cutoff_is_reported_as_unexpanded_impact(self):
         source = (ROOT / "mock_examples/mock_plastic_broom.yaml").read_text()

@@ -30,8 +30,8 @@ import numpy as np
 import bw2data as bd
 import bw2calc as bc
 
-from .models import LcaCoreResult
-from .contribution_graph import build_contribution_graph
+from .models import ContributionBatchResult, LcaCoreResult
+from .contribution_graph import build_contribution_graph, factorize_adjoint
 from .mock_database import DATABASE_NAME as MOCK_BACKGROUND_DB
 from .mock_database import ensure_mock_background_database
 
@@ -352,6 +352,12 @@ def _stable_id(kind: str, *parts: object) -> str:
     return f"{kind}:{slug}:{digest}"
 
 
+def _result_id(spec: dict) -> str:
+    """Return a deterministic identity for one normalized calculation input."""
+    normalized = yaml.safe_dump(spec, sort_keys=True, allow_unicode=True)
+    return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
+
+
 def _process_ids(spec: dict) -> dict[str, str]:
     return {
         proc["name"]: _stable_id("process", proc["name"])
@@ -598,25 +604,25 @@ def _contribution_category(
     label: str,
     unit: str,
 ) -> dict:
-    """Build exclusive foreground process scores for the active LCIA method."""
+    """Build exact, exclusive direct scores for all foreground/background activities."""
     column_totals = np.asarray(lca.characterized_inventory.sum(axis=0)).ravel()
     act_dict = lca.dicts.activity if hasattr(lca, "dicts") else lca.activity_dict
     process_ids = _process_ids(spec)
     total_score = float(lca.score)
-    process_rows = []
-    foreground_total = 0.0
+    process_rows: list[dict] = []
+    foreground_node_ids: set[object] = set()
 
     for proc in spec["processes"]:
         name = proc["name"]
         act = activities[name]
         node_id = act.id if hasattr(lca, "dicts") else act.key
+        foreground_node_ids.add(node_id)
         column = act_dict.get(node_id)
         direct_score = (
             float(column_totals[column])
             if column is not None and column < len(column_totals)
             else 0.0
         )
-        foreground_total += direct_score
         percentage = (
             None
             if abs(total_score) <= NUMERIC_ABS_TOLERANCE
@@ -632,12 +638,52 @@ def _contribution_category(
             }
         )
 
-    residual_score = total_score - foreground_total
-    if not math.isclose(
-        foreground_total + residual_score,
-        total_score,
-        rel_tol=NUMERIC_REL_TOLERANCE,
-        abs_tol=NUMERIC_ABS_TOLERANCE,
+    if hasattr(lca, "dicts"):
+        background_rows: list[dict] = []
+        for column, direct_score_value in enumerate(column_totals):
+            direct_score = float(direct_score_value)
+            node_id = lca.dicts.activity.reversed[column]
+            if node_id in foreground_node_ids or abs(direct_score) <= NUMERIC_ABS_TOLERANCE:
+                continue
+            activity = bd.get_node(id=node_id)
+            database = activity.get("database", "")
+            code = activity.get("code", "")
+            background_rows.append(
+                {
+                    "process_id": _stable_id(
+                        "background-process", database, code
+                    ),
+                    "process_name": activity.get("name", str(activity.key)),
+                    "direct_score": direct_score,
+                    "percentage": (
+                        None
+                        if abs(total_score) <= NUMERIC_ABS_TOLERANCE
+                        else direct_score / total_score * 100.0
+                    ),
+                    "scope": "background",
+                }
+            )
+        process_rows.extend(
+            sorted(
+                background_rows,
+                key=lambda row: (
+                    -abs(row["direct_score"]),
+                    row["process_name"],
+                    row["process_id"],
+                ),
+            )
+        )
+
+    direct_total = sum(row["direct_score"] for row in process_rows)
+    residual_score = total_score - direct_total
+    if abs(residual_score) <= (
+        max(abs(total_score), 1.0) * NUMERIC_REL_TOLERANCE
+        + NUMERIC_ABS_TOLERANCE
+    ):
+        residual_score = 0.0
+    if abs(direct_total + residual_score - total_score) > (
+        max(abs(total_score), 1.0) * NUMERIC_REL_TOLERANCE
+        + NUMERIC_ABS_TOLERANCE
     ):
         raise RuntimeError(f"Process contributions do not reconcile for '{label}'.")
 
@@ -834,7 +880,11 @@ def _ensure_finite_result(value, path: str = "result") -> None:
             _ensure_finite_result(item, f"{path}[{index}]")
 
 
-def run_analysis(product_graph_yaml: str) -> LcaCoreResult:
+def _run_analysis(
+    product_graph_yaml: str,
+    *,
+    include_contribution_graphs: bool,
+) -> LcaCoreResult:
     spec = _load_spec(product_graph_yaml)
 
     with _calculation_lock:
@@ -862,10 +912,15 @@ def run_analysis(product_graph_yaml: str) -> LcaCoreResult:
             contribution_methods = _resolve_contribution_graph_methods(
                 method_tuples, contribution_config
             )
+            if not include_contribution_graphs:
+                contribution_methods = set()
 
             # Compute inventory and the scaling solution exactly once.
             lca = bc.LCA(demand={ref_act: fu_amount}, method=method_tuples[0])
             lca.lci(factorize=True)
+            transpose_lu = (
+                factorize_adjoint(lca) if contribution_methods else None
+            )
 
             scaling_vector: dict[str, float] = {}
             act_dict = (
@@ -930,23 +985,14 @@ def run_analysis(product_graph_yaml: str) -> LcaCoreResult:
                         unit=unit,
                         config=contribution_config,
                         foreground_metadata=foreground_metadata,
+                        transpose_lu=transpose_lu,
                     )
                     contribution_graphs.append(graph)
-                    category["processes"] = [
-                        {
-                            "process_id": row["activity_id"],
-                            "process_name": row["process_name"],
-                            "direct_score": row["direct_score"],
-                            "percentage": row["percentage"],
-                            "scope": row["scope"],
-                        }
-                        for row in graph["activity_contributions"]
-                    ]
-                    category["residual_score"] = graph["unexpanded_score"]
                 contribution_categories.append(category)
 
             fu_spec = spec["functional_unit"]
             result: LcaCoreResult = {
+                "result_id": _result_id(spec),
                 "name": spec.get("name", ""),
                 "method": method_name,
                 "functional_unit": (
@@ -963,6 +1009,129 @@ def run_analysis(product_graph_yaml: str) -> LcaCoreResult:
                 "sankey": _build_sankey(
                     spec, scaling_vector, background_providers
                 ),
+            }
+            _ensure_finite_result(result)
+            return result
+
+
+def run_analysis(product_graph_yaml: str) -> LcaCoreResult:
+    """Run the backwards-compatible full calculation."""
+    return _run_analysis(
+        product_graph_yaml,
+        include_contribution_graphs=True,
+    )
+
+
+def run_base_analysis(product_graph_yaml: str) -> LcaCoreResult:
+    """Run totals and direct contributions without cumulative impact graphs."""
+    return _run_analysis(
+        product_graph_yaml,
+        include_contribution_graphs=False,
+    )
+
+
+def run_contribution_analysis(
+    product_graph_yaml: str,
+    categories: list[str],
+    *,
+    result_id: str | None = None,
+) -> ContributionBatchResult:
+    """Build cumulative contribution graphs for a requested category batch."""
+    spec = _load_spec(product_graph_yaml)
+    if (
+        not isinstance(categories, list)
+        or not categories
+        or any(
+            not isinstance(category, str) or not category.strip()
+            for category in categories
+        )
+    ):
+        raise ValueError("categories must be a non-empty list of category names.")
+
+    actual_result_id = _result_id(spec)
+    if result_id is not None and result_id != actual_result_id:
+        raise ValueError(
+            "result_id does not match product_graph; recalculate the base result."
+        )
+
+    configured = _contribution_graph_config(spec)
+    config = {
+        "categories": categories,
+        "cutoff": configured["cutoff"] if configured else 0.005,
+        "biosphere_cutoff": (
+            configured["biosphere_cutoff"] if configured else 0.0001
+        ),
+        "max_depth": configured["max_depth"] if configured else None,
+        "max_calculations": (
+            configured["max_calculations"] if configured else 1000
+        ),
+        "include_flows": configured["include_flows"] if configured else True,
+    }
+
+    with _calculation_lock:
+        _ensure_project()
+        with _request_foreground(spec) as (activities, _, _):
+            method_name = spec["lcia"]["method_name"]
+            method_tuples = sorted(
+                [method for method in bd.methods if method[0] == method_name],
+                key=lambda method: method[-1],
+            )
+            if not method_tuples:
+                raise ValueError(
+                    f"LCIA method '{method_name}' not found. "
+                    "Run scripts/setup_databases.py to load methods."
+                )
+            requested_methods = _resolve_contribution_graph_methods(
+                method_tuples, config
+            )
+            first_requested_method = next(
+                method for method in method_tuples if method in requested_methods
+            )
+
+            reference = activities[spec["reference_process"]]
+            amount = float(spec["functional_unit"]["amount"])
+            lca = bc.LCA(
+                demand={reference: amount},
+                method=first_requested_method,
+            )
+            lca.lci(factorize=True)
+            transpose_lu = factorize_adjoint(lca)
+            process_ids = _process_ids(spec)
+            foreground_metadata = {
+                activity.id: {
+                    "activity_id": process_ids[name],
+                    "process_name": name,
+                    "database": "foreground",
+                    "code": name,
+                    "location": activity.get("location"),
+                }
+                for name, activity in activities.items()
+            }
+
+            graphs = []
+            for method_tuple in method_tuples:
+                if method_tuple not in requested_methods:
+                    continue
+                lca.switch_method(method_tuple)
+                lca.lcia()
+                label = " | ".join(method_tuple[1:])
+                unit = bd.methods[method_tuple].get("unit", "")
+                graphs.append(
+                    build_contribution_graph(
+                        lca=lca,
+                        spec=spec,
+                        label=label,
+                        unit=unit,
+                        config=config,
+                        foreground_metadata=foreground_metadata,
+                        transpose_lu=transpose_lu,
+                    )
+                )
+
+            result: ContributionBatchResult = {
+                "result_id": actual_result_id,
+                "method": method_name,
+                "contribution_graphs": graphs,
             }
             _ensure_finite_result(result)
             return result

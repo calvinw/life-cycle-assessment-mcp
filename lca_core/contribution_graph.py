@@ -8,10 +8,12 @@ import re
 from collections import defaultdict
 
 import bw2data as bd
+import numpy as np
 from bw_graph_tools import (
     GraphTraversalSettings,
     NewNodeEachVisitGraphTraversal,
 )
+from scipy.sparse.linalg import splu
 
 from .models import ContributionGraph
 
@@ -46,6 +48,48 @@ def _flow_kind(flow) -> str:
     return "extraction" if "natural resource" in categories else "emission"
 
 
+def factorize_adjoint(lca):
+    """Factorize the transposed technosphere matrix once for one request."""
+    return splu(lca.technosphere_matrix.T.tocsc())
+
+
+def _seed_adjoint_scores(traversal, lca, transpose_lu=None) -> np.ndarray:
+    """Populate graph traversal's unit-score cache with one adjoint solve.
+
+    The traversal repeatedly asks for the cumulative score caused by one unit
+    of a technosphere product. If ``d`` is the direct characterized intensity
+    per activity, all of these product scores are the entries of ``y`` in
+    ``A.T @ y = d``. Seeding the cache means the existing, well-tested
+    occurrence and cutoff traversal can be retained without performing a
+    linear solve for each product it encounters.
+    """
+    direct_intensities = np.asarray(
+        traversal.characterized_biosphere.sum(axis=0)
+    ).ravel()
+    transpose_lu = transpose_lu or factorize_adjoint(lca)
+    cumulative_intensities = np.asarray(
+        transpose_lu.solve(direct_intensities)
+    ).ravel()
+
+    demand = np.asarray(lca.demand_array).ravel()
+    reconstructed_score = float(cumulative_intensities @ demand)
+    if not math.isclose(
+        reconstructed_score,
+        float(lca.score),
+        rel_tol=1e-9,
+        abs_tol=1e-12,
+    ):
+        raise RuntimeError(
+            "Adjoint contribution scores do not reconcile with the LCIA total: "
+            f"{reconstructed_score} != {float(lca.score)}."
+        )
+
+    solver = traversal._caching_solver
+    for product_index, unit_score in enumerate(cumulative_intensities):
+        solver.add_to_cache(product_index, float(unit_score))
+    return cumulative_intensities
+
+
 def build_contribution_graph(
     *,
     lca,
@@ -54,6 +98,8 @@ def build_contribution_graph(
     unit: str,
     config: dict,
     foreground_metadata: dict[int, dict],
+    use_adjoint: bool = True,
+    transpose_lu=None,
 ) -> ContributionGraph:
     """Traverse an already-characterized LCA object without creating a new LCA."""
     total = float(lca.score)
@@ -116,6 +162,8 @@ def build_contribution_graph(
             separate_biosphere_flows=config["include_flows"],
         ),
     )
+    if use_adjoint:
+        _seed_adjoint_scores(traversal, lca, transpose_lu=transpose_lu)
     traversal.traverse()
 
     raw_nodes = traversal.nodes

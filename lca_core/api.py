@@ -11,7 +11,7 @@ from . import search as _search
 from .background_svg import generate_bafu_svg
 from .imported_activity import calculate_activity
 from .jsonld import import_jsonld
-from .models import LcaCoreResult, LcaResult
+from .models import ContributionBatchResult, LcaCoreResult
 from .visualization import generate_svg, generate_unit_process_svg
 
 
@@ -29,14 +29,24 @@ class LCAEngine:
     def ensure_ready(self) -> None:
         _engine._ensure_databases()
 
-    def run(
-        self, product_graph: str, include_visuals: bool = False
-    ) -> LcaCoreResult | LcaResult:
-        result = _engine.run_analysis(product_graph)
-        if include_visuals:
-            result["svg_scaled"] = generate_svg(product_graph, "scaled")
-            result["svg_structure"] = generate_svg(product_graph, "structure")
-        return result
+    def run(self, product_graph: str) -> LcaCoreResult:
+        return _engine.run_analysis(product_graph)
+
+    def run_base(self, product_graph: str) -> LcaCoreResult:
+        return _engine.run_base_analysis(product_graph)
+
+    def contribution_graphs(
+        self,
+        product_graph: str,
+        categories: list[str],
+        *,
+        result_id: str | None = None,
+    ) -> ContributionBatchResult:
+        return _engine.run_contribution_analysis(
+            product_graph,
+            categories,
+            result_id=result_id,
+        )
 
     def import_jsonld(
         self,

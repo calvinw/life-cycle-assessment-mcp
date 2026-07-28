@@ -78,7 +78,9 @@ The exact REST bodies are documented below.
 | Run a custom read-only query | `POST /api/database/query` |
 | List teaching examples | `GET /api/case-studies` |
 | Retrieve a teaching example | `GET /api/case-studies/{name}` |
-| Calculate a product graph | `POST /api/lca/run` |
+| Calculate a product graph, including configured contribution graphs | `POST /api/lca/run` |
+| Calculate compact results for an interactive client | `POST /api/lca/base` |
+| Calculate selected cumulative contribution graphs | `POST /api/lca/contribution` |
 | Render a product graph | `POST /api/lca/svg` |
 | Render one foreground unit process | `POST /api/lca/svg/unit-process` |
 | Render a BAFU background supply chain | `POST /api/lca/svg/bafu` |
@@ -359,6 +361,7 @@ Response fields include:
 
 ```json
 {
+  "result_id": "sha256-of-normalized-product-graph",
   "name": "analysis name",
   "method": "LCIA method family",
   "functional_unit": "1.0 kg — description",
@@ -370,27 +373,26 @@ Response fields include:
     }
   },
   "scaling_vector": {},
-  "result_schema_version": 2,
+  "result_schema_version": 3,
   "process_contributions": {
     "categories": []
   },
+  "contribution_graphs": [],
   "sankey": {
     "nodes": [],
     "links": [],
     "available_units": []
-  },
-  "svg_scaled": "<svg ...>",
-  "svg_structure": "<svg ...>"
+  }
 }
 ```
 
 Report impact values with their returned units. Never infer or replace units.
+SVGs are not included; call `POST /api/lca/svg` independently when needed.
 
-The operation is stateless: `product_graph` is the complete input, and no
-session or result identifier is required. `process_contributions.categories`
-contains one entry per `lcia` category. Its exclusive foreground process scores
-plus `residual_score` reproduce the category total; background activity impact
-is aggregated into the residual. A null percentage means the category total is
+The operation is stateless: `product_graph` is the complete input.
+`process_contributions.categories` contains one entry per `lcia` category. Its
+exclusive foreground and background activity scores plus `residual_score`
+reproduce the category total. A null percentage means the category total is
 effectively zero. Negative scores and percentages are valid and must not be
 clamped.
 
@@ -398,6 +400,62 @@ clamped.
 final-product quantities. Every endpoint references an entry in
 `sankey.nodes`. Use `available_units` to select compatible links before mapping
 amounts to widths; never combine incompatible units into one width scale.
+
+### Run a compact base LCA
+
+```http
+POST /api/lca/base
+Content-Type: application/json
+```
+
+The request body is the same as `POST /api/lca/run`. The response has the same
+core fields, but `contribution_graphs` is empty. It still includes every LCIA
+total, exact direct foreground and background activity contributions, the
+physical Sankey, and `result_id`. Use this endpoint for the initial calculation
+in an interactive client.
+
+### Get cumulative contribution graphs
+
+```http
+POST /api/lca/contribution
+Content-Type: application/json
+```
+
+Request:
+
+```json
+{
+  "product_graph": "the same YAML string used for the base result",
+  "categories": ["climate change", "acidification"],
+  "result_id": "result_id returned by /api/lca/base"
+}
+```
+
+`categories` accepts full LCIA labels or unambiguous label
+components/substrings. The server performs one shared adjoint factorization for
+the requested batch and returns:
+
+```json
+{
+  "result_id": "matching result identifier",
+  "method": "LCIA method family",
+  "contribution_graphs": [
+    {
+      "label": "climate change | global warming potential (GWP100)",
+      "total_score": 1.23,
+      "nodes": [],
+      "edges": [],
+      "flows": [],
+      "activity_contributions": []
+    }
+  ]
+}
+```
+
+`result_id` is optional because the call is stateless, but interactive clients
+should send it. The server returns HTTP 400 if it does not match the normalized
+`product_graph`, preventing stale graph data from being merged into a newer
+result.
 
 ### Render a product graph
 
@@ -478,8 +536,11 @@ of guessing. The response is `{"svg":"<svg ...>"}`.
 2. Choose a returned name.
 3. `GET /api/case-studies/{name}`
 4. Extract the `product_graph` string.
-5. `POST /api/lca/run` with that string.
-6. Present `lcia` scores with their units; show returned SVGs only if useful.
+5. `POST /api/lca/base` with that string.
+6. Present `lcia` scores with their units.
+7. If cumulative impact detail is opened, call
+   `POST /api/lca/contribution` with the relevant categories and `result_id`.
+8. Call `POST /api/lca/svg` independently only if a diagram is useful.
 
 ### Explore a background process
 
