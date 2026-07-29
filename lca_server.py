@@ -40,7 +40,9 @@ Run in stdio mode:
 """
 
 import json
+import logging
 import pathlib
+import time
 
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
@@ -50,11 +52,38 @@ from lca_core import ContributionBatchResult, LCAEngine, LcaCoreResult
 
 mcp = FastMCP("Life Cycle Assessment MCP")
 engine = LCAEngine()
+_performance_logger = logging.getLogger("lca.performance")
 
 # Download BAFU database tarball on startup if not already present
 engine.ensure_ready()
 
 _CASE_STUDIES_DIR = pathlib.Path(__file__).parent / "case_studies"
+
+
+def _performance_json_response(
+    *,
+    operation: str,
+    request_started: float,
+    content,
+    status_code: int = 200,
+) -> JSONResponse:
+    serialization_started = time.perf_counter()
+    response = JSONResponse(content, status_code=status_code)
+    serialization_seconds = round(
+        time.perf_counter() - serialization_started, 6
+    )
+    record = {
+        "event": "lca_rest_performance",
+        "operation": operation,
+        "total_seconds": round(time.perf_counter() - request_started, 6),
+        "phases": {
+            "json_response_serialization": serialization_seconds
+        },
+    }
+    _performance_logger.info(
+        json.dumps(record, separators=(",", ":"), sort_keys=True)
+    )
+    return response
 
 # Every MCP tool has one REST equivalent. The discovery endpoint combines this
 # map with FastMCP's generated tool schemas so REST-only clients can discover
@@ -444,26 +473,44 @@ async def api_run_lca(request: Request) -> Response:
 
 @mcp.custom_route("/api/lca/base", methods=["POST"])
 async def api_run_lca_base(request: Request) -> Response:
+    request_started = time.perf_counter()
     try:
         body = await request.json()
-        return JSONResponse(engine.run_base(body["product_graph"]))
+        return _performance_json_response(
+            operation="base",
+            request_started=request_started,
+            content=engine.run_base(body["product_graph"]),
+        )
     except Exception as exc:
-        return JSONResponse({"detail": str(exc)}, status_code=400)
+        return _performance_json_response(
+            operation="base",
+            request_started=request_started,
+            content={"detail": str(exc)},
+            status_code=400,
+        )
 
 
 @mcp.custom_route("/api/lca/contribution", methods=["POST"])
 async def api_get_lca_contribution_graphs(request: Request) -> Response:
+    request_started = time.perf_counter()
     try:
         body = await request.json()
-        return JSONResponse(
-            engine.contribution_graphs(
+        return _performance_json_response(
+            operation="contribution",
+            request_started=request_started,
+            content=engine.contribution_graphs(
                 body["product_graph"],
                 body["categories"],
                 result_id=body.get("result_id"),
-            )
+            ),
         )
     except Exception as exc:
-        return JSONResponse({"detail": str(exc)}, status_code=400)
+        return _performance_json_response(
+            operation="contribution",
+            request_started=request_started,
+            content={"detail": str(exc)},
+            status_code=400,
+        )
 
 
 @mcp.custom_route("/api/lca/svg", methods=["POST"])

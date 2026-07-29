@@ -247,7 +247,24 @@ class ExtendedLcaResultTests(unittest.TestCase):
             [graph["label"] for graph in graphs],
             requested_categories,
         )
+        expected = {
+            "acidification | accumulated exceedance (AE)": {
+                "score": 0.006516547153437484,
+                "coverage": 0.7572876021515309,
+                "nodes": 73,
+                "edges": 72,
+                "flows": 40,
+            },
+            "climate change | global warming potential (GWP100)": {
+                "score": 1.7089725277536298,
+                "coverage": 0.7119483664861459,
+                "nodes": 85,
+                "edges": 84,
+                "flows": 39,
+            },
+        }
         for graph in graphs:
+            reference = expected[graph["label"]]
             self.assertTrue(
                 math.isclose(
                     graph["total_score"],
@@ -256,6 +273,26 @@ class ExtendedLcaResultTests(unittest.TestCase):
                     abs_tol=1e-12,
                 )
             )
+            self.assertTrue(
+                math.isclose(
+                    graph["total_score"],
+                    reference["score"],
+                    rel_tol=1e-8,
+                    abs_tol=1e-12,
+                )
+            )
+            self.assertTrue(
+                math.isclose(
+                    graph["coverage"],
+                    reference["coverage"],
+                    rel_tol=1e-8,
+                    abs_tol=1e-12,
+                )
+            )
+            self.assertEqual(graph["status"], "partial")
+            self.assertEqual(len(graph["nodes"]), reference["nodes"])
+            self.assertEqual(len(graph["edges"]), reference["edges"])
+            self.assertEqual(len(graph["flows"]), reference["flows"])
 
     def test_mcp_discovery_exposes_nested_result_schema(self):
         import lca_server

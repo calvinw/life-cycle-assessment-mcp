@@ -8,12 +8,15 @@ Run scripts/setup_databases.py once before using this module.
 """
 
 import hashlib
+import json
+import logging
 import math
 import os
 import pathlib
 import re
 import tarfile
 import threading
+import time
 import urllib.request
 import uuid
 from contextlib import contextmanager
@@ -53,6 +56,35 @@ TARBALL_URL = (
 _db_lock = threading.Lock()
 _calculation_lock = threading.RLock()
 _startup_databases_ready = False
+_performance_logger = logging.getLogger("lca.performance")
+_performance_logger.setLevel(logging.INFO)
+if not _performance_logger.handlers:
+    _performance_handler = logging.StreamHandler()
+    _performance_handler.setFormatter(logging.Formatter("%(message)s"))
+    _performance_logger.addHandler(_performance_handler)
+_performance_logger.propagate = False
+
+
+def _elapsed_seconds(started: float) -> float:
+    return round(time.perf_counter() - started, 6)
+
+
+def _add_phase(phases: dict, name: str, started: float) -> float:
+    elapsed = _elapsed_seconds(started)
+    phases[name] = round(phases.get(name, 0.0) + elapsed, 6)
+    return elapsed
+
+
+def _emit_performance_log(operation: str, started: float, phases: dict) -> None:
+    record = {
+        "event": "lca_engine_performance",
+        "operation": operation,
+        "total_seconds": _elapsed_seconds(started),
+        "phases": phases,
+    }
+    _performance_logger.info(
+        json.dumps(record, separators=(",", ":"), sort_keys=True)
+    )
 
 
 def _ensure_search_projection():
@@ -598,7 +630,7 @@ def _build_foreground_db(spec: dict, database_name: str) -> tuple[dict, dict, di
 
 
 @contextmanager
-def _request_foreground(spec: dict):
+def _request_foreground(spec: dict, *, phases: dict | None = None):
     """Create isolated foreground state and always remove it after the request.
 
     Brightway project and metadata state is process-global. The lock covers the
@@ -608,11 +640,19 @@ def _request_foreground(spec: dict):
     database_name = f"{FOREGROUND_DB_PREFIX}{uuid.uuid4().hex}"
     with _calculation_lock:
         try:
+            started = time.perf_counter()
             foreground = _build_foreground_db(spec, database_name)
+            if phases is not None:
+                _add_phase(phases, "temporary_foreground_creation", started)
             yield foreground
         finally:
+            cleanup_started = time.perf_counter()
             if database_name in bd.databases:
                 del bd.databases[database_name]
+            if phases is not None:
+                _add_phase(
+                    phases, "temporary_foreground_creation", cleanup_started
+                )
 
 
 def _contribution_category(
@@ -910,12 +950,20 @@ def _run_analysis(
     product_graph_yaml: str,
     *,
     include_contribution_graphs: bool,
+    performance_phases: dict | None = None,
 ) -> LcaCoreResult:
+    phases = performance_phases
+    started = time.perf_counter()
     spec = _load_spec(product_graph_yaml)
+    if phases is not None:
+        _add_phase(phases, "yaml_parsing_and_validation", started)
 
     with _calculation_lock:
+        started = time.perf_counter()
         _ensure_project()
-        with _request_foreground(spec) as (
+        if phases is not None:
+            _add_phase(phases, "brightway_project_readiness", started)
+        with _request_foreground(spec, phases=phases) as (
             activities,
             _,
             background_providers,
@@ -950,15 +998,28 @@ def _run_analysis(
             )
 
             # Compute inventory and the scaling solution exactly once.
+            started = time.perf_counter()
             lca = bc.LCA(
                 demand={ref_act: fu_amount},
                 method=calculation_methods[0],
             )
-            lca.lci(factorize=True)
-            transpose_lu = (
-                factorize_adjoint(lca) if contribution_methods else None
-            )
+            if phases is not None:
+                _add_phase(phases, "lca_construction", started)
+            started = time.perf_counter()
+            # Each request solves one forward demand exactly once. Retaining
+            # that LU factorization adds substantial cost and is never reused;
+            # contribution traversal has its own A.T factorization below.
+            lca.lci()
+            if phases is not None:
+                _add_phase(phases, "lci_factorization", started)
+            transpose_lu = None
+            if contribution_methods:
+                started = time.perf_counter()
+                transpose_lu = factorize_adjoint(lca)
+                if phases is not None:
+                    _add_phase(phases, "adjoint_transpose_factorization", started)
 
+            base_result_started = time.perf_counter()
             scaling_vector: dict[str, float] = {}
             act_dict = (
                 lca.dicts.activity if hasattr(lca, "dicts") else lca.activity_dict
@@ -1005,7 +1066,14 @@ def _run_analysis(
                 }
                 for name, activity in activities.items()
             }
+            if phases is not None:
+                _add_phase(
+                    phases, "inventory_base_result_construction", base_result_started
+                )
+            lcia_timings = []
+            traversal_timings = []
             for method_index, method_tuple in enumerate(calculation_methods):
+                category_started = time.perf_counter()
                 if method_index:
                     lca.switch_method(method_tuple)
                 lca.lcia()
@@ -1020,7 +1088,11 @@ def _run_analysis(
                     unit=unit,
                     background_metadata=background_metadata,
                 )
+                lcia_timings.append(
+                    {"category": label, "seconds": _elapsed_seconds(category_started)}
+                )
                 if method_tuple in contribution_methods:
+                    traversal_started = time.perf_counter()
                     graph = build_contribution_graph(
                         lca=lca,
                         spec=spec,
@@ -1031,8 +1103,26 @@ def _run_analysis(
                         transpose_lu=transpose_lu,
                     )
                     contribution_graphs.append(graph)
+                    traversal_timings.append(
+                        {"category": label, "seconds": _elapsed_seconds(traversal_started)}
+                    )
                 contribution_categories.append(category)
+            if phases is not None:
+                phases["lcia_calculation_and_direct_contributions"] = {
+                    "total_seconds": round(
+                        sum(item["seconds"] for item in lcia_timings), 6
+                    ),
+                    "categories": lcia_timings,
+                }
+                if traversal_timings:
+                    phases["contribution_traversal_per_category"] = {
+                        "total_seconds": round(
+                            sum(item["seconds"] for item in traversal_timings), 6
+                        ),
+                        "categories": traversal_timings,
+                    }
 
+            base_result_started = time.perf_counter()
             fu_spec = spec["functional_unit"]
             result: LcaCoreResult = {
                 "result_id": _result_id(spec),
@@ -1053,7 +1143,14 @@ def _run_analysis(
                     spec, scaling_vector, background_providers
                 ),
             }
+            if phases is not None:
+                _add_phase(
+                    phases, "inventory_base_result_construction", base_result_started
+                )
+            started = time.perf_counter()
             _ensure_finite_result(result)
+            if phases is not None:
+                _add_phase(phases, "result_validation", started)
             return result
 
 
@@ -1067,20 +1164,31 @@ def run_analysis(product_graph_yaml: str) -> LcaCoreResult:
 
 def run_base_analysis(product_graph_yaml: str) -> LcaCoreResult:
     """Run totals and direct contributions without cumulative impact graphs."""
-    return _run_analysis(
-        product_graph_yaml,
-        include_contribution_graphs=False,
-    )
+    request_started = time.perf_counter()
+    phases: dict = {}
+    try:
+        return _run_analysis(
+            product_graph_yaml,
+            include_contribution_graphs=False,
+            performance_phases=phases,
+        )
+    finally:
+        _emit_performance_log("base", request_started, phases)
 
 
-def run_contribution_analysis(
+def _run_contribution_analysis(
     product_graph_yaml: str,
     categories: list[str],
     *,
     result_id: str | None = None,
+    performance_phases: dict | None = None,
 ) -> ContributionBatchResult:
     """Build cumulative contribution graphs for a requested category batch."""
+    phases = performance_phases
+    started = time.perf_counter()
     spec = _load_spec(product_graph_yaml)
+    if phases is not None:
+        _add_phase(phases, "yaml_parsing_and_validation", started)
     if (
         not isinstance(categories, list)
         or not categories
@@ -1112,8 +1220,11 @@ def run_contribution_analysis(
     }
 
     with _calculation_lock:
+        started = time.perf_counter()
         _ensure_project()
-        with _request_foreground(spec) as (activities, _, _):
+        if phases is not None:
+            _add_phase(phases, "brightway_project_readiness", started)
+        with _request_foreground(spec, phases=phases) as (activities, _, _):
             method_name = spec["lcia"]["method_name"]
             method_tuples = sorted(
                 [method for method in bd.methods if method[0] == method_name],
@@ -1147,12 +1258,23 @@ def run_contribution_analysis(
 
             reference = activities[spec["reference_process"]]
             amount = float(spec["functional_unit"]["amount"])
+            started = time.perf_counter()
             lca = bc.LCA(
                 demand={reference: amount},
                 method=first_requested_method,
             )
-            lca.lci(factorize=True)
+            if phases is not None:
+                _add_phase(phases, "lca_construction", started)
+            started = time.perf_counter()
+            # The forward system is solved once; only the separate transpose
+            # factorization is reused by contribution traversal.
+            lca.lci()
+            if phases is not None:
+                _add_phase(phases, "lci_factorization", started)
+            started = time.perf_counter()
             transpose_lu = factorize_adjoint(lca)
+            if phases is not None:
+                _add_phase(phases, "adjoint_transpose_factorization", started)
             process_ids = _process_ids(spec)
             foreground_metadata = {
                 activity.id: {
@@ -1166,13 +1288,20 @@ def run_contribution_analysis(
             }
 
             graphs = []
+            lcia_timings = []
+            traversal_timings = []
             for method_tuple in method_tuples:
                 if method_tuple not in requested_methods:
                     continue
+                category_started = time.perf_counter()
                 lca.switch_method(method_tuple)
                 lca.lcia()
                 label = " | ".join(method_tuple[1:])
                 unit = bd.methods[method_tuple].get("unit", "")
+                lcia_timings.append(
+                    {"category": label, "seconds": _elapsed_seconds(category_started)}
+                )
+                traversal_started = time.perf_counter()
                 graphs.append(
                     build_contribution_graph(
                         lca=lca,
@@ -1184,14 +1313,53 @@ def run_contribution_analysis(
                         transpose_lu=transpose_lu,
                     )
                 )
+                traversal_timings.append(
+                    {"category": label, "seconds": _elapsed_seconds(traversal_started)}
+                )
+            if phases is not None:
+                phases["lcia_calculation_and_direct_contributions"] = {
+                    "total_seconds": round(
+                        sum(item["seconds"] for item in lcia_timings), 6
+                    ),
+                    "categories": lcia_timings,
+                }
+                phases["contribution_traversal_per_category"] = {
+                    "total_seconds": round(
+                        sum(item["seconds"] for item in traversal_timings), 6
+                    ),
+                    "categories": traversal_timings,
+                }
 
             result: ContributionBatchResult = {
                 "result_id": actual_result_id,
                 "method": method_name,
                 "contribution_graphs": graphs,
             }
+            started = time.perf_counter()
             _ensure_finite_result(result)
+            if phases is not None:
+                _add_phase(phases, "result_validation", started)
             return result
+
+
+def run_contribution_analysis(
+    product_graph_yaml: str,
+    categories: list[str],
+    *,
+    result_id: str | None = None,
+) -> ContributionBatchResult:
+    """Build contribution graphs and emit one request timing record."""
+    request_started = time.perf_counter()
+    phases: dict = {}
+    try:
+        return _run_contribution_analysis(
+            product_graph_yaml,
+            categories,
+            result_id=result_id,
+            performance_phases=phases,
+        )
+    finally:
+        _emit_performance_log("contribution", request_started, phases)
 
 
 def get_contributions(product_graph_yaml: str, method_name: str, top_n: int = 10) -> dict:
