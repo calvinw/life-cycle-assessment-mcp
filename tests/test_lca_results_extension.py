@@ -231,6 +231,32 @@ class ExtendedLcaResultTests(unittest.TestCase):
             )
         )
 
+    def test_lazy_real_bafu_broom_batch_accepts_solver_rounding(self):
+        source = (ROOT / "bafu_examples/plastic_broom.yaml").read_text()
+        base = self.engine.run_base(source)
+        requested_categories = list(base["lcia"])
+
+        batch = self.engine.contribution_graphs(
+            source,
+            requested_categories,
+            result_id=base["result_id"],
+        )
+
+        graphs = batch["contribution_graphs"]
+        self.assertEqual(
+            [graph["label"] for graph in graphs],
+            requested_categories,
+        )
+        for graph in graphs:
+            self.assertTrue(
+                math.isclose(
+                    graph["total_score"],
+                    base["lcia"][graph["label"]]["score"],
+                    rel_tol=1e-8,
+                    abs_tol=1e-12,
+                )
+            )
+
     def test_mcp_discovery_exposes_nested_result_schema(self):
         import lca_server
 

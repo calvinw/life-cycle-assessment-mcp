@@ -18,6 +18,10 @@ from scipy.sparse.linalg import splu
 from .models import ContributionGraph
 
 
+ADJOINT_SCORE_REL_TOLERANCE = 1e-8
+ADJOINT_SCORE_ABS_TOLERANCE = 1e-12
+
+
 def _stable_id(kind: str, *parts: object) -> str:
     canonical = "\x1f".join(str(part) for part in parts)
     slug_source = str(parts[0]) if parts else kind
@@ -76,8 +80,11 @@ def _seed_adjoint_scores(traversal, lca, transpose_lu=None) -> np.ndarray:
     if not math.isclose(
         reconstructed_score,
         float(lca.score),
-        rel_tol=1e-9,
-        abs_tol=1e-12,
+        # Sparse factorizations can differ by a few parts per billion across
+        # BLAS/SuperLU builds. Keep the reconciliation guard strict without
+        # rejecting numerically equivalent scores on another deployment.
+        rel_tol=ADJOINT_SCORE_REL_TOLERANCE,
+        abs_tol=ADJOINT_SCORE_ABS_TOLERANCE,
     ):
         raise RuntimeError(
             "Adjoint contribution scores do not reconcile with the LCIA total: "
