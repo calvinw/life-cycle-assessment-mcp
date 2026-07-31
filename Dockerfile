@@ -17,6 +17,7 @@ RUN uv sync --frozen --no-dev --extra server --no-install-project
 # Application code
 COPY sse_server.py lca_server.py lca_engine.py lca_search.py lca_svg_engine.py lca_svg.py ./
 COPY lca_core/ ./lca_core/
+COPY product-graphs/ ./product-graphs/
 COPY case_studies/ ./case_studies/
 COPY mock_background/ ./mock_background/
 COPY mock_examples/ ./mock_examples/

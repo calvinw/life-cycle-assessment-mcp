@@ -11,6 +11,7 @@ MCP Tools:
     query_lca_database   — safe read-only SQL on the inventory projection
     get_lca_activity_inputs — typed direct exchanges for one activity
     check_server         — Brightway engine health check
+    list_product_graphs  — return the webapp product-graph YAML catalog
     list_case_studies    — list bundled teaching case studies
     get_case_study       — return the pre-computed bundle for a named case study
 
@@ -23,6 +24,7 @@ REST API (via @mcp.custom_route):
     POST /api/database/query
     POST /api/database/search
     POST /api/database/activity-inputs
+    GET  /api/product-graphs
     GET  /api/case-studies
     GET  /api/case-studies/{name}
     POST /api/lca/run
@@ -44,6 +46,7 @@ import logging
 import pathlib
 import time
 
+import yaml
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 from fastmcp import FastMCP
@@ -58,6 +61,36 @@ _performance_logger = logging.getLogger("lca.performance")
 engine.ensure_ready()
 
 _CASE_STUDIES_DIR = pathlib.Path(__file__).parent / "case_studies"
+_PRODUCT_GRAPHS_DIR = pathlib.Path(__file__).parent / "product-graphs"
+_DEFAULT_PRODUCT_GRAPH_ID = "jacket"
+
+
+def _load_product_graph_catalog() -> dict:
+    """Return every webapp product graph and its YAML source in stable order."""
+    product_graphs = []
+    for path in sorted(_PRODUCT_GRAPHS_DIR.glob("*.yaml")):
+        source = path.read_text()
+        document = yaml.safe_load(source)
+        if not isinstance(document, dict) or not isinstance(document.get("name"), str):
+            raise ValueError(f"Product graph '{path.name}' must define a string name.")
+        product_graphs.append(
+            {
+                "id": path.stem,
+                "filename": path.name,
+                "name": document["name"],
+                "product_graph": source,
+            }
+        )
+
+    if not product_graphs:
+        raise RuntimeError("No product graphs are installed.")
+    available_ids = {item["id"] for item in product_graphs}
+    default_id = (
+        _DEFAULT_PRODUCT_GRAPH_ID
+        if _DEFAULT_PRODUCT_GRAPH_ID in available_ids
+        else product_graphs[0]["id"]
+    )
+    return {"default_id": default_id, "product_graphs": product_graphs}
 
 
 def _performance_json_response(
@@ -114,6 +147,7 @@ REST_TOOL_ROUTES = {
         "method": "POST",
         "path": "/api/database/activity-inputs",
     },
+    "list_product_graphs": {"method": "GET", "path": "/api/product-graphs"},
     "list_impact_methods": {"method": "GET", "path": "/api/methods"},
     "check_server": {"method": "GET", "path": "/api/health"},
 }
@@ -264,6 +298,17 @@ def get_unit_process_svg(product_graph: str, process_name: str) -> str:
     Returns SVG as a string.
     """
     return engine.generate_unit_process_svg(product_graph, process_name)
+
+
+@mcp.tool()
+def list_product_graphs() -> dict:
+    """
+    Return all bundled product graphs for interactive clients.
+
+    Each catalog entry includes a stable ID, filename, display name, and the
+    complete YAML document. ``default_id`` identifies the initial selection.
+    """
+    return _load_product_graph_catalog()
 
 
 @mcp.tool()
@@ -438,6 +483,11 @@ async def api_get_activity_inputs(request: Request) -> Response:
         )
     except Exception as exc:
         return JSONResponse({"detail": str(exc)}, status_code=400)
+
+
+@mcp.custom_route("/api/product-graphs", methods=["GET"])
+async def api_list_product_graphs(request: Request) -> Response:
+    return JSONResponse(list_product_graphs())
 
 
 @mcp.custom_route("/api/case-studies", methods=["GET"])

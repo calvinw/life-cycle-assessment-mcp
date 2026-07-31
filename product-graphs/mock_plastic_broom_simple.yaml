@@ -1,0 +1,27 @@
+name: Simple Mock Plastic Broom — 1 unit
+goal: >
+  Demonstrate a simple foreground product whose grid electricity is supplied
+  only to polypropylene. All inventory values are fictional.
+
+functional_unit:
+  description: 1 simple mock plastic broom
+  amount: 1.0
+  unit: unit
+
+products:
+  - { name: Simple mock plastic broom, unit: unit }
+
+processes:
+  - name: Simple mock plastic broom assembly
+    reference_output: { flow: Simple mock plastic broom, amount: 1.0, unit: unit }
+    inputs:
+      - { flow: "Mock polypropylene granulate, at plant", location: MOCK, database: mock_background, amount: 0.52, unit: kilogram }
+      - { flow: "Mock freight transport, small truck, direct emissions only", location: MOCK, database: mock_background, amount: 0.1055, unit: ton kilometer }
+
+reference_process: Simple mock plastic broom assembly
+
+lcia:
+  method_name: "EF v3.1"
+  categories:
+    - climate change
+    - acidification

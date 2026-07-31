@@ -78,6 +78,7 @@ The exact REST bodies are documented below.
 | Run a custom read-only query | `POST /api/database/query` |
 | List teaching examples | `GET /api/case-studies` |
 | Retrieve a teaching example | `GET /api/case-studies/{name}` |
+| Retrieve the webapp product-graph catalog | `GET /api/product-graphs` |
 | Calculate a product graph, including configured contribution graphs | `POST /api/lca/run` |
 | Calculate compact results for an interactive client | `POST /api/lca/base` |
 | Calculate selected cumulative contribution graphs | `POST /api/lca/contribution` |
@@ -306,6 +307,34 @@ Response:
 
 Never issue destructive SQL, even if a user asks for it. This endpoint is a
 read-only projection, not Brightway's internal database.
+
+### Retrieve the product-graph catalog
+
+```http
+GET /api/product-graphs
+```
+
+This endpoint returns every YAML document offered by the product editor in
+one request. The server-side `product-graphs/` directory is the source of
+truth; the webapp does not bundle private copies of these files.
+
+```json
+{
+  "default_id": "jacket",
+  "product_graphs": [
+    {
+      "id": "jacket",
+      "filename": "jacket.yaml",
+      "name": "Jacket — 1 unit (3-tier)",
+      "product_graph": "name: Jacket — 1 unit (3-tier)\n..."
+    }
+  ]
+}
+```
+
+Use `id` as the dropdown value, `name` as its label, and `product_graph` as
+the exact YAML editor/calculation input. `default_id` identifies the initial
+selection.
 
 ### List and retrieve case studies
 
