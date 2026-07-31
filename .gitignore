@@ -5,6 +5,7 @@ lca_debug/
 brightway_data/
 data/
 .claude/
+.env.deploy
 
 # Local OS, Java database, and nested-repository artifacts
 .DS_Store
