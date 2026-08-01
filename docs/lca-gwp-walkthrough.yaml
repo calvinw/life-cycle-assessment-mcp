@@ -1,0 +1,58 @@
+name: Walkthrough Electricity — 1000 kWh
+goal: >
+  Reproduce the worked two-process GWP calculation in
+  docs/lca-gwp-walkthrough.md. Scale independently documented fuel and
+  electricity unit processes to a functional unit of 1000 kWh, compile the
+  life-cycle inventory, and characterize fossil carbon dioxide and methane
+  with the EF v3.1 climate-change category and its IPCC AR6 GWP100 factors.
+
+functional_unit:
+  description: 1000 kWh electricity
+  amount: 1000.0
+  unit: kWh
+
+units:
+  L: Volume
+  kg: Mass
+  kWh: Energy
+
+products:
+  - { name: Fuel, unit: L }
+  - { name: Electricity, unit: kWh }
+
+elementary_flows:
+  emissions:
+    - { name: Carbon dioxide, compartment: air, unit: kg }
+    - { name: Methane, compartment: air, unit: kg }
+  resources:
+    - { name: "Oil, crude", compartment: ground, unit: L }
+
+processes:
+  - name: P1 — Fuel production
+    reference_output: { flow: Fuel, amount: 100.0, unit: L }
+    emissions:
+      - { flow: Carbon dioxide, amount: 30.0 }
+      - { flow: Methane, amount: 10.0 }
+    resources:
+      - { flow: "Oil, crude", compartment: ground, amount: 50.0 }
+
+  - name: P2 — Electricity generation
+    reference_output: { flow: Electricity, amount: 10.0, unit: kWh }
+    inputs:
+      - { flow: Fuel, amount: 2.0, unit: L }
+    emissions:
+      - { flow: Carbon dioxide, amount: 5.4 }
+      - { flow: Methane, amount: 0.05 }
+
+reference_process: P2 — Electricity generation
+
+lcia:
+  method_name: "EF v3.1"
+  contribution_graph:
+    categories:
+      - climate change
+    cutoff: 0.000001
+    biosphere_cutoff: 0.000001
+    max_depth: 4
+    max_calculations: 100
+    include_flows: true

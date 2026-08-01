@@ -2,6 +2,9 @@
 
 **A worked GWP calculation**
 
+Companion executable product graph:
+[`lca-gwp-walkthrough.yaml`](lca-gwp-walkthrough.yaml).
+
 Two unit processes, two greenhouse gases, and one functional unit. Every number below is computed by scaling each process directly — no matrix algebra, nothing that can't be done on paper.
 
 **Functional unit = 1000 kWh electricity**

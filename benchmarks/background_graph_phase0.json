@@ -1,0 +1,1836 @@
+{
+  "benchmark_schema_version": 1,
+  "measured_at": "2026-07-28T03:37:09.248990+00:00",
+  "settings": {
+    "cutoff": 0.001,
+    "biosphere_cutoff": 0.0001,
+    "max_depth": 12,
+    "max_calculations": 1000,
+    "include_flows": true
+  },
+  "measurement_definitions": {
+    "lcia_only_seconds": "Complete current engine run with contribution graphs disabled: foreground setup, factorized LCI, every LCIA category, and core result assembly.",
+    "category_traversal_seconds": "Existing Brightway traversal plus schema-3 graph adaptation for one category.",
+    "all_nonzero_total_seconds": "Complete current engine run with an independent graph traversal for every category whose total is not within 1e-12 of zero.",
+    "response_sizes": "Compact UTF-8 JSON core result without REST SVG strings; gzip is level 9 with mtime zero.",
+    "union_node_count": "Benchmark-only union of category-independent occurrence paths; not a public or production node identity."
+  },
+  "environment": {
+    "python": "3.14.1",
+    "platform": "macOS-26.5.1-arm64-arm-64bit-Mach-O",
+    "brightway_project": "lca_server",
+    "brightway25": "1.1.1",
+    "bw2calc": "2.5.0",
+    "bw2data": "4.7",
+    "bw-graph-tools": "0.9"
+  },
+  "examples": [
+    {
+      "example": "cotton_fiber_bafu.yaml",
+      "path": "bafu_examples/cotton_fiber_bafu.yaml",
+      "method": "TRACI v2.1",
+      "repeat": 1,
+      "nonzero_category_count": 9,
+      "lcia_only_seconds": 2.7122897499939427,
+      "lcia_only_second_samples": [
+        2.7122897499939427
+      ],
+      "all_nonzero_total_seconds": 31.386629833024926,
+      "all_nonzero_total_second_samples": [
+        31.386629833024926
+      ],
+      "total_node_count": 3264,
+      "total_edge_count": 3255,
+      "total_flow_count": 1179,
+      "union_node_count": 1417,
+      "union_node_count_method": "category_independent_occurrence_path_v1",
+      "response_sizes": {
+        "raw_bytes": 4769254,
+        "gzip_bytes": 570287
+      },
+      "independent_graphs_sha256": "37cf3f05ef02bff5ad7a84956a6aea6d8bdda7f0a9361ca1115e12fd04f3c1ec",
+      "categories": [
+        {
+          "label": "acidification | acidification potential (AP)",
+          "unit": "kg SO2-Eq",
+          "traversal_seconds": 1.5524624579993542,
+          "traversal_second_samples": [
+            1.5524624579993542
+          ],
+          "calculation_count": 45,
+          "node_count": 47,
+          "edge_count": 46,
+          "flow_count": 19,
+          "graph_sizes": {
+            "raw_bytes": 68260,
+            "gzip_bytes": 9075
+          },
+          "numeric_reference": {
+            "total_score": 0.024396891941054787,
+            "coverage": 0.957307763499604,
+            "unexpanded_score": 0.0010415578806221154,
+            "sum_node_direct_score": 0.023355334060432664,
+            "sum_flow_score": 0.02334627046495039,
+            "sha256": "bd395faefb1ed0ba9c8d0bb821097a468791818222e96de85176b068279335ce"
+          }
+        },
+        {
+          "label": "ecotoxicity: freshwater | ecotoxicity: freshwater",
+          "unit": "CTUe",
+          "traversal_seconds": 4.00267066701781,
+          "traversal_second_samples": [
+            4.00267066701781
+          ],
+          "calculation_count": 539,
+          "node_count": 541,
+          "edge_count": 540,
+          "flow_count": 331,
+          "graph_sizes": {
+            "raw_bytes": 784023,
+            "gzip_bytes": 96157
+          },
+          "numeric_reference": {
+            "total_score": 6.36181925821766,
+            "coverage": 0.5958538427409295,
+            "unexpanded_score": 2.571104806385418,
+            "sum_node_direct_score": 3.790714451832244,
+            "sum_flow_score": 3.6763253016953934,
+            "sha256": "ac2bdd3630cc847f45cb1d9e505c2fa0e18cbbac7fdfcbfd542bbaf67eb19f98"
+          }
+        },
+        {
+          "label": "eutrophication | eutrophication potential",
+          "unit": "kg N-Eq",
+          "traversal_seconds": 3.732223333005095,
+          "traversal_second_samples": [
+            3.732223333005095
+          ],
+          "calculation_count": 428,
+          "node_count": 430,
+          "edge_count": 429,
+          "flow_count": 113,
+          "graph_sizes": {
+            "raw_bytes": 544020,
+            "gzip_bytes": 66766
+          },
+          "numeric_reference": {
+            "total_score": 0.00291297304972792,
+            "coverage": 0.7253341917521678,
+            "unexpanded_score": 0.0008000940971076716,
+            "sum_node_direct_score": 0.0021128789526202495,
+            "sum_flow_score": 0.002106332913937211,
+            "sha256": "07302ccbb22bf8522425d76c6b74574284d5864ac2e6594ec39ab3d69b903f00"
+          }
+        },
+        {
+          "label": "climate change | global warming potential (GWP100)",
+          "unit": "kg CO2-Eq",
+          "traversal_seconds": 1.6247568339749705,
+          "traversal_second_samples": [
+            1.6247568339749705
+          ],
+          "calculation_count": 58,
+          "node_count": 60,
+          "edge_count": 59,
+          "flow_count": 20,
+          "graph_sizes": {
+            "raw_bytes": 86496,
+            "gzip_bytes": 11278
+          },
+          "numeric_reference": {
+            "total_score": 6.165215252364727,
+            "coverage": 0.9392791291722649,
+            "unexpanded_score": 0.37435723896402084,
+            "sum_node_direct_score": 5.790858013400704,
+            "sum_flow_score": 5.7853613627007325,
+            "sha256": "2eaa731a2b3846356ca8a3d42ff8ff60515578b55163f17f28677729a6ffa4bb"
+          }
+        },
+        {
+          "label": "human toxicity: carcinogenic | human toxicity: carcinogenic",
+          "unit": "CTUh",
+          "traversal_seconds": 4.500329917005729,
+          "traversal_second_samples": [
+            4.500329917005729
+          ],
+          "calculation_count": 605,
+          "node_count": 607,
+          "edge_count": 606,
+          "flow_count": 161,
+          "graph_sizes": {
+            "raw_bytes": 809088,
+            "gzip_bytes": 94631
+          },
+          "numeric_reference": {
+            "total_score": 3.593425638334736e-08,
+            "coverage": 0.5780491098951376,
+            "unexpanded_score": 1.516249146620975e-08,
+            "sum_node_direct_score": 2.077176491713759e-08,
+            "sum_flow_score": 2.0544182467623607e-08,
+            "sha256": "30e405265c195c201eefb7785eb643a7d1f4590835a52536a92afc486ab6bb30"
+          }
+        },
+        {
+          "label": "human toxicity: non-carcinogenic | human toxicity: non-carcinogenic",
+          "unit": "CTUh",
+          "traversal_seconds": 4.3371139589871746,
+          "traversal_second_samples": [
+            4.3371139589871746
+          ],
+          "calculation_count": 574,
+          "node_count": 576,
+          "edge_count": 575,
+          "flow_count": 317,
+          "graph_sizes": {
+            "raw_bytes": 833636,
+            "gzip_bytes": 99723
+          },
+          "numeric_reference": {
+            "total_score": 2.2375686047690735e-07,
+            "coverage": 0.5255559067431186,
+            "unexpanded_score": 1.0616012077897282e-07,
+            "sum_node_direct_score": 1.1759673969793462e-07,
+            "sum_flow_score": 1.1424382759056288e-07,
+            "sha256": "4bf8b669d20042c4314fd0a1ac173632a0267ff7d20b3ad1962d47ae35bd7b5e"
+          }
+        },
+        {
+          "label": "photochemical oxidant formation | maximum incremental reactivity (MIR)",
+          "unit": "kg O3-Eq",
+          "traversal_seconds": 2.2412412079866044,
+          "traversal_second_samples": [
+            2.2412412079866044
+          ],
+          "calculation_count": 122,
+          "node_count": 124,
+          "edge_count": 123,
+          "flow_count": 30,
+          "graph_sizes": {
+            "raw_bytes": 176770,
+            "gzip_bytes": 23031
+          },
+          "numeric_reference": {
+            "total_score": 0.14767490243968326,
+            "coverage": 0.8709522624562159,
+            "unexpanded_score": 0.019057112051840158,
+            "sum_node_direct_score": 0.12861779038784313,
+            "sum_flow_score": 0.12846668883603216,
+            "sha256": "eec6a29862b18489fc0e47e4a2d119d935dd2956c0ed7e3fd3137887ac3e698a"
+          }
+        },
+        {
+          "label": "ozone depletion | ozone depletion potential (ODP)",
+          "unit": "kg CFC-11-Eq",
+          "traversal_seconds": 4.785879542003386,
+          "traversal_second_samples": [
+            4.785879542003386
+          ],
+          "calculation_count": 779,
+          "node_count": 781,
+          "edge_count": 780,
+          "flow_count": 129,
+          "graph_sizes": {
+            "raw_bytes": 987036,
+            "gzip_bytes": 107289
+          },
+          "numeric_reference": {
+            "total_score": 3.3742527996408926e-08,
+            "coverage": 0.5794754498605816,
+            "unexpanded_score": 1.4189561406256591e-08,
+            "sum_node_direct_score": 1.955296659015233e-08,
+            "sum_flow_score": 1.9532534571701355e-08,
+            "sha256": "d9ee903346af5612c1ea22243bf263a5acbae2afe64f409ae5bccd9cace904fd"
+          }
+        },
+        {
+          "label": "particulate matter formation | particulate matter formation potential (PMFP)",
+          "unit": "PM2.5-Eq",
+          "traversal_seconds": 2.0500574159959797,
+          "traversal_second_samples": [
+            2.0500574159959797
+          ],
+          "calculation_count": 96,
+          "node_count": 98,
+          "edge_count": 97,
+          "flow_count": 59,
+          "graph_sizes": {
+            "raw_bytes": 153192,
+            "gzip_bytes": 20491
+          },
+          "numeric_reference": {
+            "total_score": 0.0013531990177840189,
+            "coverage": 0.9179716884274413,
+            "unexpanded_score": 0.00011100063065046803,
+            "sum_node_direct_score": 0.001242198387133551,
+            "sum_flow_score": 0.0012401252918635007,
+            "sha256": "2d2bb40663f378e4b4bb22f7a631430e05b4e9f4dcc1c94c3d237743a639cca4"
+          }
+        }
+      ]
+    },
+    {
+      "example": "plastic_broom.yaml",
+      "path": "bafu_examples/plastic_broom.yaml",
+      "method": "EF v3.1",
+      "repeat": 1,
+      "nonzero_category_count": 25,
+      "lcia_only_seconds": 2.7572057909856085,
+      "lcia_only_second_samples": [
+        2.7572057909856085
+      ],
+      "all_nonzero_total_seconds": 98.20750424999278,
+      "all_nonzero_total_second_samples": [
+        98.20750424999278
+      ],
+      "total_node_count": 7854,
+      "total_edge_count": 7829,
+      "total_flow_count": 2641,
+      "union_node_count": 2342,
+      "union_node_count_method": "category_independent_occurrence_path_v1",
+      "response_sizes": {
+        "raw_bytes": 11950855,
+        "gzip_bytes": 1434941
+      },
+      "independent_graphs_sha256": "1f324a46fceb93af557fb95762f8bcd9c2e61ac99ff3d413f548f3b9410cef75",
+      "categories": [
+        {
+          "label": "material resources: metals/minerals | abiotic depletion potential (ADP): elements (ultimate reserves)",
+          "unit": "kg Sb-Eq",
+          "traversal_seconds": 4.0077793749806006,
+          "traversal_second_samples": [
+            4.0077793749806006
+          ],
+          "calculation_count": 354,
+          "node_count": 356,
+          "edge_count": 355,
+          "flow_count": 96,
+          "graph_sizes": {
+            "raw_bytes": 483110,
+            "gzip_bytes": 58915
+          },
+          "numeric_reference": {
+            "total_score": 5.640644342092135e-06,
+            "coverage": 0.7744119257634065,
+            "unexpanded_score": 1.272462094586102e-06,
+            "sum_node_direct_score": 4.368182247506034e-06,
+            "sum_flow_score": 4.367273136537294e-06,
+            "sha256": "2e1b338d25ae9e65ac83ad985036f62f8d4063187f008515847a93d9bac76168"
+          }
+        },
+        {
+          "label": "energy resources: non-renewable | abiotic depletion potential (ADP): fossil fuels",
+          "unit": "MJ, net calorific value",
+          "traversal_seconds": 4.688535207998939,
+          "traversal_second_samples": [
+            4.688535207998939
+          ],
+          "calculation_count": 569,
+          "node_count": 571,
+          "edge_count": 570,
+          "flow_count": 62,
+          "graph_sizes": {
+            "raw_bytes": 742048,
+            "gzip_bytes": 83622
+          },
+          "numeric_reference": {
+            "total_score": 25.736354997038937,
+            "coverage": 0.540444417194374,
+            "unexpanded_score": 11.827285619956713,
+            "sum_node_direct_score": 13.909069377082226,
+            "sum_flow_score": 13.903867161686692,
+            "sha256": "8850b656f372a6c93ace6a791b95bdb4ff2a613fc7ba81cb3a017f22cd4dc483"
+          }
+        },
+        {
+          "label": "acidification | accumulated exceedance (AE)",
+          "unit": "mol H+-Eq",
+          "traversal_seconds": 3.473108250007499,
+          "traversal_second_samples": [
+            3.473108250007499
+          ],
+          "calculation_count": 204,
+          "node_count": 206,
+          "edge_count": 205,
+          "flow_count": 116,
+          "graph_sizes": {
+            "raw_bytes": 310029,
+            "gzip_bytes": 41891
+          },
+          "numeric_reference": {
+            "total_score": 0.006516547154900909,
+            "coverage": 0.836858815503217,
+            "unexpanded_score": 0.001063117221679676,
+            "sum_node_direct_score": 0.005453429933221233,
+            "sum_flow_score": 0.005448031379710531,
+            "sha256": "53edd35401b49eb9bba5e8605c81cfad377cf7fde2af406fa740a26814d3b82c"
+          }
+        },
+        {
+          "label": "eutrophication: terrestrial | accumulated exceedance (AE)",
+          "unit": "mol N-Eq",
+          "traversal_seconds": 3.13660616701236,
+          "traversal_second_samples": [
+            3.13660616701236
+          ],
+          "calculation_count": 170,
+          "node_count": 172,
+          "edge_count": 171,
+          "flow_count": 73,
+          "graph_sizes": {
+            "raw_bytes": 263135,
+            "gzip_bytes": 34163
+          },
+          "numeric_reference": {
+            "total_score": 0.022455031202123357,
+            "coverage": 0.8615894237324764,
+            "unexpanded_score": 0.003108013808791117,
+            "sum_node_direct_score": 0.019347017393332243,
+            "sum_flow_score": 0.019338977918869283,
+            "sha256": "a56343c7479362abebed506dede7bf9a3a5ab42ec897d29aea520a5d8e1e58a5"
+          }
+        },
+        {
+          "label": "ecotoxicity: freshwater | comparative toxic unit for ecosystems (CTUe)",
+          "unit": "CTUe",
+          "traversal_seconds": 3.4447998339892365,
+          "traversal_second_samples": [
+            3.4447998339892365
+          ],
+          "calculation_count": 162,
+          "node_count": 164,
+          "edge_count": 163,
+          "flow_count": 71,
+          "graph_sizes": {
+            "raw_bytes": 247172,
+            "gzip_bytes": 33730
+          },
+          "numeric_reference": {
+            "total_score": 17.866655332431986,
+            "coverage": 0.8388963196939406,
+            "unexpanded_score": 2.8783839288146744,
+            "sum_node_direct_score": 14.988271403617315,
+            "sum_flow_score": 14.947907465008333,
+            "sha256": "b2124088169c307db8ed3d9391566a965118696a264e169e2ccd141be83da86f"
+          }
+        },
+        {
+          "label": "ecotoxicity: freshwater, inorganics | comparative toxic unit for ecosystems (CTUe)",
+          "unit": "CTUe",
+          "traversal_seconds": 4.335069833003217,
+          "traversal_second_samples": [
+            4.335069833003217
+          ],
+          "calculation_count": 336,
+          "node_count": 338,
+          "edge_count": 337,
+          "flow_count": 89,
+          "graph_sizes": {
+            "raw_bytes": 473006,
+            "gzip_bytes": 58873
+          },
+          "numeric_reference": {
+            "total_score": 6.811128753799179,
+            "coverage": 0.6264949529188911,
+            "unexpanded_score": 2.543990965863257,
+            "sum_node_direct_score": 4.26713778793592,
+            "sum_flow_score": 4.246289649871465,
+            "sha256": "d742edc19438e2894f1bdf42f428db7c54d1d3e80cbe2a8ddfc4a115fdb7b646"
+          }
+        },
+        {
+          "label": "ecotoxicity: freshwater, organics | comparative toxic unit for ecosystems (CTUe)",
+          "unit": "CTUe",
+          "traversal_seconds": 0.5352064580074511,
+          "traversal_second_samples": [
+            0.5352064580074511
+          ],
+          "calculation_count": 15,
+          "node_count": 17,
+          "edge_count": 16,
+          "flow_count": 23,
+          "graph_sizes": {
+            "raw_bytes": 31902,
+            "gzip_bytes": 4680
+          },
+          "numeric_reference": {
+            "total_score": 11.055526578632806,
+            "coverage": 0.9869287546476153,
+            "unexpanded_score": 0.1445095004091197,
+            "sum_node_direct_score": 10.911017078223686,
+            "sum_flow_score": 10.90574961931461,
+            "sha256": "009b21b7ad48408337b77a15d1a634a476d8e4df628f6f38ce8e465d3231d212"
+          }
+        },
+        {
+          "label": "human toxicity: carcinogenic | comparative toxic unit for human (CTUh)",
+          "unit": "CTUh",
+          "traversal_seconds": 4.985247000004165,
+          "traversal_second_samples": [
+            4.985247000004165
+          ],
+          "calculation_count": 438,
+          "node_count": 440,
+          "edge_count": 439,
+          "flow_count": 210,
+          "graph_sizes": {
+            "raw_bytes": 631840,
+            "gzip_bytes": 75470
+          },
+          "numeric_reference": {
+            "total_score": 5.873268992760621e-10,
+            "coverage": 0.7001678261764654,
+            "unexpanded_score": 1.7609950095497783e-10,
+            "sum_node_direct_score": 4.112273983210839e-10,
+            "sum_flow_score": 4.0665330196095707e-10,
+            "sha256": "39aa172f884e075461e154d70af0874015f9de556f66b31d7fc53134a2dbbf63"
+          }
+        },
+        {
+          "label": "human toxicity: carcinogenic, inorganics | comparative toxic unit for human (CTUh)",
+          "unit": "CTUh",
+          "traversal_seconds": 5.201071333984146,
+          "traversal_second_samples": [
+            5.201071333984146
+          ],
+          "calculation_count": 463,
+          "node_count": 465,
+          "edge_count": 464,
+          "flow_count": 193,
+          "graph_sizes": {
+            "raw_bytes": 659422,
+            "gzip_bytes": 78398
+          },
+          "numeric_reference": {
+            "total_score": 2.767490045528853e-10,
+            "coverage": 0.6288988262122158,
+            "unexpanded_score": 1.0270188043417657e-10,
+            "sum_node_direct_score": 1.7404712411870882e-10,
+            "sum_flow_score": 1.7247126030027872e-10,
+            "sha256": "bd9bbabedb31238ced06bdd6c4a820187118b473b4faffde4c3167e790cb3da6"
+          }
+        },
+        {
+          "label": "human toxicity: carcinogenic, organics | comparative toxic unit for human (CTUh)",
+          "unit": "CTUh",
+          "traversal_seconds": 3.997630832978757,
+          "traversal_second_samples": [
+            3.997630832978757
+          ],
+          "calculation_count": 302,
+          "node_count": 304,
+          "edge_count": 303,
+          "flow_count": 105,
+          "graph_sizes": {
+            "raw_bytes": 418094,
+            "gzip_bytes": 47468
+          },
+          "numeric_reference": {
+            "total_score": 3.1057789472317673e-10,
+            "coverage": 0.8176317895349549,
+            "unexpanded_score": 5.663953487066692e-11,
+            "sum_node_direct_score": 2.5393835985250976e-10,
+            "sum_flow_score": 2.529135107673957e-10,
+            "sha256": "a1511fa2791124a258d7c225a8eedd145509fa67d9b96a22e3073716861cbdb6"
+          }
+        },
+        {
+          "label": "human toxicity: non-carcinogenic | comparative toxic unit for human (CTUh)",
+          "unit": "CTUh",
+          "traversal_seconds": 5.329544625012204,
+          "traversal_second_samples": [
+            5.329544625012204
+          ],
+          "calculation_count": 379,
+          "node_count": 381,
+          "edge_count": 380,
+          "flow_count": 249,
+          "graph_sizes": {
+            "raw_bytes": 596536,
+            "gzip_bytes": 77656
+          },
+          "numeric_reference": {
+            "total_score": 9.825976608764194e-09,
+            "coverage": 0.6603959988505943,
+            "unexpanded_score": 3.3369409715367885e-09,
+            "sum_node_direct_score": 6.489035637227407e-09,
+            "sum_flow_score": 6.408909560352177e-09,
+            "sha256": "618ac5333974fba5dc306b00e285f583e760051213afafa775cc5e083f336b0c"
+          }
+        },
+        {
+          "label": "human toxicity: non-carcinogenic, inorganics | comparative toxic unit for human (CTUh)",
+          "unit": "CTUh",
+          "traversal_seconds": 5.523397499986459,
+          "traversal_second_samples": [
+            5.523397499986459
+          ],
+          "calculation_count": 413,
+          "node_count": 415,
+          "edge_count": 414,
+          "flow_count": 241,
+          "graph_sizes": {
+            "raw_bytes": 633926,
+            "gzip_bytes": 80456
+          },
+          "numeric_reference": {
+            "total_score": 8.020808064159746e-09,
+            "coverage": 0.6371923283253016,
+            "unexpanded_score": 2.910010698707442e-09,
+            "sum_node_direct_score": 5.110797365452302e-09,
+            "sum_flow_score": 5.05556350600149e-09,
+            "sha256": "4b506155087dfa74b4ef885bb1ea34bcfb012acb8c3cb85398f95ede9e49bd46"
+          }
+        },
+        {
+          "label": "human toxicity: non-carcinogenic, organics | comparative toxic unit for human (CTUh)",
+          "unit": "CTUh",
+          "traversal_seconds": 3.334594166983152,
+          "traversal_second_samples": [
+            3.334594166983152
+          ],
+          "calculation_count": 199,
+          "node_count": 201,
+          "edge_count": 200,
+          "flow_count": 83,
+          "graph_sizes": {
+            "raw_bytes": 296329,
+            "gzip_bytes": 37612
+          },
+          "numeric_reference": {
+            "total_score": 1.8051685446044467e-09,
+            "coverage": 0.8275689837103263,
+            "unexpanded_score": 3.1126704672029586e-10,
+            "sum_node_direct_score": 1.4939014978841514e-09,
+            "sum_flow_score": 1.4895388742246673e-09,
+            "sha256": "ead150801df0f2d51e2d1fdd95386cbb98f393be9cd439ba3db3572c16e8f894"
+          }
+        },
+        {
+          "label": "eutrophication: freshwater | fraction of nutrients reaching freshwater end compartment (P)",
+          "unit": "kg P-Eq",
+          "traversal_seconds": 3.6163827079872135,
+          "traversal_second_samples": [
+            3.6163827079872135
+          ],
+          "calculation_count": 315,
+          "node_count": 317,
+          "edge_count": 316,
+          "flow_count": 90,
+          "graph_sizes": {
+            "raw_bytes": 431674,
+            "gzip_bytes": 50858
+          },
+          "numeric_reference": {
+            "total_score": 0.0005026124412149284,
+            "coverage": 0.7953191306049282,
+            "unexpanded_score": 0.00010287515143665097,
+            "sum_node_direct_score": 0.0003997372897782775,
+            "sum_flow_score": 0.00039970545496782924,
+            "sha256": "3bdaa8dcbe064ab31d923085703af2b543211be4abc66168e6abe2f4faa3d30b"
+          }
+        },
+        {
+          "label": "eutrophication: marine | fraction of nutrients reaching marine end compartment (N)",
+          "unit": "kg N-Eq",
+          "traversal_seconds": 2.333904209022876,
+          "traversal_second_samples": [
+            2.333904209022876
+          ],
+          "calculation_count": 85,
+          "node_count": 87,
+          "edge_count": 86,
+          "flow_count": 42,
+          "graph_sizes": {
+            "raw_bytes": 134815,
+            "gzip_bytes": 18128
+          },
+          "numeric_reference": {
+            "total_score": 0.006614708757833669,
+            "coverage": 0.9332133409823185,
+            "unexpanded_score": 0.0004417742983107093,
+            "sum_node_direct_score": 0.0061729344595229585,
+            "sum_flow_score": 0.006171529988008083,
+            "sha256": "f9f9311d8b4cb4b54f154ffd87cc2e589c1eb63f29fe74209af48bf54d1ad842"
+          }
+        },
+        {
+          "label": "climate change | global warming potential (GWP100)",
+          "unit": "kg CO2-Eq",
+          "traversal_seconds": 3.556737915991107,
+          "traversal_second_samples": [
+            3.556737915991107
+          ],
+          "calculation_count": 236,
+          "node_count": 238,
+          "edge_count": 237,
+          "flow_count": 94,
+          "graph_sizes": {
+            "raw_bytes": 354046,
+            "gzip_bytes": 45686
+          },
+          "numeric_reference": {
+            "total_score": 1.7089725281835535,
+            "coverage": 0.7958999897737149,
+            "unexpanded_score": 0.34880131047870355,
+            "sum_node_direct_score": 1.3601712177048502,
+            "sum_flow_score": 1.3557586378317115,
+            "sha256": "356e9d8c376e90b4e45c4ca3c59bf4d8b29f09e99aee0189fc5f9090b3ceca47"
+          }
+        },
+        {
+          "label": "climate change: biogenic | global warming potential (GWP100)",
+          "unit": "kg CO2-Eq",
+          "traversal_seconds": 2.9386988329933956,
+          "traversal_second_samples": [
+            2.9386988329933956
+          ],
+          "calculation_count": 220,
+          "node_count": 222,
+          "edge_count": 221,
+          "flow_count": 54,
+          "graph_sizes": {
+            "raw_bytes": 301742,
+            "gzip_bytes": 36388
+          },
+          "numeric_reference": {
+            "total_score": 0.006897942486239618,
+            "coverage": 0.8380495929818985,
+            "unexpanded_score": 0.0011171245932339608,
+            "sum_node_direct_score": 0.005780817893005658,
+            "sum_flow_score": 0.005775819489867451,
+            "sha256": "ff8c2573177903358220c6b1000972572383f656d8e7a1d1d80b7c09db7fb787"
+          }
+        },
+        {
+          "label": "climate change: fossil | global warming potential (GWP100)",
+          "unit": "kg CO2-Eq",
+          "traversal_seconds": 3.547752250015037,
+          "traversal_second_samples": [
+            3.547752250015037
+          ],
+          "calculation_count": 236,
+          "node_count": 238,
+          "edge_count": 237,
+          "flow_count": 93,
+          "graph_sizes": {
+            "raw_bytes": 356862,
+            "gzip_bytes": 45690
+          },
+          "numeric_reference": {
+            "total_score": 1.7016371096147116,
+            "coverage": 0.7984871375248678,
+            "unexpanded_score": 0.3429017648523709,
+            "sum_node_direct_score": 1.358735344762341,
+            "sum_flow_score": 1.35436941926909,
+            "sha256": "7ec0e9a79e80eab3c0d4dd58915fffd51c6b54f09b68c13a265bb7b6ebcad057"
+          }
+        },
+        {
+          "label": "climate change: land use and land use change | global warming potential (GWP100)",
+          "unit": "kg CO2-Eq",
+          "traversal_seconds": 4.606007582973689,
+          "traversal_second_samples": [
+            4.606007582973689
+          ],
+          "calculation_count": 796,
+          "node_count": 798,
+          "edge_count": 797,
+          "flow_count": 156,
+          "graph_sizes": {
+            "raw_bytes": 1025272,
+            "gzip_bytes": 113490
+          },
+          "numeric_reference": {
+            "total_score": 0.0004374760826026233,
+            "coverage": 0.5926809529259327,
+            "unexpanded_score": 0.00017819234108339648,
+            "sum_node_direct_score": 0.00025928374151922684,
+            "sum_flow_score": 0.00025928374151922684,
+            "sha256": "293f80429e246540bb4c4649b0b65552dc7e6a73eea3d76bcd4a2b59731bc5ff"
+          }
+        },
+        {
+          "label": "ionising radiation: human health | human exposure efficiency relative to u235",
+          "unit": "kBq U235-Eq",
+          "traversal_seconds": 3.0524886669882108,
+          "traversal_second_samples": [
+            3.0524886669882108
+          ],
+          "calculation_count": 369,
+          "node_count": 371,
+          "edge_count": 370,
+          "flow_count": 35,
+          "graph_sizes": {
+            "raw_bytes": 469873,
+            "gzip_bytes": 51049
+          },
+          "numeric_reference": {
+            "total_score": 0.4423961000703148,
+            "coverage": 0.19973582269541867,
+            "unexpanded_score": 0.3540337510655257,
+            "sum_node_direct_score": 0.08836234900478913,
+            "sum_flow_score": 0.08797128608760495,
+            "sha256": "3b0094bf53d9845bbb4e3d8e19f99397ae13b3ff937c90d723908deb54535a85"
+          }
+        },
+        {
+          "label": "particulate matter formation | impact on human health",
+          "unit": "disease incidence",
+          "traversal_seconds": 3.840600000025006,
+          "traversal_second_samples": [
+            3.840600000025006
+          ],
+          "calculation_count": 216,
+          "node_count": 218,
+          "edge_count": 217,
+          "flow_count": 109,
+          "graph_sizes": {
+            "raw_bytes": 335813,
+            "gzip_bytes": 43603
+          },
+          "numeric_reference": {
+            "total_score": 4.8019937040242786e-08,
+            "coverage": 0.787738714655056,
+            "unexpanded_score": 1.019277355834522e-08,
+            "sum_node_direct_score": 3.782716348189758e-08,
+            "sum_flow_score": 3.766690464585898e-08,
+            "sha256": "12267504ca448af3b0ac3d034419700e9cc6d1552e732a3f255e0f30bc9e08f2"
+          }
+        },
+        {
+          "label": "ozone depletion | ozone depletion potential (ODP)",
+          "unit": "kg CFC-11-Eq",
+          "traversal_seconds": 5.485226041986607,
+          "traversal_second_samples": [
+            5.485226041986607
+          ],
+          "calculation_count": 567,
+          "node_count": 569,
+          "edge_count": 568,
+          "flow_count": 72,
+          "graph_sizes": {
+            "raw_bytes": 729719,
+            "gzip_bytes": 82763
+          },
+          "numeric_reference": {
+            "total_score": 3.993045903815245e-08,
+            "coverage": 0.6659848687393958,
+            "unexpanded_score": 1.333737751692467e-08,
+            "sum_node_direct_score": 2.6593081521227774e-08,
+            "sum_flow_score": 2.658218959017805e-08,
+            "sha256": "c8a9e849cd03d8937435e2595b040266ebc3863ab6fc13d067bae346fb705d66"
+          }
+        },
+        {
+          "label": "land use | soil quality index",
+          "unit": "dimensionless",
+          "traversal_seconds": 2.2835204580042046,
+          "traversal_second_samples": [
+            2.2835204580042046
+          ],
+          "calculation_count": 108,
+          "node_count": 110,
+          "edge_count": 109,
+          "flow_count": 44,
+          "graph_sizes": {
+            "raw_bytes": 143818,
+            "gzip_bytes": 19547
+          },
+          "numeric_reference": {
+            "total_score": 33.513517057601746,
+            "coverage": 0.9108998697983075,
+            "unexpanded_score": 2.9860587333489583,
+            "sum_node_direct_score": 30.52745832425279,
+            "sum_flow_score": 30.52071143846848,
+            "sha256": "9c28651e0da6e12a2c1bb26473927b03f49c2b40293fd5db0000dd47adb56fa7"
+          }
+        },
+        {
+          "label": "photochemical oxidant formation: human health | tropospheric ozone concentration increase",
+          "unit": "kg NMVOC-Eq",
+          "traversal_seconds": 4.225985541997943,
+          "traversal_second_samples": [
+            4.225985541997943
+          ],
+          "calculation_count": 353,
+          "node_count": 355,
+          "edge_count": 354,
+          "flow_count": 166,
+          "graph_sizes": {
+            "raw_bytes": 536176,
+            "gzip_bytes": 67526
+          },
+          "numeric_reference": {
+            "total_score": 0.005178036795032099,
+            "coverage": 0.6830369974935769,
+            "unexpanded_score": 0.00164124608964211,
+            "sum_node_direct_score": 0.0035367907053899883,
+            "sum_flow_score": 0.00349823071052738,
+            "sha256": "0fb340de3d2c52b233fbc174b14adf7dec1778ac7a1ad3b92f7059a4c6081e2a"
+          }
+        },
+        {
+          "label": "water use | user deprivation potential (deprivation-weighted water consumption)",
+          "unit": "m3 world eq. deprived",
+          "traversal_seconds": 3.9499701249878854,
+          "traversal_second_samples": [
+            3.9499701249878854
+          ],
+          "calculation_count": 299,
+          "node_count": 301,
+          "edge_count": 300,
+          "flow_count": 75,
+          "graph_sizes": {
+            "raw_bytes": 413655,
+            "gzip_bytes": 49906
+          },
+          "numeric_reference": {
+            "total_score": 16.414101703554294,
+            "coverage": 0.7806618388985981,
+            "unexpanded_score": 3.600238883788988,
+            "sum_node_direct_score": 12.813862819765307,
+            "sum_flow_score": 12.811970905123099,
+            "sha256": "1e3c3cfb9a98e1b71a72e4d1264402938da04d14a2f2ec5cfbf547cb4a3de872"
+          }
+        }
+      ]
+    },
+    {
+      "example": "polyester_tshirt_bafu.yaml",
+      "path": "bafu_examples/polyester_tshirt_bafu.yaml",
+      "method": "TRACI v2.1",
+      "repeat": 1,
+      "nonzero_category_count": 9,
+      "lcia_only_seconds": 2.650724250008352,
+      "lcia_only_second_samples": [
+        2.650724250008352
+      ],
+      "all_nonzero_total_seconds": 32.83068033400923,
+      "all_nonzero_total_second_samples": [
+        32.83068033400923
+      ],
+      "total_node_count": 2828,
+      "total_edge_count": 2819,
+      "total_flow_count": 1424,
+      "union_node_count": 881,
+      "union_node_count_method": "category_independent_occurrence_path_v1",
+      "response_sizes": {
+        "raw_bytes": 4475523,
+        "gzip_bytes": 543984
+      },
+      "independent_graphs_sha256": "cab4338bda12d9009f874ca031a8115fd508966321a13b6e5db2a94c480e34d3",
+      "categories": [
+        {
+          "label": "acidification | acidification potential (AP)",
+          "unit": "kg SO2-Eq",
+          "traversal_seconds": 3.01316712499829,
+          "traversal_second_samples": [
+            3.01316712499829
+          ],
+          "calculation_count": 205,
+          "node_count": 207,
+          "edge_count": 206,
+          "flow_count": 133,
+          "graph_sizes": {
+            "raw_bytes": 314678,
+            "gzip_bytes": 40827
+          },
+          "numeric_reference": {
+            "total_score": 0.002807449515295006,
+            "coverage": 0.8724318494289229,
+            "unexpanded_score": 0.0003581411424878507,
+            "sum_node_direct_score": 0.0024493083728071552,
+            "sum_flow_score": 0.002445509543425794,
+            "sha256": "e246ece006857ebea7ba2bcceb93ca511543091c48ab8da39b2c1c965a6bc525"
+          }
+        },
+        {
+          "label": "ecotoxicity: freshwater | ecotoxicity: freshwater",
+          "unit": "CTUe",
+          "traversal_seconds": 3.965378207998583,
+          "traversal_second_samples": [
+            3.965378207998583
+          ],
+          "calculation_count": 391,
+          "node_count": 393,
+          "edge_count": 392,
+          "flow_count": 374,
+          "graph_sizes": {
+            "raw_bytes": 634069,
+            "gzip_bytes": 80071
+          },
+          "numeric_reference": {
+            "total_score": 5.156217765264267,
+            "coverage": 0.7764216110484536,
+            "unexpanded_score": 1.1528188610411272,
+            "sum_node_direct_score": 4.003398904223141,
+            "sum_flow_score": 3.9175600356990765,
+            "sha256": "4388a975608240e1d9455804f0f027ca74f71ded3295e958e1b4e36c7dfe9e66"
+          }
+        },
+        {
+          "label": "eutrophication | eutrophication potential",
+          "unit": "kg N-Eq",
+          "traversal_seconds": 2.6540481249976438,
+          "traversal_second_samples": [
+            2.6540481249976438
+          ],
+          "calculation_count": 252,
+          "node_count": 254,
+          "edge_count": 253,
+          "flow_count": 114,
+          "graph_sizes": {
+            "raw_bytes": 345483,
+            "gzip_bytes": 43735
+          },
+          "numeric_reference": {
+            "total_score": 0.0039276200835614995,
+            "coverage": 0.8975974833371893,
+            "unexpanded_score": 0.0004021981810520968,
+            "sum_node_direct_score": 0.003525421902509401,
+            "sum_flow_score": 0.003518866913737033,
+            "sha256": "e6bded035e9c88dd472f873172afc2fd29f11ff94387451ab367a13b65a0eb2a"
+          }
+        },
+        {
+          "label": "climate change | global warming potential (GWP100)",
+          "unit": "kg CO2-Eq",
+          "traversal_seconds": 2.1473439580004197,
+          "traversal_second_samples": [
+            2.1473439580004197
+          ],
+          "calculation_count": 155,
+          "node_count": 157,
+          "edge_count": 156,
+          "flow_count": 58,
+          "graph_sizes": {
+            "raw_bytes": 226897,
+            "gzip_bytes": 27692
+          },
+          "numeric_reference": {
+            "total_score": 2.283358702280836,
+            "coverage": 0.9107141134085075,
+            "unexpanded_score": 0.20387170613954408,
+            "sum_node_direct_score": 2.079486996141291,
+            "sum_flow_score": 2.0766379512848347,
+            "sha256": "5c94b20160db12b739f2c4afda9c396b56d2f3e83a438e000555fd83c5068ee8"
+          }
+        },
+        {
+          "label": "human toxicity: carcinogenic | human toxicity: carcinogenic",
+          "unit": "CTUh",
+          "traversal_seconds": 3.5763475419953465,
+          "traversal_second_samples": [
+            3.5763475419953465
+          ],
+          "calculation_count": 358,
+          "node_count": 360,
+          "edge_count": 359,
+          "flow_count": 148,
+          "graph_sizes": {
+            "raw_bytes": 510792,
+            "gzip_bytes": 61390
+          },
+          "numeric_reference": {
+            "total_score": 4.206799885283612e-08,
+            "coverage": 0.7877081065770569,
+            "unexpanded_score": 8.930695128982777e-09,
+            "sum_node_direct_score": 3.3137303723853354e-08,
+            "sum_flow_score": 3.2923837669324557e-08,
+            "sha256": "855e69cbf6479b5db436427ea3a7085764638dba43c01912652a79e72012c0cf"
+          }
+        },
+        {
+          "label": "human toxicity: non-carcinogenic | human toxicity: non-carcinogenic",
+          "unit": "CTUh",
+          "traversal_seconds": 3.9911521670001093,
+          "traversal_second_samples": [
+            3.9911521670001093
+          ],
+          "calculation_count": 423,
+          "node_count": 425,
+          "edge_count": 424,
+          "flow_count": 255,
+          "graph_sizes": {
+            "raw_bytes": 633195,
+            "gzip_bytes": 76154
+          },
+          "numeric_reference": {
+            "total_score": 2.1136160865730092e-07,
+            "coverage": 0.7148302862554297,
+            "unexpanded_score": 6.02739294373944e-08,
+            "sum_node_direct_score": 1.5108767921990652e-07,
+            "sum_flow_score": 1.4854884764533044e-07,
+            "sha256": "fefa8152c119e763c0af14da8d3bb7cdd0d6801462cdf2beee1877f1b2b9f310"
+          }
+        },
+        {
+          "label": "photochemical oxidant formation | maximum incremental reactivity (MIR)",
+          "unit": "kg O3-Eq",
+          "traversal_seconds": 3.5753227079985663,
+          "traversal_second_samples": [
+            3.5753227079985663
+          ],
+          "calculation_count": 282,
+          "node_count": 284,
+          "edge_count": 283,
+          "flow_count": 116,
+          "graph_sizes": {
+            "raw_bytes": 417099,
+            "gzip_bytes": 51653
+          },
+          "numeric_reference": {
+            "total_score": 0.04012579432194463,
+            "coverage": 0.8337760963255922,
+            "unexpanded_score": 0.006669866170230021,
+            "sum_node_direct_score": 0.03345592815171462,
+            "sum_flow_score": 0.033316691391039106,
+            "sha256": "c0297ec895bfcbfad91aee3ed4fb3a6bf37af31f684428cc22f1eba53b953c4d"
+          }
+        },
+        {
+          "label": "ozone depletion | ozone depletion potential (ODP)",
+          "unit": "kg CFC-11-Eq",
+          "traversal_seconds": 3.8424396659829654,
+          "traversal_second_samples": [
+            3.8424396659829654
+          ],
+          "calculation_count": 446,
+          "node_count": 448,
+          "edge_count": 447,
+          "flow_count": 46,
+          "graph_sizes": {
+            "raw_bytes": 565603,
+            "gzip_bytes": 61461
+          },
+          "numeric_reference": {
+            "total_score": 2.3321715055164222e-08,
+            "coverage": 0.7015912132321998,
+            "unexpanded_score": 6.959404694955897e-09,
+            "sum_node_direct_score": 1.6362310360208325e-08,
+            "sum_flow_score": 1.636083488138724e-08,
+            "sha256": "fa8031134a8e5ab2fb4118452b1a79d268e5195f1bc6b3e98789ba6c32f4feea"
+          }
+        },
+        {
+          "label": "particulate matter formation | particulate matter formation potential (PMFP)",
+          "unit": "PM2.5-Eq",
+          "traversal_seconds": 3.416286666993983,
+          "traversal_second_samples": [
+            3.416286666993983
+          ],
+          "calculation_count": 298,
+          "node_count": 300,
+          "edge_count": 299,
+          "flow_count": 180,
+          "graph_sizes": {
+            "raw_bytes": 460530,
+            "gzip_bytes": 56352
+          },
+          "numeric_reference": {
+            "total_score": 0.0002364790278303613,
+            "coverage": 0.7890755499959731,
+            "unexpanded_score": 4.987920888260594e-05,
+            "sum_node_direct_score": 0.0001865998189477553,
+            "sum_flow_score": 0.00018527638855734763,
+            "sha256": "04ab7cf811858f91bf20d73ecf41bf97f54f133ba05957be1d206bb8788c6eeb"
+          }
+        }
+      ]
+    },
+    {
+      "example": "wool_yarn_bafu.yaml",
+      "path": "bafu_examples/wool_yarn_bafu.yaml",
+      "method": "TRACI v2.1",
+      "repeat": 1,
+      "nonzero_category_count": 9,
+      "lcia_only_seconds": 2.555843750014901,
+      "lcia_only_second_samples": [
+        2.555843750014901
+      ],
+      "all_nonzero_total_seconds": 27.382074291002937,
+      "all_nonzero_total_second_samples": [
+        27.382074291002937
+      ],
+      "total_node_count": 2385,
+      "total_edge_count": 2376,
+      "total_flow_count": 913,
+      "union_node_count": 1228,
+      "union_node_count_method": "category_independent_occurrence_path_v1",
+      "response_sizes": {
+        "raw_bytes": 3572793,
+        "gzip_bytes": 446485
+      },
+      "independent_graphs_sha256": "9bfa9f221da37d0dee8d6ea0509b344725b9c2b868a13d9bb7d131036e57a9cd",
+      "categories": [
+        {
+          "label": "acidification | acidification potential (AP)",
+          "unit": "kg SO2-Eq",
+          "traversal_seconds": 0.7283104160160292,
+          "traversal_second_samples": [
+            0.7283104160160292
+          ],
+          "calculation_count": 15,
+          "node_count": 17,
+          "edge_count": 16,
+          "flow_count": 12,
+          "graph_sizes": {
+            "raw_bytes": 26573,
+            "gzip_bytes": 3784
+          },
+          "numeric_reference": {
+            "total_score": 0.4152474380401899,
+            "coverage": 0.9797976895195626,
+            "unexpanded_score": 0.008388957669494101,
+            "sum_node_direct_score": 0.4068584803706958,
+            "sum_flow_score": 0.40683223741906677,
+            "sha256": "30f5430c0a5953adbe96aae0e42a0604050630ce7dcc2645ced0159568454b6e"
+          }
+        },
+        {
+          "label": "ecotoxicity: freshwater | ecotoxicity: freshwater",
+          "unit": "CTUe",
+          "traversal_seconds": 3.43497295799898,
+          "traversal_second_samples": [
+            3.43497295799898
+          ],
+          "calculation_count": 334,
+          "node_count": 336,
+          "edge_count": 335,
+          "flow_count": 212,
+          "graph_sizes": {
+            "raw_bytes": 493601,
+            "gzip_bytes": 63943
+          },
+          "numeric_reference": {
+            "total_score": 44.94517434736582,
+            "coverage": 0.7301716626559706,
+            "unexpanded_score": 12.127481665787244,
+            "sum_node_direct_score": 32.817692681578585,
+            "sum_flow_score": 32.416743312927075,
+            "sha256": "3a54b3b6be5c404859d2e9c50386ac04367c89a8bb344cbf3ef2139aff9480cd"
+          }
+        },
+        {
+          "label": "eutrophication | eutrophication potential",
+          "unit": "kg N-Eq",
+          "traversal_seconds": 1.060974417021498,
+          "traversal_second_samples": [
+            1.060974417021498
+          ],
+          "calculation_count": 35,
+          "node_count": 37,
+          "edge_count": 36,
+          "flow_count": 38,
+          "graph_sizes": {
+            "raw_bytes": 61222,
+            "gzip_bytes": 8924
+          },
+          "numeric_reference": {
+            "total_score": 0.19021349725011666,
+            "coverage": 0.9756199744115097,
+            "unexpanded_score": 0.0046374099302340654,
+            "sum_node_direct_score": 0.18557608731988262,
+            "sum_flow_score": 0.18546476655898295,
+            "sha256": "fa534c9a91a6c1cc375e12c83523c6dcc7838d3910e7959975765f4341adf49e"
+          }
+        },
+        {
+          "label": "climate change | global warming potential (GWP100)",
+          "unit": "kg CO2-Eq",
+          "traversal_seconds": 2.0786014170153067,
+          "traversal_second_samples": [
+            2.0786014170153067
+          ],
+          "calculation_count": 74,
+          "node_count": 76,
+          "edge_count": 75,
+          "flow_count": 35,
+          "graph_sizes": {
+            "raw_bytes": 113879,
+            "gzip_bytes": 15919
+          },
+          "numeric_reference": {
+            "total_score": 24.31960442404811,
+            "coverage": 0.9315335449865163,
+            "unexpanded_score": 1.6650771022448083,
+            "sum_node_direct_score": 22.6545273218033,
+            "sum_flow_score": 22.63555337254288,
+            "sha256": "bde75166f8339539baf16a2768c0383de23f225002f4cba831bf7eca1651b187"
+          }
+        },
+        {
+          "label": "human toxicity: carcinogenic | human toxicity: carcinogenic",
+          "unit": "CTUh",
+          "traversal_seconds": 3.223752624995541,
+          "traversal_second_samples": [
+            3.223752624995541
+          ],
+          "calculation_count": 241,
+          "node_count": 243,
+          "edge_count": 242,
+          "flow_count": 77,
+          "graph_sizes": {
+            "raw_bytes": 337652,
+            "gzip_bytes": 43700
+          },
+          "numeric_reference": {
+            "total_score": 4.249702704788394e-07,
+            "coverage": 0.7997869291157046,
+            "unexpanded_score": 8.508460288709806e-08,
+            "sum_node_direct_score": 3.3988566759174147e-07,
+            "sum_flow_score": 3.3884755952077166e-07,
+            "sha256": "ed23ef66f9459ea2b4b42db92a8a514a7f71b862b79a59c9f354f9e00c864703"
+          }
+        },
+        {
+          "label": "human toxicity: non-carcinogenic | human toxicity: non-carcinogenic",
+          "unit": "CTUh",
+          "traversal_seconds": 4.094305542006623,
+          "traversal_second_samples": [
+            4.094305542006623
+          ],
+          "calculation_count": 435,
+          "node_count": 437,
+          "edge_count": 436,
+          "flow_count": 239,
+          "graph_sizes": {
+            "raw_bytes": 636249,
+            "gzip_bytes": 80488
+          },
+          "numeric_reference": {
+            "total_score": 1.381723380221343e-06,
+            "coverage": 0.6478807017137472,
+            "unexpanded_score": 4.865314670692485e-07,
+            "sum_node_direct_score": 8.951919131520935e-07,
+            "sum_flow_score": 8.793604887170816e-07,
+            "sha256": "d2336c02bb227eae2343829f1c76a83a3e9d4150cdc8c7945a1fa08fed8c9046"
+          }
+        },
+        {
+          "label": "photochemical oxidant formation | maximum incremental reactivity (MIR)",
+          "unit": "kg O3-Eq",
+          "traversal_seconds": 3.3184550419973675,
+          "traversal_second_samples": [
+            3.3184550419973675
+          ],
+          "calculation_count": 259,
+          "node_count": 261,
+          "edge_count": 260,
+          "flow_count": 125,
+          "graph_sizes": {
+            "raw_bytes": 391844,
+            "gzip_bytes": 51321
+          },
+          "numeric_reference": {
+            "total_score": 0.3419650162191988,
+            "coverage": 0.7854139573669926,
+            "unexpanded_score": 0.07338091954941006,
+            "sum_node_direct_score": 0.26858409666978883,
+            "sum_flow_score": 0.26776820757980974,
+            "sha256": "e41d25629839e3464f00e2a12b9ebc4b0e5d4c43193bd965bc5cee46dc4f4828"
+          }
+        },
+        {
+          "label": "ozone depletion | ozone depletion potential (ODP)",
+          "unit": "kg CFC-11-Eq",
+          "traversal_seconds": 5.6145582089957315,
+          "traversal_second_samples": [
+            5.6145582089957315
+          ],
+          "calculation_count": 923,
+          "node_count": 925,
+          "edge_count": 924,
+          "flow_count": 131,
+          "graph_sizes": {
+            "raw_bytes": 1146874,
+            "gzip_bytes": 130072
+          },
+          "numeric_reference": {
+            "total_score": 8.147627672104403e-08,
+            "coverage": 0.37159484547703975,
+            "unexpanded_score": 5.120011226284314e-08,
+            "sum_node_direct_score": 3.027616445820088e-08,
+            "sum_flow_score": 3.015946897475136e-08,
+            "sha256": "c017b419d996aa789d5db94268cfc2c364fd160eeee7c938d9c159d234f59805"
+          }
+        },
+        {
+          "label": "particulate matter formation | particulate matter formation potential (PMFP)",
+          "unit": "PM2.5-Eq",
+          "traversal_seconds": 1.27683041698765,
+          "traversal_second_samples": [
+            1.27683041698765
+          ],
+          "calculation_count": 51,
+          "node_count": 53,
+          "edge_count": 52,
+          "flow_count": 44,
+          "graph_sizes": {
+            "raw_bytes": 89194,
+            "gzip_bytes": 12231
+          },
+          "numeric_reference": {
+            "total_score": 0.01557480263756702,
+            "coverage": 0.950641600898555,
+            "unexpanded_score": 0.0007687473245112722,
+            "sum_node_direct_score": 0.01480605531305575,
+            "sum_flow_score": 0.014787690777168723,
+            "sha256": "27ef9566253beb0af6d8fd4eb06611aa62143b1d8aa1835d968c355b14161ea0"
+          }
+        }
+      ]
+    },
+    {
+      "example": "mock_plastic_broom.yaml",
+      "path": "mock_examples/mock_plastic_broom.yaml",
+      "method": "EF v3.1",
+      "repeat": 1,
+      "nonzero_category_count": 5,
+      "lcia_only_seconds": 0.17063354200217873,
+      "lcia_only_second_samples": [
+        0.17063354200217873
+      ],
+      "all_nonzero_total_seconds": 0.16411566600436345,
+      "all_nonzero_total_second_samples": [
+        0.16411566600436345
+      ],
+      "total_node_count": 30,
+      "total_edge_count": 25,
+      "total_flow_count": 20,
+      "union_node_count": 6,
+      "union_node_count_method": "category_independent_occurrence_path_v1",
+      "response_sizes": {
+        "raw_bytes": 61898,
+        "gzip_bytes": 5465
+      },
+      "independent_graphs_sha256": "e5f581a47327ca504f767b55c3e063c5bea7aeaf05c9209377adb1241ed555dc",
+      "categories": [
+        {
+          "label": "acidification | accumulated exceedance (AE)",
+          "unit": "mol H+-Eq",
+          "traversal_seconds": 0.002131458022631705,
+          "traversal_second_samples": [
+            0.002131458022631705
+          ],
+          "calculation_count": 4,
+          "node_count": 6,
+          "edge_count": 5,
+          "flow_count": 4,
+          "graph_sizes": {
+            "raw_bytes": 8714,
+            "gzip_bytes": 1501
+          },
+          "numeric_reference": {
+            "total_score": 0.0007664573939935826,
+            "coverage": 1.0,
+            "unexpanded_score": 0.0,
+            "sum_node_direct_score": 0.0007664573939935826,
+            "sum_flow_score": 0.0007664573939935826,
+            "sha256": "ce4ae5cfeb71f6b3777305d1a3e8d6707dece18e3b6a5a32d7097b864b41b7b3"
+          }
+        },
+        {
+          "label": "climate change | global warming potential (GWP100)",
+          "unit": "kg CO2-Eq",
+          "traversal_seconds": 0.0019991659792140126,
+          "traversal_second_samples": [
+            0.0019991659792140126
+          ],
+          "calculation_count": 4,
+          "node_count": 6,
+          "edge_count": 5,
+          "flow_count": 4,
+          "graph_sizes": {
+            "raw_bytes": 8961,
+            "gzip_bytes": 1458
+          },
+          "numeric_reference": {
+            "total_score": 0.9488709719424245,
+            "coverage": 1.0,
+            "unexpanded_score": 0.0,
+            "sum_node_direct_score": 0.9488709719424245,
+            "sum_flow_score": 0.9488709719424245,
+            "sha256": "a860a7a4ad475fd476d838a9c9e8c4da451b726a7b128b992633bd418684ab5e"
+          }
+        },
+        {
+          "label": "climate change: fossil | global warming potential (GWP100)",
+          "unit": "kg CO2-Eq",
+          "traversal_seconds": 0.0019609580049291253,
+          "traversal_second_samples": [
+            0.0019609580049291253
+          ],
+          "calculation_count": 4,
+          "node_count": 6,
+          "edge_count": 5,
+          "flow_count": 4,
+          "graph_sizes": {
+            "raw_bytes": 9043,
+            "gzip_bytes": 1464
+          },
+          "numeric_reference": {
+            "total_score": 0.9488709719424245,
+            "coverage": 1.0,
+            "unexpanded_score": 0.0,
+            "sum_node_direct_score": 0.9488709719424245,
+            "sum_flow_score": 0.9488709719424245,
+            "sha256": "3e81a20fc6dd8b1b51bdd01e65c188e5d6d5df0f0400700c89353513767a3ac7"
+          }
+        },
+        {
+          "label": "particulate matter formation | impact on human health",
+          "unit": "disease incidence",
+          "traversal_seconds": 0.0018967079813592136,
+          "traversal_second_samples": [
+            0.0018967079813592136
+          ],
+          "calculation_count": 4,
+          "node_count": 6,
+          "edge_count": 5,
+          "flow_count": 4,
+          "graph_sizes": {
+            "raw_bytes": 9072,
+            "gzip_bytes": 1510
+          },
+          "numeric_reference": {
+            "total_score": 4.680656033814501e-09,
+            "coverage": 1.0,
+            "unexpanded_score": 0.0,
+            "sum_node_direct_score": 4.680656033814501e-09,
+            "sum_flow_score": 4.680656033814501e-09,
+            "sha256": "9f16b6676f43c741e7adc1e3812d58d565c7fb43f1c3de237c9ddd1a4cbe951d"
+          }
+        },
+        {
+          "label": "photochemical oxidant formation: human health | tropospheric ozone concentration increase",
+          "unit": "kg NMVOC-Eq",
+          "traversal_seconds": 0.0019046250090468675,
+          "traversal_second_samples": [
+            0.0019046250090468675
+          ],
+          "calculation_count": 4,
+          "node_count": 6,
+          "edge_count": 5,
+          "flow_count": 4,
+          "graph_sizes": {
+            "raw_bytes": 9097,
+            "gzip_bytes": 1533
+          },
+          "numeric_reference": {
+            "total_score": 4.7450151792499415e-05,
+            "coverage": 1.0,
+            "unexpanded_score": 0.0,
+            "sum_node_direct_score": 4.7450151792499415e-05,
+            "sum_flow_score": 4.7450151792499415e-05,
+            "sha256": "80a4195a2ae5d145a55264b3b4e1a9c21b2ee3e6c7f350559deddd4ab52ced80"
+          }
+        }
+      ]
+    },
+    {
+      "example": "mock_plastic_broom_simple.yaml",
+      "path": "mock_examples/mock_plastic_broom_simple.yaml",
+      "method": "EF v3.1",
+      "repeat": 1,
+      "nonzero_category_count": 5,
+      "lcia_only_seconds": 0.15712758398149163,
+      "lcia_only_second_samples": [
+        0.15712758398149163
+      ],
+      "all_nonzero_total_seconds": 0.16490987499128096,
+      "all_nonzero_total_second_samples": [
+        0.16490987499128096
+      ],
+      "total_node_count": 25,
+      "total_edge_count": 20,
+      "total_flow_count": 15,
+      "union_node_count": 5,
+      "union_node_count_method": "category_independent_occurrence_path_v1",
+      "response_sizes": {
+        "raw_bytes": 55702,
+        "gzip_bytes": 4804
+      },
+      "independent_graphs_sha256": "ac533f5e40e3030ad86b2da1651a1d3012b6335e907b964df5c360a981c8d3ff",
+      "categories": [
+        {
+          "label": "acidification | accumulated exceedance (AE)",
+          "unit": "mol H+-Eq",
+          "traversal_seconds": 0.0018585840007290244,
+          "traversal_second_samples": [
+            0.0018585840007290244
+          ],
+          "calculation_count": 3,
+          "node_count": 5,
+          "edge_count": 4,
+          "flow_count": 3,
+          "graph_sizes": {
+            "raw_bytes": 7423,
+            "gzip_bytes": 1350
+          },
+          "numeric_reference": {
+            "total_score": 0.0007631404741262694,
+            "coverage": 0.9999999999999999,
+            "unexpanded_score": 0.0,
+            "sum_node_direct_score": 0.0007631404741262693,
+            "sum_flow_score": 0.0007631404741262693,
+            "sha256": "da98e2ab4fae198fc87c602bb59b6086c03a54b29e52b8d72bce2074478b32e4"
+          }
+        },
+        {
+          "label": "climate change | global warming potential (GWP100)",
+          "unit": "kg CO2-Eq",
+          "traversal_seconds": 0.0016929159755818546,
+          "traversal_second_samples": [
+            0.0016929159755818546
+          ],
+          "calculation_count": 3,
+          "node_count": 5,
+          "edge_count": 4,
+          "flow_count": 3,
+          "graph_sizes": {
+            "raw_bytes": 7581,
+            "gzip_bytes": 1321
+          },
+          "numeric_reference": {
+            "total_score": 0.945494972040057,
+            "coverage": 1.0,
+            "unexpanded_score": 0.0,
+            "sum_node_direct_score": 0.945494972040057,
+            "sum_flow_score": 0.945494972040057,
+            "sha256": "8d4c703a779c413013f87d24f8a4864f36f80ec1caa44c879797ee413756cc56"
+          }
+        },
+        {
+          "label": "climate change: fossil | global warming potential (GWP100)",
+          "unit": "kg CO2-Eq",
+          "traversal_seconds": 0.0016803340113256127,
+          "traversal_second_samples": [
+            0.0016803340113256127
+          ],
+          "calculation_count": 3,
+          "node_count": 5,
+          "edge_count": 4,
+          "flow_count": 3,
+          "graph_sizes": {
+            "raw_bytes": 7647,
+            "gzip_bytes": 1323
+          },
+          "numeric_reference": {
+            "total_score": 0.945494972040057,
+            "coverage": 1.0,
+            "unexpanded_score": 0.0,
+            "sum_node_direct_score": 0.945494972040057,
+            "sum_flow_score": 0.945494972040057,
+            "sha256": "0d0896433c40e609aac3a8eeff1054f3b20affc238ccc89099c4748aceb01422"
+          }
+        },
+        {
+          "label": "particulate matter formation | impact on human health",
+          "unit": "disease incidence",
+          "traversal_seconds": 0.0016351249942090362,
+          "traversal_second_samples": [
+            0.0016351249942090362
+          ],
+          "calculation_count": 3,
+          "node_count": 5,
+          "edge_count": 4,
+          "flow_count": 3,
+          "graph_sizes": {
+            "raw_bytes": 7703,
+            "gzip_bytes": 1368
+          },
+          "numeric_reference": {
+            "total_score": 4.660400033791167e-09,
+            "coverage": 0.9999999999999998,
+            "unexpanded_score": 0.0,
+            "sum_node_direct_score": 4.660400033791166e-09,
+            "sum_flow_score": 4.660400033791166e-09,
+            "sha256": "6b2c1e5a899d760bb3b23cc6944220821f3d654810b660ae7cd05339d3b11f14"
+          }
+        },
+        {
+          "label": "photochemical oxidant formation: human health | tropospheric ozone concentration increase",
+          "unit": "kg NMVOC-Eq",
+          "traversal_seconds": 0.0016602079849690199,
+          "traversal_second_samples": [
+            0.0016602079849690199
+          ],
+          "calculation_count": 3,
+          "node_count": 5,
+          "edge_count": 4,
+          "flow_count": 3,
+          "graph_sizes": {
+            "raw_bytes": 7707,
+            "gzip_bytes": 1382
+          },
+          "numeric_reference": {
+            "total_score": 4.724480658685464e-05,
+            "coverage": 1.0,
+            "unexpanded_score": 0.0,
+            "sum_node_direct_score": 4.724480658685464e-05,
+            "sum_flow_score": 4.724480658685464e-05,
+            "sha256": "8cec13c3ca362f9b704a1615d577a3f394cf4c323104130514c99596ebee1f75"
+          }
+        }
+      ]
+    },
+    {
+      "example": "mock_storage_bin.yaml",
+      "path": "mock_examples/mock_storage_bin.yaml",
+      "method": "EF v3.1",
+      "repeat": 1,
+      "nonzero_category_count": 5,
+      "lcia_only_seconds": 0.15501454201876186,
+      "lcia_only_second_samples": [
+        0.15501454201876186
+      ],
+      "all_nonzero_total_seconds": 0.16088783400482498,
+      "all_nonzero_total_second_samples": [
+        0.16088783400482498
+      ],
+      "total_node_count": 20,
+      "total_edge_count": 15,
+      "total_flow_count": 10,
+      "union_node_count": 4,
+      "union_node_count_method": "category_independent_occurrence_path_v1",
+      "response_sizes": {
+        "raw_bytes": 43441,
+        "gzip_bytes": 3949
+      },
+      "independent_graphs_sha256": "5450035bd86bca805c59afabfd43fc3f42ff0fe8dd1b454f7f3696c96f4ed85f",
+      "categories": [
+        {
+          "label": "acidification | accumulated exceedance (AE)",
+          "unit": "mol H+-Eq",
+          "traversal_seconds": 0.001513750001322478,
+          "traversal_second_samples": [
+            0.001513750001322478
+          ],
+          "calculation_count": 2,
+          "node_count": 4,
+          "edge_count": 3,
+          "flow_count": 2,
+          "graph_sizes": {
+            "raw_bytes": 5472,
+            "gzip_bytes": 1063
+          },
+          "numeric_reference": {
+            "total_score": 0.0011528000215791142,
+            "coverage": 1.0,
+            "unexpanded_score": 0.0,
+            "sum_node_direct_score": 0.0011528000215791142,
+            "sum_flow_score": 0.0011528000215791142,
+            "sha256": "16c0eca23f72c773bab586ee7ba062b1bddb9ae11f46c07473e97e64a32f19e3"
+          }
+        },
+        {
+          "label": "climate change | global warming potential (GWP100)",
+          "unit": "kg CO2-Eq",
+          "traversal_seconds": 0.0013343750033527613,
+          "traversal_second_samples": [
+            0.0013343750033527613
+          ],
+          "calculation_count": 2,
+          "node_count": 4,
+          "edge_count": 3,
+          "flow_count": 2,
+          "graph_sizes": {
+            "raw_bytes": 5599,
+            "gzip_bytes": 1068
+          },
+          "numeric_reference": {
+            "total_score": 1.4400000309944154,
+            "coverage": 1.0,
+            "unexpanded_score": 0.0,
+            "sum_node_direct_score": 1.4400000309944154,
+            "sum_flow_score": 1.4400000309944154,
+            "sha256": "cf2d0368c6a1f2cbbed42427709353af4583023d941e286c43a3b85323e6ab6e"
+          }
+        },
+        {
+          "label": "climate change: fossil | global warming potential (GWP100)",
+          "unit": "kg CO2-Eq",
+          "traversal_seconds": 0.001281000004382804,
+          "traversal_second_samples": [
+            0.001281000004382804
+          ],
+          "calculation_count": 2,
+          "node_count": 4,
+          "edge_count": 3,
+          "flow_count": 2,
+          "graph_sizes": {
+            "raw_bytes": 5649,
+            "gzip_bytes": 1068
+          },
+          "numeric_reference": {
+            "total_score": 1.4400000309944154,
+            "coverage": 1.0,
+            "unexpanded_score": 0.0,
+            "sum_node_direct_score": 1.4400000309944154,
+            "sum_flow_score": 1.4400000309944154,
+            "sha256": "eb2dd7ea4aaf47f3c74376f7b276df7cacb0d7be32a8eba16a5c2862d6019b1c"
+          }
+        },
+        {
+          "label": "particulate matter formation | impact on human health",
+          "unit": "disease incidence",
+          "traversal_seconds": 0.0012743329862132668,
+          "traversal_second_samples": [
+            0.0012743329862132668
+          ],
+          "calculation_count": 2,
+          "node_count": 4,
+          "edge_count": 3,
+          "flow_count": 2,
+          "graph_sizes": {
+            "raw_bytes": 5699,
+            "gzip_bytes": 1091
+          },
+          "numeric_reference": {
+            "total_score": 7.040000421511945e-09,
+            "coverage": 1.0,
+            "unexpanded_score": 0.0,
+            "sum_node_direct_score": 7.040000421511945e-09,
+            "sum_flow_score": 7.040000421511945e-09,
+            "sha256": "6b69490f8c6929f170c4ba0aa34b9a26527c424352277e6d424c584ab2b2ca2e"
+          }
+        },
+        {
+          "label": "photochemical oxidant formation: human health | tropospheric ozone concentration increase",
+          "unit": "kg NMVOC-Eq",
+          "traversal_seconds": 0.0012708749854937196,
+          "traversal_second_samples": [
+            0.0012708749854937196
+          ],
+          "calculation_count": 2,
+          "node_count": 4,
+          "edge_count": 3,
+          "flow_count": 2,
+          "graph_sizes": {
+            "raw_bytes": 5718,
+            "gzip_bytes": 1110
+          },
+          "numeric_reference": {
+            "total_score": 7.136800615271196e-05,
+            "coverage": 1.0,
+            "unexpanded_score": 0.0,
+            "sum_node_direct_score": 7.136800615271196e-05,
+            "sum_flow_score": 7.136800615271196e-05,
+            "sha256": "f05497872f210d4291a394d2b15c78e441704804cd50936a4d82b38bc715d847"
+          }
+        }
+      ]
+    }
+  ],
+  "synthetic_serialization_fixture": {
+    "node_count": 1000,
+    "edge_count": 999,
+    "flow_count": 1500,
+    "sizes": {
+      "raw_bytes": 1094513,
+      "gzip_bytes": 94948
+    },
+    "sha256": "b20d172fa30128dbb264b597a0a2c216885f8338570dd83c0d66db93246475fb"
+  }
+}
