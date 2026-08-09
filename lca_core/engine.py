@@ -219,7 +219,9 @@ def _validate_spec(spec: dict) -> None:
         raise ValueError("functional_unit.unit is required.")
 
     names: set[str] = set()
-    output_flows: set[str] = set()
+    process_ids: set[str] = set()
+    processes_by_id: dict[str, dict] = {}
+    providers_by_flow: dict[str, list[dict]] = {}
     for proc_index, proc in enumerate(processes):
         path = f"processes[{proc_index}]"
         if not isinstance(proc, dict):
@@ -230,6 +232,14 @@ def _validate_spec(spec: dict) -> None:
         if name in names:
             raise ValueError(f"Duplicate process name '{name}' is not allowed.")
         names.add(name)
+        process_id = proc.get("id")
+        if process_id is not None:
+            if not isinstance(process_id, str) or not process_id.strip():
+                raise ValueError(f"{path}.id must be a non-empty string.")
+            if process_id in process_ids:
+                raise ValueError(f"Duplicate process id '{process_id}' is not allowed.")
+            process_ids.add(process_id)
+            processes_by_id[process_id] = proc
 
         reference_output = proc.get("reference_output")
         if not isinstance(reference_output, dict):
@@ -237,11 +247,7 @@ def _validate_spec(spec: dict) -> None:
         flow = reference_output.get("flow")
         if not isinstance(flow, str) or not flow.strip():
             raise ValueError(f"{path}.reference_output.flow is required.")
-        if flow in output_flows:
-            raise ValueError(
-                f"Product flow '{flow}' has more than one foreground provider."
-            )
-        output_flows.add(flow)
+        providers_by_flow.setdefault(flow, []).append(proc)
         output_amount = _require_finite(
             reference_output.get("amount"), f"{path}.reference_output.amount"
         )
@@ -260,11 +266,54 @@ def _validate_spec(spec: dict) -> None:
                     raise ValueError(f"{row_path}.flow is required.")
                 _require_finite(row.get("amount"), f"{row_path}.amount")
 
+    for proc_index, proc in enumerate(processes):
+        for input_index, row in enumerate(proc.get("inputs", [])):
+            if row.get("database"):
+                if row.get("provider_id") is not None:
+                    raise ValueError(
+                        f"processes[{proc_index}].inputs[{input_index}] cannot define "
+                        "both database and provider_id."
+                    )
+                continue
+            provider_id = row.get("provider_id")
+            candidates = providers_by_flow.get(row["flow"], [])
+            if provider_id is not None:
+                if not isinstance(provider_id, str) or not provider_id.strip():
+                    raise ValueError(
+                        f"processes[{proc_index}].inputs[{input_index}].provider_id "
+                        "must be a non-empty string."
+                    )
+                provider = processes_by_id.get(provider_id)
+                if provider is None:
+                    raise ValueError(f"Unknown foreground provider_id '{provider_id}'.")
+                provider_flow = provider["reference_output"]["flow"]
+                if provider_flow != row["flow"]:
+                    raise ValueError(
+                        f"Foreground provider_id '{provider_id}' produces "
+                        f"'{provider_flow}', not '{row['flow']}'."
+                    )
+            elif len(candidates) > 1:
+                raise ValueError(
+                    f"Product flow '{row['flow']}' has more than one foreground "
+                    "provider; specify provider_id on the input."
+                )
+
     reference_process = spec.get("reference_process")
     if reference_process not in names:
         raise ValueError(
             f"Reference process '{reference_process}' does not match a process name."
         )
+    reference_process_id = spec.get("reference_process_id")
+    if reference_process_id is not None:
+        selected = processes_by_id.get(reference_process_id)
+        if selected is None:
+            raise ValueError(
+                f"Reference process id '{reference_process_id}' does not match a process id."
+            )
+        if selected["name"] != reference_process:
+            raise ValueError(
+                "reference_process and reference_process_id identify different processes."
+            )
     lcia = spec.get("lcia")
     if not isinstance(lcia, dict) or not lcia.get("method_name"):
         raise ValueError("lcia.method_name is required.")
@@ -410,9 +459,26 @@ def _result_id(spec: dict) -> str:
 
 def _process_ids(spec: dict) -> dict[str, str]:
     return {
-        proc["name"]: _stable_id("process", proc["name"])
+        proc["name"]: _stable_id("process", proc.get("id", proc["name"]))
         for proc in spec["processes"]
     }
+
+
+def _foreground_provider(spec: dict, inp: dict) -> dict | None:
+    """Resolve one foreground input after ``_validate_spec`` has run."""
+    if inp.get("database"):
+        return None
+    provider_id = inp.get("provider_id")
+    if provider_id is not None:
+        return next(
+            proc for proc in spec["processes"] if proc.get("id") == provider_id
+        )
+    matches = [
+        proc
+        for proc in spec["processes"]
+        if proc["reference_output"]["flow"] == inp["flow"]
+    ]
+    return matches[0] if matches else None
 
 
 def _declared_flow_units(spec: dict) -> tuple[dict[str, str], dict[tuple[str, str], str]]:
@@ -515,14 +581,14 @@ def _compartment_for_resource(res: dict) -> str:
 def _build_foreground_db(spec: dict, database_name: str) -> tuple[dict, dict, dict]:
     """Build (or rebuild) the foreground database from a parsed spec.
 
-    Returns foreground activities, product providers, and the exact background
+    Returns foreground activities, ID-addressable processes, and the exact background
     provider selected for each ``(process_index, input_index)`` pair.
     """
     fg = bd.Database(database_name)
     fg.register()
 
     activities: dict = {}
-    product_to_activity: dict = {}
+    process_id_to_activity: dict = {}
     background_providers: dict = {}
 
     for proc_index, proc in enumerate(spec["processes"]):
@@ -535,7 +601,8 @@ def _build_foreground_db(spec: dict, database_name: str) -> tuple[dict, dict, di
         )
         act.save()
         activities[proc["name"]] = act
-        product_to_activity[ref["flow"]] = act
+        if proc.get("id") is not None:
+            process_id_to_activity[proc["id"]] = act
 
     for proc in spec["processes"]:
         act = activities[proc["name"]]
@@ -584,7 +651,12 @@ def _build_foreground_db(spec: dict, database_name: str) -> tuple[dict, dict, di
                     )
                 background_providers[(proc_index, input_index)] = provider
             else:
-                provider = product_to_activity.get(inp["flow"])
+                provider_proc = _foreground_provider(spec, inp)
+                provider = (
+                    activities.get(provider_proc["name"])
+                    if provider_proc is not None
+                    else None
+                )
                 if provider is None:
                     raise ValueError(
                         f"Input flow '{inp['flow']}' in process '{proc['name']}' "
@@ -626,7 +698,7 @@ def _build_foreground_db(spec: dict, database_name: str) -> tuple[dict, dict, di
                 type="biosphere",
             ).save()
 
-    return activities, product_to_activity, background_providers
+    return activities, process_id_to_activity, background_providers
 
 
 @contextmanager
@@ -771,10 +843,6 @@ def _build_sankey(
     """Build a renderer-neutral graph from YAML using the solved scaling state."""
     process_ids = _process_ids(spec)
     product_units, elementary_units = _declared_flow_units(spec)
-    product_providers = {
-        proc["reference_output"]["flow"]: proc["name"]
-        for proc in spec["processes"]
-    }
     nodes: list[dict] = []
     links: list[dict] = []
     node_ids: set[str] = set()
@@ -847,11 +915,12 @@ def _build_sankey(
                     }
                 )
             else:
-                provider_name = product_providers.get(inp["flow"])
-                if provider_name is None:
+                provider_proc = _foreground_provider(spec, inp)
+                if provider_proc is None:
                     raise ValueError(
                         f"Input flow '{inp['flow']}' in process '{name}' has no provider."
                     )
+                provider_name = provider_proc["name"]
                 source = process_ids[provider_name]
             unit = _exchange_unit(
                 inp,

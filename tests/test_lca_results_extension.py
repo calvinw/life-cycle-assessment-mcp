@@ -187,6 +187,89 @@ class ExtendedLcaResultTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Duplicate process name"):
             self.engine.run(duplicate)
 
+    def test_provider_id_selects_between_processes_with_the_same_output(self):
+        from lca_core.svg_renderer import compute_scaling
+
+        def source(provider_id):
+            return f"""
+name: Provider ID integration test
+functional_unit:
+  description: 1 finished product
+  amount: 1
+  unit: unit
+products:
+  - {{ id: material, name: Material, unit: kg }}
+  - {{ id: finished-product, name: Finished product, unit: unit }}
+elementary_flows:
+  emissions:
+    - {{ name: Carbon dioxide, compartment: air, unit: kg }}
+processes:
+  - id: supplier-a
+    name: Supplier A
+    reference_output: {{ flow: Material, product_id: material, amount: 1 }}
+    emissions:
+      - {{ flow: Carbon dioxide, amount: 10 }}
+  - id: supplier-b
+    name: Supplier B
+    reference_output: {{ flow: Material, product_id: material, amount: 1 }}
+    emissions:
+      - {{ flow: Carbon dioxide, amount: 1 }}
+  - id: assembly
+    name: Assembly
+    reference_output: {{ flow: Finished product, product_id: finished-product, amount: 1 }}
+    inputs:
+      - {{ flow: Material, product_id: material, provider_id: {provider_id}, amount: 1 }}
+reference_process: Assembly
+reference_process_id: assembly
+lcia:
+  method_name: TRACI v2.1
+  categories:
+    - climate change
+"""
+
+        supplier_a = self.engine.run_base(source("supplier-a"))
+        supplier_b = self.engine.run_base(source("supplier-b"))
+
+        self.assertEqual(
+            compute_scaling(core_engine._load_spec(source("supplier-a"))),
+            {"Supplier A": 1.0, "Supplier B": 0.0, "Assembly": 1.0},
+        )
+        self.assertEqual(
+            compute_scaling(core_engine._load_spec(source("supplier-b"))),
+            {"Supplier A": 0.0, "Supplier B": 1.0, "Assembly": 1.0},
+        )
+
+        self.assertEqual(
+            supplier_a["scaling_vector"],
+            {"Supplier A": 1.0, "Supplier B": 0.0, "Assembly": 1.0},
+        )
+        self.assertEqual(
+            supplier_b["scaling_vector"],
+            {"Supplier A": 0.0, "Supplier B": 1.0, "Assembly": 1.0},
+        )
+        climate_a = next(iter(supplier_a["lcia"].values()))["score"]
+        climate_b = next(iter(supplier_b["lcia"].values()))["score"]
+        self.assertAlmostEqual(climate_a, climate_b * 10)
+
+    def test_ambiguous_provider_still_requires_provider_id(self):
+        ambiguous = """
+name: Ambiguous providers
+functional_unit: {amount: 1, unit: unit}
+processes:
+  - {id: a, name: A, reference_output: {flow: Material, amount: 1}}
+  - {id: b, name: B, reference_output: {flow: Material, amount: 1}}
+  - name: Assembly
+    reference_output: {flow: Product, amount: 1}
+    inputs:
+      - {flow: Material, amount: 1}
+reference_process: Assembly
+lcia:
+  method_name: TRACI v2.1
+  categories: [climate change]
+"""
+        with self.assertRaisesRegex(ValueError, "specify provider_id"):
+            core_engine._load_spec(ambiguous)
+
     def test_concurrent_requests_do_not_cross_contaminate(self):
         with ThreadPoolExecutor(max_workers=2) as pool:
             polyester_future = pool.submit(self.engine.run, self.polyester_yaml)

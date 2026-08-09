@@ -117,7 +117,7 @@ def run_dot_plain(recipe: dict) -> str:
     bg_nodes = set()
     for p in recipe['processes']:
         for inp in p.get('inputs', []):
-            if inp.get('database') and not _producer(recipe, inp['flow']):
+            if inp.get('database'):
                 node_id = inp['flow']
                 if node_id not in bg_nodes:
                     bg_nodes.add(node_id)
@@ -127,7 +127,7 @@ def run_dot_plain(recipe: dict) -> str:
     ref = recipe['reference_process']
     for p in recipe['processes']:
         for inp in p.get('inputs', []):
-            src = _producer(recipe, inp['flow'])
+            src = _producer(recipe, inp)
             if src:
                 label = inp["flow"]
                 lines.append(f'  "{src}" -> "{p["name"]}" [label="{label}"];')
@@ -154,11 +154,25 @@ def run_dot_plain(recipe: dict) -> str:
     return result.stdout.decode()
 
 
-def _producer(recipe: dict, flow_name: str) -> str | None:
-    for p in recipe['processes']:
-        if p['reference_output']['flow'] == flow_name:
-            return p['name']
-    return None
+def _producer(recipe: dict, inp: dict) -> str | None:
+    if inp.get('database'):
+        return None
+    provider_id = inp.get('provider_id')
+    if provider_id is not None:
+        for process in recipe['processes']:
+            if process.get('id') == provider_id:
+                return process['name']
+        raise ValueError(f"Unknown foreground provider_id '{provider_id}'.")
+    matches = [
+        process for process in recipe['processes']
+        if process['reference_output']['flow'] == inp['flow']
+    ]
+    if len(matches) > 1:
+        raise ValueError(
+            f"Product flow '{inp['flow']}' has more than one foreground "
+            "provider; specify provider_id on the input."
+        )
+    return matches[0]['name'] if matches else None
 
 
 def _ref_process(recipe: dict, name: str) -> dict:
@@ -180,25 +194,20 @@ def compute_scaling(recipe: dict) -> dict:
     """Solve A·s = f and return {process_name: scaling_factor}."""
     order = [p['name'] for p in recipe['processes']]
     proc_map = {p['name']: p for p in recipe['processes']}
-    products = [p['name'] for p in recipe['products']]
-
     n = len(order)
-    m = len(products)
-    A = np.zeros((m, n))
+    A = np.zeros((n, n))
 
     for j, pname in enumerate(order):
         ps = proc_map[pname]
         ro = ps['reference_output']
-        if ro['flow'] in products:
-            A[products.index(ro['flow']), j] = ro['amount']
+        A[j, j] = ro['amount']
         for inp in ps.get('inputs', []):
-            if inp['flow'] in products:
-                A[products.index(inp['flow']), j] -= inp['amount']
+            provider_name = _producer(recipe, inp)
+            if provider_name is not None:
+                A[order.index(provider_name), j] -= inp['amount']
 
-    ref_ro = proc_map[recipe['reference_process']]['reference_output']
-    f = np.zeros(m)
-    if ref_ro['flow'] in products:
-        f[products.index(ref_ro['flow'])] = recipe['functional_unit']['amount']
+    f = np.zeros(n)
+    f[order.index(recipe['reference_process'])] = recipe['functional_unit']['amount']
 
     s_vec = np.linalg.solve(A, f)
     return {pname: float(s_vec[j]) for j, pname in enumerate(order)}
@@ -484,8 +493,7 @@ def background_inputs(recipe: dict, nodes: dict, flip_y: float,
         cy = flip_y - cy
         box_left = cx - nw / 2
 
-        bg_inputs = [inp for inp in p.get('inputs', [])
-                     if inp.get('database') and not _producer(recipe, inp['flow'])]
+        bg_inputs = [inp for inp in p.get('inputs', []) if inp.get('database')]
         if not bg_inputs:
             continue
 

@@ -419,6 +419,30 @@ Report impact values with their returned units. Never infer or replace units.
 SVGs are not included; call `POST /api/lca/svg` independently when needed.
 
 The operation is stateless: `product_graph` is the complete input.
+Foreground processes may define a stable `id`. When more than one foreground
+process produces the same product flow, each consuming input must select its
+supplier with `provider_id`:
+
+```yaml
+processes:
+  - id: recycled-material
+    name: Recycled material supplier
+    reference_output: { flow: Material, amount: 1 }
+  - id: virgin-material
+    name: Virgin material supplier
+    reference_output: { flow: Material, amount: 1 }
+  - id: assembly
+    name: Assembly
+    reference_output: { flow: Product, amount: 1 }
+    inputs:
+      - { flow: Material, provider_id: recycled-material, amount: 2 }
+```
+
+The selected process must exist and produce the input's named flow. Inputs with
+exactly one foreground provider remain backward-compatible and do not require
+`provider_id`. Background database inputs continue to use `database` and
+`code`; they cannot also define `provider_id`.
+
 `process_contributions.categories` contains one entry per `lcia` category. Its
 exclusive foreground and background activity scores plus `residual_score`
 reproduce the category total. A null percentage means the category total is
