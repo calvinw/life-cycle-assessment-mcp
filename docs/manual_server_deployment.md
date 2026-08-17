@@ -36,6 +36,12 @@ source .env.deploy
 The default target is `lca.mathplosion.com`. A DigitalOcean IP address or an
 entry from `~/.ssh/config` also works as `LCA_DEPLOY_HOST`.
 
+For the background-intensity branch, set
+`LCA_BACKGROUND_INTENSITY_CACHE=compare`. In this mode the server calculates
+both the existing and cached paths, returns the existing result, and logs any
+disagreement. The deployment default remains `off`; use `on` only after a
+clean compare-mode run has been reviewed.
+
 Do not commit `.env.deploy` or private SSH keys. The example contains no
 secrets and is safe to commit.
 
