@@ -1,10 +1,10 @@
-# Proposed UI: Live LCA Scenario Explorer
+# Proposed UI: Interactive LCA Scenario Explorer
 
 ## Product concept
 
-A mobile-first life-cycle-assessment app for exploring product-design scenarios.
-The user edits a product graph while keeping the functional unit fixed and sees
-environmental impacts update immediately.
+An interactive web application for exploring life-cycle-assessment product-design
+scenarios. The user edits a product graph while keeping the functional unit
+fixed and sees environmental impacts update immediately.
 
 Example product: a plastic broom.
 
@@ -194,8 +194,8 @@ rule, not an automatic LCA rule.
 - Make units, defaults, ranges, assumptions, and scenario notes visible.
 - Keep raw categories visible alongside weighting and normalization.
 - Distinguish fast score previews from exact detailed results.
-- Use mobile-friendly cards, bottom sheets, a simple graph, and progressive
-  disclosure rather than dense desktop-LCA tables.
+- Use clear cards or panels, a simple graph, and progressive disclosure rather
+  than dense desktop-LCA tables.
 
 ## Product framing
 
