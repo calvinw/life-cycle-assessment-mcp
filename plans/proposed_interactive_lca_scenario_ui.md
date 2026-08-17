@@ -16,15 +16,21 @@ supplier, improve yield, or reduce emissions?”
 
 ## Core model
 
-The product graph has foreground activities and background supply chains.
+The BAFU-linked [`product-graphs/plastic_broom.yaml`](../product-graphs/plastic_broom.yaml)
+has **one foreground activity** and **three background-provider activities at
+the foreground/background boundary**:
 
-- Foreground activity: Broom assembly.
-- Background inputs: PLA granulate, Nylon 6, electricity, and freight transport.
-- Functional unit: 1 broom.
+- Foreground activity: Plastic broom assembly.
+- Background provider: Polylactide, granulate, at plant (GLO): 0.52 kg.
+- Background provider: Nylon 6, at plant (RER): 0.03 kg.
+- Background provider: Transport, freight, lorry, 16t–32t gross weight, fleet
+  average (RER): 0.1055 tkm.
+- Functional unit: 1 plastic broom.
 
-The user changes meaningful foreground parameters, such as PLA handle mass,
-nylon bristle mass, assembly electricity, transport distance, VOC-capture
-efficiency, or a material supplier.
+The user can change meaningful foreground parameters, such as PLA mass, nylon
+mass, transport demand, or a material supplier. Future product graphs could
+also expose assembly electricity or direct-emission controls, but neither is an
+exchange in this particular broom YAML.
 
 The editable value belongs to the foreground activity’s **technosphere input
 exchange**. It is not an elementary-flow inventory result.
@@ -35,31 +41,26 @@ Show a simplified product structure rather than a fully scaled LCA network
 while the user is dragging a control.
 
 ```text
-                 [ PLA granulate ]
-                    0.52 kg
-                       │
-                 [ Nylon 6 ]
-                    0.03 kg
-                       │
-[ electricity ] ──> [ Broom assembly ] ──> [ 1 broom ]
-                       │
-                 [ freight transport ]
+[ Polylactide, granulate, at plant — GLO ] ── 0.52 kg ──┐
+[ Nylon 6, at plant — RER ] ────────────────── 0.03 kg ──┼──> [ Plastic broom assembly ] ──> [ 1 plastic broom ]
+[ Freight lorry 16t–32t, fleet average — RER ] 0.1055 tkm┘
+             background-provider activities                  foreground activity       functional unit
 ```
 
-Make Broom assembly the focal card. Its inputs appear in or adjacent to that
-activity.
+Make Plastic broom assembly the focal card. Its inputs appear in or adjacent to
+that activity.
 
 ```text
 ┌──────────────────────────────────────┐
-│  Broom assembly                      │
-│  Output: 1 broom                     │
+│  Plastic broom assembly              │
+│  Output: 1 plastic broom             │
 │                                      │
-│  MATERIAL INPUTS                     │
-│  PLA granulate                       │
+│  BACKGROUND INPUTS                   │
+│  Polylactide granulate, GLO          │
 │  0.40 kg ────────●──────── 0.70 kg   │
 │                                      │
-│  Nylon 6             0.03 kg         │
-│  Electricity          1.0 kWh        │
+│  Nylon 6, RER          0.03 kg       │
+│  Freight lorry, RER    0.1055 tkm    │
 │                                      │
 │  [ Reset ]        [ Scenario notes ] │
 └──────────────────────────────────────┘
@@ -69,8 +70,8 @@ When PLA changes from 0.52 kg to 0.40 kg:
 
 - Keep the graph structurally stable.
 - Highlight and visually narrow the PLA edge.
-- Highlight the upstream PLA branch; mute unchanged branches such as nylon and
-  electricity.
+- Highlight the upstream Polylactide branch; mute the unchanged Nylon 6 and
+  freight branches.
 - Do not show calculated inventory quantities, activity scales, contribution
   widths, or Sankey widths while dragging: they are stale until the exact
   calculation refreshes.
@@ -85,15 +86,15 @@ Functional unit: 1 broom
 
 PLA input: 0.52 kg → 0.40 kg
 
-Climate change       3.42 → 3.18 kg CO₂e     ↓ 7.0%
-Water scarcity       0.91 → 0.82 m³-eq       ↓ 9.9%
-Fossil resource use  1.76 → 1.52 kg oil-eq   ↓ 13.6%
-Human toxicity       0.27 → 0.25 CTUh        ↓ 7.4%
+Climate change       baseline → preview
+Acidification        baseline → preview
 ```
 
 Use a compact animated delta: old value in soft gray, new value prominent, a
-green arrow for a reduction, and amber/red for an increase. The values above
-are illustrative.
+green arrow for a reduction, and amber/red for an increase. Climate change and
+acidification are the two categories listed in the current BAFU-linked broom
+YAML. The user can select more compatible categories in a future scenario; any
+numerical values in a design illustration should be labelled illustrative.
 
 These live score previews use preloaded cumulative impact intensities for the
 affected background supplies. The computation per edit is a small set of
@@ -125,12 +126,13 @@ a decision score, rather than an inherent or objective LCA result.
 ## Interaction sequence
 
 1. The user opens “Plastic broom — 1 broom.”
-2. They tap the PLA input on Broom assembly.
+2. They tap the Polylactide input on Plastic broom assembly.
 3. They drag the slider from 0.52 kg to 0.40 kg.
 4. The graph remains in Structure mode.
 5. Raw category scores, normalized values, and weighted score animate
    immediately.
-6. The PLA branch is highlighted and unaffected branches are muted.
+6. The Polylactide branch is highlighted and the Nylon 6 and freight branches
+   are muted.
 7. On release or a short pause, the app requests an exact full LCA refresh.
 8. The detailed view refreshes activity scaling, elementary-flow inventory,
    contribution tables, and Sankey widths together.
@@ -151,9 +153,8 @@ Top changed inventory flows:
 
 Top changed supply-chain contributors:
 1. PLA granulate production
-2. Electricity for PLA production
-3. Feedstock production
-4. Upstream freight
+2. Feedstock production
+3. Upstream freight
 ```
 
 The underlying supply chain is a network with shared suppliers and loops. A
@@ -169,14 +170,13 @@ broom means: “make one equivalent broom using 0.40 kg of PLA instead of
 By default:
 
 - PLA demand and its upstream supply chain decrease.
-- Nylon remains 0.03 kg.
-- Electricity, transport, direct emissions, and the one-broom output remain
-  unchanged.
+- Nylon and transport remain at 0.03 kg and 0.1055 tkm respectively; the
+  one-broom output remains unchanged.
 - The detailed elementary-flow inventory changes downstream: CO₂, methane,
   water use, resource extraction, and many other flows.
 - Each LCIA category can change differently.
 
-Do not automatically alter nylon or electricity unless the scenario defines an
+Do not automatically alter nylon or transport unless the scenario defines an
 engineering constraint. For example:
 
 ```text
