@@ -34,7 +34,12 @@ import bw2data as bd
 import bw2calc as bc
 
 from .models import ContributionBatchResult, LcaCoreResult
-from .contribution_graph import build_contribution_graph, factorize_adjoint
+from .contribution_graph import (
+    ADJOINT_SCORE_ABS_TOLERANCE,
+    ADJOINT_SCORE_REL_TOLERANCE,
+    build_contribution_graph,
+    factorize_adjoint,
+)
 from .mock_database import DATABASE_NAME as MOCK_BACKGROUND_DB
 from .mock_database import ensure_mock_background_database
 
@@ -63,6 +68,7 @@ if not _performance_logger.handlers:
     _performance_handler.setFormatter(logging.Formatter("%(message)s"))
     _performance_logger.addHandler(_performance_handler)
 _performance_logger.propagate = False
+_logger = logging.getLogger(__name__)
 
 
 def _elapsed_seconds(started: float) -> float:
@@ -158,6 +164,20 @@ def _ensure_databases():
             )
 
         _ensure_search_projection()
+        from . import background_intensity
+
+        if background_intensity.configured_mode() != "off":
+            cache_started = time.perf_counter()
+            try:
+                requests = _startup_background_intensity_requests()
+                background_intensity.warm(bd, bc, requests)
+                print(
+                    "[lca_engine] Background intensity cache ready — "
+                    f"{len(requests)} database/category combinations in "
+                    f"{_elapsed_seconds(cache_started):.3f}s."
+                )
+            except Exception as exc:
+                background_intensity.disable(str(exc))
         _startup_databases_ready = True
 
 # Index: (lowercase name, compartment) → activity key — built once on first lookup
@@ -391,6 +411,115 @@ def _resolve_contribution_graph_methods(
             )
         resolved.add(matches[0])
     return resolved
+
+
+def _startup_background_intensity_requests() -> set[tuple[tuple[str, ...], tuple]]:
+    from .background_intensity import database_names_from_spec
+
+    requests: set[tuple[tuple[str, ...], tuple]] = set()
+    candidates = []
+    for directory in (ROOT / "product-graphs", ROOT / "mock_examples"):
+        if directory.exists():
+            candidates.extend(sorted(directory.glob("*.yaml")))
+    for path in candidates:
+        spec = _load_spec(path.read_text())
+        database_names = database_names_from_spec(spec)
+        if not database_names:
+            continue
+        method_name = spec["lcia"]["method_name"]
+        available = sorted(
+            [method for method in bd.methods if method[0] == method_name],
+            key=lambda method: method[-1],
+        )
+        resolved = _resolve_contribution_graph_methods(
+            available,
+            _impact_category_config(spec),
+        )
+        requests.update((database_names, method) for method in resolved)
+    return requests
+
+
+def _cached_request_cumulative_intensities(
+    *,
+    lca,
+    spec: dict,
+    activities: dict,
+    method: tuple,
+    mode: str,
+    transpose_lu,
+):
+    from . import background_intensity
+
+    try:
+        cached = background_intensity.assemble_request_cumulative_intensities(
+            bd=bd,
+            bc=bc,
+            lca=lca,
+            activities=activities,
+            database_names=background_intensity.database_names_from_spec(spec),
+            method=method,
+        )
+    except Exception as exc:
+        _logger.warning(
+            "Background intensity cache fallback for %s: %s",
+            " | ".join(method),
+            exc,
+        )
+        if mode == "on":
+            background_intensity.disable(str(exc))
+        if transpose_lu is None:
+            transpose_lu = factorize_adjoint(lca)
+        return None, transpose_lu
+
+    demand = np.asarray(lca.demand_array).ravel()
+    cached_score = float(cached @ demand)
+    score_matches = math.isclose(
+        cached_score,
+        float(lca.score),
+        rel_tol=ADJOINT_SCORE_REL_TOLERANCE,
+        abs_tol=ADJOINT_SCORE_ABS_TOLERANCE,
+    )
+
+    if mode == "compare":
+        direct = background_intensity.direct_intensities(lca)
+        full = np.asarray(transpose_lu.solve(direct)).ravel()
+        full_norm = float(np.linalg.norm(full))
+        relative_vector_difference = float(np.linalg.norm(cached - full)) / max(
+            full_norm,
+            ADJOINT_SCORE_ABS_TOLERANCE,
+        )
+        vector_matches = (
+            relative_vector_difference <= ADJOINT_SCORE_REL_TOLERANCE
+        )
+        if not vector_matches or not score_matches:
+            max_absolute = float(np.max(np.abs(cached - full)))
+            _logger.warning(
+                "Background intensity comparison failed for %s: "
+                "vector_matches=%s score_matches=%s relative_vector_difference=%s "
+                "max_abs=%s "
+                "cached_score=%s reference_score=%s",
+                " | ".join(method),
+                vector_matches,
+                score_matches,
+                relative_vector_difference,
+                max_absolute,
+                cached_score,
+                float(lca.score),
+            )
+        return full, transpose_lu
+
+    if not score_matches:
+        reason = (
+            "cached cumulative intensities do not reconcile with the full "
+            f"Brightway score for {' | '.join(method)}: "
+            f"{cached_score} != {float(lca.score)}"
+        )
+        _logger.warning(reason)
+        background_intensity.disable(reason)
+        if transpose_lu is None:
+            transpose_lu = factorize_adjoint(lca)
+        return None, transpose_lu
+    return cached, transpose_lu
 
 
 def _stable_id(kind: str, *parts: object) -> str:
@@ -1012,8 +1141,11 @@ def _run_analysis(
             lca.lci()
             if phases is not None:
                 _add_phase(phases, "lci_factorization", started)
+            from . import background_intensity
+
+            background_cache_mode = background_intensity.effective_mode()
             transpose_lu = None
-            if contribution_methods:
+            if contribution_methods and background_cache_mode != "on":
                 started = time.perf_counter()
                 transpose_lu = factorize_adjoint(lca)
                 if phases is not None:
@@ -1072,6 +1204,7 @@ def _run_analysis(
                 )
             lcia_timings = []
             traversal_timings = []
+            background_cache_timings = []
             for method_index, method_tuple in enumerate(calculation_methods):
                 category_started = time.perf_counter()
                 if method_index:
@@ -1092,6 +1225,26 @@ def _run_analysis(
                     {"category": label, "seconds": _elapsed_seconds(category_started)}
                 )
                 if method_tuple in contribution_methods:
+                    cumulative_intensities = None
+                    category_cache_mode = background_intensity.effective_mode()
+                    if category_cache_mode != "off":
+                        cache_started = time.perf_counter()
+                        cumulative_intensities, transpose_lu = (
+                            _cached_request_cumulative_intensities(
+                                lca=lca,
+                                spec=spec,
+                                activities=activities,
+                                method=method_tuple,
+                                mode=category_cache_mode,
+                                transpose_lu=transpose_lu,
+                            )
+                        )
+                        background_cache_timings.append(
+                            {
+                                "category": label,
+                                "seconds": _elapsed_seconds(cache_started),
+                            }
+                        )
                     traversal_started = time.perf_counter()
                     graph = build_contribution_graph(
                         lca=lca,
@@ -1101,6 +1254,7 @@ def _run_analysis(
                         config=contribution_config,
                         foreground_metadata=foreground_metadata,
                         transpose_lu=transpose_lu,
+                        cumulative_intensities=cumulative_intensities,
                     )
                     contribution_graphs.append(graph)
                     traversal_timings.append(
@@ -1120,6 +1274,17 @@ def _run_analysis(
                             sum(item["seconds"] for item in traversal_timings), 6
                         ),
                         "categories": traversal_timings,
+                    }
+                if background_cache_timings:
+                    phases["background_intensity_cache_per_category"] = {
+                        "total_seconds": round(
+                            sum(
+                                item["seconds"]
+                                for item in background_cache_timings
+                            ),
+                            6,
+                        ),
+                        "categories": background_cache_timings,
                     }
 
             base_result_started = time.perf_counter()
@@ -1271,10 +1436,15 @@ def _run_contribution_analysis(
             lca.lci()
             if phases is not None:
                 _add_phase(phases, "lci_factorization", started)
+            from . import background_intensity
+
+            background_cache_mode = background_intensity.effective_mode()
             started = time.perf_counter()
-            transpose_lu = factorize_adjoint(lca)
-            if phases is not None:
-                _add_phase(phases, "adjoint_transpose_factorization", started)
+            transpose_lu = None
+            if background_cache_mode != "on":
+                transpose_lu = factorize_adjoint(lca)
+                if phases is not None:
+                    _add_phase(phases, "adjoint_transpose_factorization", started)
             process_ids = _process_ids(spec)
             foreground_metadata = {
                 activity.id: {
@@ -1290,6 +1460,7 @@ def _run_contribution_analysis(
             graphs = []
             lcia_timings = []
             traversal_timings = []
+            background_cache_timings = []
             for method_tuple in method_tuples:
                 if method_tuple not in requested_methods:
                     continue
@@ -1301,6 +1472,26 @@ def _run_contribution_analysis(
                 lcia_timings.append(
                     {"category": label, "seconds": _elapsed_seconds(category_started)}
                 )
+                cumulative_intensities = None
+                category_cache_mode = background_intensity.effective_mode()
+                if category_cache_mode != "off":
+                    cache_started = time.perf_counter()
+                    cumulative_intensities, transpose_lu = (
+                        _cached_request_cumulative_intensities(
+                            lca=lca,
+                            spec=spec,
+                            activities=activities,
+                            method=method_tuple,
+                            mode=category_cache_mode,
+                            transpose_lu=transpose_lu,
+                        )
+                    )
+                    background_cache_timings.append(
+                        {
+                            "category": label,
+                            "seconds": _elapsed_seconds(cache_started),
+                        }
+                    )
                 traversal_started = time.perf_counter()
                 graphs.append(
                     build_contribution_graph(
@@ -1311,6 +1502,7 @@ def _run_contribution_analysis(
                         config=config,
                         foreground_metadata=foreground_metadata,
                         transpose_lu=transpose_lu,
+                        cumulative_intensities=cumulative_intensities,
                     )
                 )
                 traversal_timings.append(
@@ -1329,6 +1521,17 @@ def _run_contribution_analysis(
                     ),
                     "categories": traversal_timings,
                 }
+                if background_cache_timings:
+                    phases["background_intensity_cache_per_category"] = {
+                        "total_seconds": round(
+                            sum(
+                                item["seconds"]
+                                for item in background_cache_timings
+                            ),
+                            6,
+                        ),
+                        "categories": background_cache_timings,
+                    }
 
             result: ContributionBatchResult = {
                 "result_id": actual_result_id,
