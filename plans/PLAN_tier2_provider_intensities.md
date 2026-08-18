@@ -1,8 +1,9 @@
 # Plan: Tier 2 — Return Background Provider Intensities from Call 1
 
-Status: Phase 1 and Phase 2 implemented and green on
-`plan/tier2-provider-intensities`; Tier 2 authorised by explicit instruction on
-August 18, 2026  
+Status: Phases 1 and 2 complete and green on `plan/tier2-provider-intensities`;
+consumed end to end by the Realtime view and confirmed by hand against an
+independently running copy of the webapp. Phases 3 and 4 remain open. Tier 2 was
+authorised by explicit instruction on August 18, 2026  
 Date: August 18, 2026  
 Parent plan: [`PLAN_precomputed_background_intensities.md`](PLAN_precomputed_background_intensities.md)  
 Plain-English overview: [`explainer_precomputed_background_intensities.md`](explainer_precomputed_background_intensities.md)  
@@ -185,17 +186,71 @@ seven graphs with background links (four `bafu_examples/`, three
 `product-graphs/` directory is the editor-facing catalogue served by
 `GET /api/product-graphs`, not the test corpus.
 
-### Phase 3 — measure
+### Phase 3 — measure — NOT STARTED
 
 Record the added Call 1 cost, warm and cold, in
 `benchmarks/tier2_call1_payload.md`. Report absolute milliseconds. Tier 2's
 purpose is not a faster Call 1, so a small regression is acceptable and must be
 stated rather than hidden.
 
-### Phase 4 — documentation
+### Phase 4 — documentation — NOT STARTED
 
 Update `docs/llm_rest_api_guide.md` and `docs/rest_api.md` with the new field,
 its cache-mode conditionality, and the reconciliation formula.
+
+## What was actually built
+
+`lca_core/models.py` gained `BackgroundLinkIntensity` and the optional
+`background_link_intensities` entry on `LcaCoreResult`. `result_schema_version`
+stayed at `3`.
+
+`lca_core/engine.py` gained two helpers:
+
+- `_background_link_rows(spec, background_providers)` describes every
+  foreground/background link in stable spec order, reusing the
+  `(process_index, input_index)` key `_build_foreground_db` already returns.
+- `_attach_background_link_intensities(...)` adds one category's cached provider
+  intensity to every row, returning `False` when the cache cannot supply that
+  category.
+
+`_run_analysis` builds the rows once, fills them inside the existing category
+loop, and publishes the field only when **every** category succeeded. A partial
+payload is never emitted: a client that received some categories but not others
+would silently mis-score the missing ones. With the cache off, or after it
+disables itself, the field is simply absent and the client falls back.
+
+### Verified over HTTP
+
+`POST /api/lca/base` for `bafu_examples/plastic_broom.yaml` against a local
+server with `LCA_BACKGROUND_INTENSITY_CACHE=on` returns all three links with
+both categories populated, correct provider codes, locations, and units.
+
+### Confirmed by hand
+
+The Realtime view's slider preview was compared against a separately running
+copy of the webapp, where the same amount change was made through the ordinary
+YAML edit and full calculation path. The two agree. This is an independent
+end-to-end confirmation of the decomposition, obtained without the test
+fixtures.
+
+## Local testing recipe
+
+Production still runs the Tier 1 commit, which has no Tier 2 field, and the
+editor's Vite dev proxy points at production by default. Testing Realtime
+therefore requires a local engine:
+
+```bash
+# engine — the cache flag is what publishes the field
+BRIGHTWAY_PROJECT=lca_server BRIGHTWAY2_DIR=$PWD/brightway_data \
+  LCA_BACKGROUND_INTENSITY_CACHE=on PORT=9000 .venv/bin/python sse_server.py
+
+# editor, from ../product-graph-editor
+VITE_LCA_API_BASE=http://localhost:9000 npm run dev
+```
+
+`http://localhost:5173` is already in the server's CORS allow-list, so no
+configuration change is needed. Load `plastic_broom`; the catalogue default,
+`jacket`, has no background links and lands on the empty state.
 
 ## Out of scope
 
@@ -228,9 +283,12 @@ the preferred order and is tracked by that plan, not this one.
 - [x] Perturbation prediction matches exact calculation within tolerance
 - [x] Empty-list behaviour verified on foreground-only graphs
 - [x] Full suite green in `off` and `compare` modes, 80 tests
+- [x] Field verified over HTTP on a local server
+- [x] Frontend plan's contract expectations confirmed against the shipped field
+- [x] Preview confirmed by hand against an independent full calculation
 - [ ] Call 1 cost measured and recorded in absolute milliseconds
 - [ ] REST documentation updated
-- [ ] Frontend plan's contract expectations confirmed against the shipped field
+- [ ] Tier 2 deployed, which requires Tier 1 merged to `main` first
 
 ## Known unrelated failure
 
