@@ -531,6 +531,75 @@ def _stable_id(kind: str, *parts: object) -> str:
     return f"{kind}:{slug}:{digest}"
 
 
+def _background_link_rows(
+    spec: dict, background_providers: dict
+) -> tuple[list[dict], list]:
+    """Describe every foreground->background link in stable spec order.
+
+    ``background_providers`` is keyed by ``(process_index, input_index)``, which
+    is exactly the identity a client needs to match a row back to its own YAML.
+    """
+    rows: list[dict] = []
+    providers: list = []
+    for (proc_index, input_index) in sorted(background_providers):
+        provider = background_providers[(proc_index, input_index)]
+        proc = spec["processes"][proc_index]
+        exchange = proc["inputs"][input_index]
+        rows.append(
+            {
+                "link_id": _stable_id(
+                    "background-link", proc["name"], proc_index, input_index
+                ),
+                "process_index": proc_index,
+                "input_index": input_index,
+                "process_name": proc["name"],
+                "flow": exchange["flow"],
+                "database": provider.get("database", exchange.get("database", "")),
+                "code": provider.get("code", ""),
+                "location": provider.get("location"),
+                "amount": float(exchange["amount"]),
+                "unit": exchange.get("unit") or provider.get("unit") or "",
+                "intensities": {},
+            }
+        )
+        providers.append(provider)
+    return rows, providers
+
+
+def _attach_background_link_intensities(
+    *,
+    rows: list[dict],
+    providers: list,
+    database_names: tuple[str, ...],
+    method: tuple,
+    label: str,
+) -> bool:
+    """Add this category's cached provider intensity to every link row.
+
+    Returns ``False`` when the cache cannot supply the category, in which case
+    the caller omits the whole field rather than publishing a partial payload.
+    """
+    from . import background_intensity
+
+    if background_intensity.effective_mode() == "off":
+        return False
+    if not rows:
+        return True
+    try:
+        cached = background_intensity.get_background_y(
+            bd, bc, database_names, method
+        )
+        values = [float(cached[provider.id]) for provider in providers]
+    except Exception as exc:
+        _logger.warning(
+            "Background link intensities unavailable for %s: %s", label, exc
+        )
+        return False
+    for row, value in zip(rows, values, strict=True):
+        row["intensities"][label] = value
+    return True
+
+
 def _result_id(spec: dict) -> str:
     """Return a deterministic identity for one normalized calculation input."""
     normalized = yaml.safe_dump(spec, sort_keys=True, allow_unicode=True)
@@ -1198,6 +1267,13 @@ def _run_analysis(
                 }
                 for name, activity in activities.items()
             }
+            background_link_rows, background_link_providers = (
+                _background_link_rows(spec, background_providers)
+            )
+            background_database_names = (
+                background_intensity.database_names_from_spec(spec)
+            )
+            background_links_complete = True
             if phases is not None:
                 _add_phase(
                     phases, "inventory_base_result_construction", base_result_started
@@ -1213,6 +1289,16 @@ def _run_analysis(
                 label = " | ".join(method_tuple[1:])
                 unit = bd.methods[method_tuple].get("unit", "")
                 lcia_results[label] = {"score": float(lca.score), "unit": unit}
+                background_links_complete = (
+                    _attach_background_link_intensities(
+                        rows=background_link_rows,
+                        providers=background_link_providers,
+                        database_names=background_database_names,
+                        method=method_tuple,
+                        label=label,
+                    )
+                    and background_links_complete
+                )
                 category = _contribution_category(
                     lca,
                     spec,
@@ -1308,6 +1394,8 @@ def _run_analysis(
                     spec, scaling_vector, background_providers
                 ),
             }
+            if background_links_complete:
+                result["background_link_intensities"] = background_link_rows
             if phases is not None:
                 _add_phase(
                     phases, "inventory_base_result_construction", base_result_started

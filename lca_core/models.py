@@ -137,6 +137,27 @@ class SankeyResult(TypedDict):
     available_units: list[str]
 
 
+class BackgroundLinkIntensity(TypedDict):
+    """Cumulative LCIA intensity of the background provider behind one link.
+
+    ``process_index``/``input_index`` address the exchange in the request spec
+    and are the authoritative key. The descriptive fields let a client match the
+    row against its own parsed YAML without depending on ordering.
+    """
+
+    link_id: str
+    process_index: int
+    input_index: int
+    process_name: str
+    flow: str
+    database: str
+    code: str
+    location: str | None
+    amount: float
+    unit: str
+    intensities: dict[str, float]
+
+
 class LcaCoreResult(TypedDict):
     result_id: str
     name: str
@@ -149,6 +170,7 @@ class LcaCoreResult(TypedDict):
     process_contributions: ProcessContributions
     contribution_graphs: list[ContributionGraph]
     sankey: SankeyResult
+    background_link_intensities: NotRequired[list[BackgroundLinkIntensity]]
 
 
 class ContributionBatchResult(TypedDict):
