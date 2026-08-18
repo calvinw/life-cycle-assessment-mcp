@@ -1,0 +1,140 @@
+{
+  "schema_version": 1,
+  "specs": {
+    "bafu_examples/cotton_fiber_bafu.yaml": {
+      "categories": {
+        "acidification | acidification potential (AP)": {
+          "score": 0.024396891944362252,
+          "unit": "kg SO2-Eq"
+        },
+        "climate change | global warming potential (GWP100)": {
+          "score": 6.165215253309476,
+          "unit": "kg CO2-Eq"
+        }
+      },
+      "method": "TRACI v2.1"
+    },
+    "bafu_examples/plastic_broom.yaml": {
+      "categories": {
+        "acidification | accumulated exceedance (AE)": {
+          "score": 0.006516547162492725,
+          "unit": "mol H+-Eq"
+        },
+        "climate change | global warming potential (GWP100)": {
+          "score": 1.7089725294165676,
+          "unit": "kg CO2-Eq"
+        }
+      },
+      "method": "EF v3.1"
+    },
+    "bafu_examples/polyester_tshirt_bafu.yaml": {
+      "categories": {
+        "acidification | acidification potential (AP)": {
+          "score": 0.002807449526233412,
+          "unit": "kg SO2-Eq"
+        },
+        "climate change | global warming potential (GWP100)": {
+          "score": 2.2833587055439724,
+          "unit": "kg CO2-Eq"
+        }
+      },
+      "method": "TRACI v2.1"
+    },
+    "bafu_examples/wool_yarn_bafu.yaml": {
+      "categories": {
+        "acidification | acidification potential (AP)": {
+          "score": 0.41524743804434766,
+          "unit": "kg SO2-Eq"
+        },
+        "climate change | global warming potential (GWP100)": {
+          "score": 24.31960442500874,
+          "unit": "kg CO2-Eq"
+        }
+      },
+      "method": "TRACI v2.1"
+    },
+    "case_studies/cotton_fiber.yaml": {
+      "categories": {
+        "acidification | acidification potential (AP)": {
+          "score": 0.01879999953210354,
+          "unit": "kg SO2-Eq"
+        },
+        "climate change | global warming potential (GWP100)": {
+          "score": 5.969999922439456,
+          "unit": "kg CO2-Eq"
+        }
+      },
+      "method": "TRACI v2.1"
+    },
+    "case_studies/jacket.yaml": {
+      "categories": {
+        "acidification | acidification potential (AP)": {
+          "score": 0.007699999863654371,
+          "unit": "kg SO2-Eq"
+        },
+        "climate change | global warming potential (GWP100)": {
+          "score": 4.878600277830665,
+          "unit": "kg CO2-Eq"
+        }
+      },
+      "method": "TRACI v2.1"
+    },
+    "case_studies/polyester_tshirt.yaml": {
+      "categories": {
+        "acidification | acidification potential (AP)": {
+          "score": 0.0,
+          "unit": "kg SO2-Eq"
+        },
+        "climate change | global warming potential (GWP100)": {
+          "score": 2.5350000293552877,
+          "unit": "kg CO2-Eq"
+        }
+      },
+      "method": "TRACI v2.1"
+    },
+    "case_studies/wool_yarn.yaml": {
+      "categories": {
+        "acidification | acidification potential (AP)": {
+          "score": 0.0,
+          "unit": "kg SO2-Eq"
+        },
+        "climate change | global warming potential (GWP100)": {
+          "score": 13.550000414252285,
+          "unit": "kg CO2-Eq"
+        }
+      },
+      "method": "TRACI v2.1"
+    },
+    "mock_examples/mock_plastic_broom.yaml": {
+      "categories": {
+        "climate change | global warming potential (GWP100)": {
+          "score": 0.9488709719424245,
+          "unit": "kg CO2-Eq"
+        }
+      },
+      "method": "EF v3.1"
+    },
+    "mock_examples/mock_plastic_broom_simple.yaml": {
+      "categories": {
+        "climate change | global warming potential (GWP100)": {
+          "score": 0.945494972040057,
+          "unit": "kg CO2-Eq"
+        }
+      },
+      "method": "EF v3.1"
+    },
+    "mock_examples/mock_storage_bin.yaml": {
+      "categories": {
+        "acidification | accumulated exceedance (AE)": {
+          "score": 0.0011528000215791142,
+          "unit": "mol H+-Eq"
+        },
+        "climate change | global warming potential (GWP100)": {
+          "score": 1.4400000309944154,
+          "unit": "kg CO2-Eq"
+        }
+      },
+      "method": "EF v3.1"
+    }
+  }
+}

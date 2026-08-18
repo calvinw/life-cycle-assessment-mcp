@@ -57,7 +57,12 @@ def factorize_adjoint(lca):
     return splu(lca.technosphere_matrix.T.tocsc())
 
 
-def _seed_adjoint_scores(traversal, lca, transpose_lu=None) -> np.ndarray:
+def _seed_adjoint_scores(
+    traversal,
+    lca,
+    transpose_lu=None,
+    cumulative_intensities=None,
+) -> np.ndarray:
     """Populate graph traversal's unit-score cache with one adjoint solve.
 
     The traversal repeatedly asks for the cumulative score caused by one unit
@@ -67,13 +72,16 @@ def _seed_adjoint_scores(traversal, lca, transpose_lu=None) -> np.ndarray:
     occurrence and cutoff traversal can be retained without performing a
     linear solve for each product it encounters.
     """
-    direct_intensities = np.asarray(
-        traversal.characterized_biosphere.sum(axis=0)
-    ).ravel()
-    transpose_lu = transpose_lu or factorize_adjoint(lca)
-    cumulative_intensities = np.asarray(
-        transpose_lu.solve(direct_intensities)
-    ).ravel()
+    if cumulative_intensities is None:
+        direct_intensities = np.asarray(
+            traversal.characterized_biosphere.sum(axis=0)
+        ).ravel()
+        transpose_lu = transpose_lu or factorize_adjoint(lca)
+        cumulative_intensities = np.asarray(
+            transpose_lu.solve(direct_intensities)
+        ).ravel()
+    else:
+        cumulative_intensities = np.asarray(cumulative_intensities).ravel()
 
     demand = np.asarray(lca.demand_array).ravel()
     reconstructed_score = float(cumulative_intensities @ demand)
@@ -107,6 +115,7 @@ def build_contribution_graph(
     foreground_metadata: dict[int, dict],
     use_adjoint: bool = True,
     transpose_lu=None,
+    cumulative_intensities=None,
 ) -> ContributionGraph:
     """Traverse an already-characterized LCA object without creating a new LCA."""
     total = float(lca.score)
@@ -170,7 +179,12 @@ def build_contribution_graph(
         ),
     )
     if use_adjoint:
-        _seed_adjoint_scores(traversal, lca, transpose_lu=transpose_lu)
+        _seed_adjoint_scores(
+            traversal,
+            lca,
+            transpose_lu=transpose_lu,
+            cumulative_intensities=cumulative_intensities,
+        )
     traversal.traverse()
 
     raw_nodes = traversal.nodes

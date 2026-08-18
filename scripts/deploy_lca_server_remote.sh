@@ -10,6 +10,7 @@ volume_name=${6:?Missing volume name}
 image_name=${7:?Missing image name}
 port_binding=${8:?Missing port binding}
 health_url=${9:?Missing health URL}
+background_intensity_cache=${10:?Missing background intensity cache mode}
 rollback_name="${container_name}-rollback"
 
 for command_name in curl docker flock git mktemp tar; do
@@ -29,6 +30,10 @@ if [[ "$volume_name" == *[!A-Za-z0-9_.-]* || -z "$volume_name" ]]; then
 fi
 if [[ "$repo_dir" != /* || "$repo_dir" == "/" ]]; then
     echo "LCA_REMOTE_REPO_DIR must be a non-root absolute path." >&2
+    exit 2
+fi
+if [[ ! "$background_intensity_cache" =~ ^(off|compare|on)$ ]]; then
+    echo "Invalid background intensity cache mode: $background_intensity_cache" >&2
     exit 2
 fi
 
@@ -187,6 +192,7 @@ if ! docker run --detach \
     --env PORT=9000 \
     --env BRIGHTWAY_PROJECT=lca_server \
     --env BRIGHTWAY2_DIR=/app/brightway_data \
+    --env "LCA_BACKGROUND_INTENSITY_CACHE=$background_intensity_cache" \
     --health-cmd 'curl -fsS http://127.0.0.1:9000/api/health >/dev/null || exit 1' \
     --health-interval 15s \
     --health-timeout 5s \

@@ -1,3 +1,4 @@
+import os
 import pathlib
 import types
 import unittest
@@ -9,8 +10,14 @@ import lca_engine
 class ProductionStartupTests(unittest.TestCase):
     def setUp(self):
         self.original_ready = lca_engine._startup_databases_ready
+        self.cache_setting = patch.dict(
+            os.environ,
+            {"LCA_BACKGROUND_INTENSITY_CACHE": "off"},
+        )
+        self.cache_setting.start()
 
     def tearDown(self):
+        self.cache_setting.stop()
         lca_engine._startup_databases_ready = self.original_ready
 
     def test_fresh_projection_is_reused(self):
