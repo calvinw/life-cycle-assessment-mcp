@@ -411,12 +411,37 @@ Response fields include:
     "nodes": [],
     "links": [],
     "available_units": []
-  }
+  },
+  "background_link_intensities": []
 }
 ```
 
 Report impact values with their returned units. Never infer or replace units.
 SVGs are not included; call `POST /api/lca/svg` independently when needed.
+
+`background_link_intensities` is optional and appears only when the server runs
+with its background intensity cache enabled (`LCA_BACKGROUND_INTENSITY_CACHE`
+set to `compare` or `on`). Treat its absence as normal and feature-detect it.
+`result_schema_version` remains `3` either way. Each entry carries the
+cumulative intensity of the background activity behind one foreground input, per
+calculated category, keyed by the `process_index` and `input_index` of the
+exchange in the submitted YAML. Graphs with no background inputs return an empty
+list.
+
+It exists so a client can rescore background input changes without another
+request:
+
+```text
+score_new = score_baseline
+          + Σ  scaling_vector[process_name] × (amount_new − amount) × intensity
+```
+
+This is exact only while the foreground structure is unchanged, since that is
+what keeps `scaling_vector` valid; changing an emission, reference output, or
+provider requires a real recalculation. Agreement with a full recalculation is
+about `1e-7` relative rather than exact, because Brightway stores technosphere
+amounts as float32. Compare with a `1e-6` relative tolerance, never for
+equality.
 
 The operation is stateless: `product_graph` is the complete input.
 `process_contributions.categories` contains one entry per `lcia` category. Its

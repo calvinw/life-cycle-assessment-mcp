@@ -92,9 +92,55 @@ SVGs are generated only by the dedicated SVG endpoints:
     "nodes": [],
     "links": [],
     "available_units": ["kg", "unit"]
-  }
+  },
+  "background_link_intensities": [
+    {
+      "link_id": "background-link:...",
+      "process_index": 0,
+      "input_index": 0,
+      "process_name": "Plastic broom assembly",
+      "flow": "Polylactide, granulate, at plant",
+      "database": "bafu",
+      "code": "273090",
+      "location": "GLO",
+      "amount": 0.52,
+      "unit": "kg",
+      "intensities": {
+        "climate change | global warming potential (GWP100)": 2.7064573564136585
+      }
+    }
+  ]
 }
 ```
+
+`background_link_intensities` is **optional**. It appears only when the server
+runs with `LCA_BACKGROUND_INTENSITY_CACHE` set to `compare` or `on`; the
+committed default is `off`, which omits the field entirely. Its absence is a
+normal fallback and never an error, so clients must feature-detect it rather
+than require it. `result_schema_version` stays `3`.
+
+Each entry gives the cumulative LCIA intensity of the background activity behind
+one foreground input, per calculated category. `process_index` and `input_index`
+address the exchange in the submitted YAML and are the authoritative key; the
+descriptive fields exist so a client can cross-check against its own parse. A
+graph with no background inputs returns an empty list.
+
+Because these are cumulative intensities, a client can rescore background input
+edits locally without another request:
+
+```text
+score_new = score_baseline
+          + Σ  scaling_vector[process_name] × (amount_new − amount) × intensity
+```
+
+This holds exactly while the foreground structure is unchanged, which is what
+keeps `scaling_vector` valid. Editing an emission, a reference output, or a
+provider invalidates it — recalculate instead.
+
+Expect agreement with a full recalculation to about `1e-7` relative, not to
+machine precision. Brightway stores technosphere amounts as float32, so the
+server scores `0.52` as `0.5199999809265137` while a client multiplies the exact
+value. Compare with a relative tolerance of `1e-6`, never for equality.
 
 Process scores are exclusive, preserve their sign, include both foreground and
 background activities, and reconcile with the category total after adding
