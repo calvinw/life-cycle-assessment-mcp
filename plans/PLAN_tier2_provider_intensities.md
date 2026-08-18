@@ -1,6 +1,7 @@
 # Plan: Tier 2 — Return Background Provider Intensities from Call 1
 
-Status: Phases 1 and 2 complete and green on `plan/tier2-provider-intensities`;
+Status: Phases 1-4 complete and green on `plan/tier2-provider-intensities`,
+ready to merge and deploy;
 consumed end to end by the Realtime view and confirmed by hand against an
 independently running copy of the webapp. Phases 3 and 4 remain open. Tier 2 was
 authorised by explicit instruction on August 18, 2026  
@@ -186,14 +187,38 @@ seven graphs with background links (four `bafu_examples/`, three
 `product-graphs/` directory is the editor-facing catalogue served by
 `GET /api/product-graphs`, not the test corpus.
 
-### Phase 3 — measure — NOT STARTED
+### Phase 3 — measure — DONE
 
-Record the added Call 1 cost, warm and cold, in
-`benchmarks/tier2_call1_payload.md`. Report absolute milliseconds. Tier 2's
-purpose is not a faster Call 1, so a small regression is acceptable and must be
-stated rather than hidden.
+Recorded in [`../benchmarks/tier2_call1_payload.md`](../benchmarks/tier2_call1_payload.md)
+using `scripts/benchmark_tier2_call1.py`, which follows the Tier 1 seven-sample
+method. A `background_link_intensities_per_category` phase was added to Call 1
+instrumentation to isolate the new work.
 
-### Phase 4 — documentation — NOT STARTED
+| Configuration | Link phase median | Call 1 wall median |
+|---|---:|---:|
+| `off` baseline | 0.013ms | 811.824ms |
+| `on`, warm | 0.044ms | 830.131ms |
+| `on`, category miss | 8.126ms | 810.255ms |
+| `on`, full rebuild | 627.502ms | 1477.273ms |
+
+**The warm cost is 0.031ms** — 0.044 minus the 0.013 no-op — for three links
+across two categories, roughly 5µs per link-category.
+
+The wall column is not a Tier 2 signal. `on` warm reads 18ms above `off`, but
+`on` with a category miss — strictly more work — reads *below* both. Call 1 wall
+time is dominated by temporary foreground creation, which spanned 304-418ms
+across samples. Attributing that 18ms swing to Tier 2 would overstate its cost
+by roughly 600x.
+
+The full-rebuild row is synthetic: it clears the LU factorization so every
+sample re-runs `_build_entry`. Operationally that happens at startup or on a
+background database identity change, not per request.
+
+### Phase 4 — documentation — DONE
+
+`docs/rest_api.md` and `docs/llm_rest_api_guide.md` now document the field, its
+cache-mode conditionality, the `(process_index, input_index)` key, the local
+rescoring formula, and the float32 tolerance guidance for clients.
 
 Update `docs/llm_rest_api_guide.md` and `docs/rest_api.md` with the new field,
 its cache-mode conditionality, and the reconciliation formula.
@@ -286,9 +311,11 @@ the preferred order and is tracked by that plan, not this one.
 - [x] Field verified over HTTP on a local server
 - [x] Frontend plan's contract expectations confirmed against the shipped field
 - [x] Preview confirmed by hand against an independent full calculation
-- [ ] Call 1 cost measured and recorded in absolute milliseconds
-- [ ] REST documentation updated
-- [ ] Tier 2 deployed, which requires Tier 1 merged to `main` first
+- [x] Call 1 cost measured and recorded in absolute milliseconds
+- [x] REST documentation updated
+- [x] Tier 1 merged to `main` and deployed (`47d9cb9`, August 18, 2026)
+- [ ] Tier 2 merged to `main` and deployed
+- [ ] Editor `realtime` branch merged and shipped
 
 ## Known unrelated failure
 

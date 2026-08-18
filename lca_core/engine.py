@@ -1274,6 +1274,7 @@ def _run_analysis(
                 background_intensity.database_names_from_spec(spec)
             )
             background_links_complete = True
+            background_link_timings: list[dict] = []
             if phases is not None:
                 _add_phase(
                     phases, "inventory_base_result_construction", base_result_started
@@ -1289,6 +1290,7 @@ def _run_analysis(
                 label = " | ".join(method_tuple[1:])
                 unit = bd.methods[method_tuple].get("unit", "")
                 lcia_results[label] = {"score": float(lca.score), "unit": unit}
+                link_started = time.perf_counter()
                 background_links_complete = (
                     _attach_background_link_intensities(
                         rows=background_link_rows,
@@ -1298,6 +1300,9 @@ def _run_analysis(
                         label=label,
                     )
                     and background_links_complete
+                )
+                background_link_timings.append(
+                    {"category": label, "seconds": _elapsed_seconds(link_started)}
                 )
                 category = _contribution_category(
                     lca,
@@ -1372,6 +1377,14 @@ def _run_analysis(
                         ),
                         "categories": background_cache_timings,
                     }
+
+            if phases is not None and background_link_timings:
+                phases["background_link_intensities_per_category"] = {
+                    "total_seconds": round(
+                        sum(item["seconds"] for item in background_link_timings), 6
+                    ),
+                    "categories": background_link_timings,
+                }
 
             base_result_started = time.perf_counter()
             fu_spec = spec["functional_unit"]
