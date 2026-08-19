@@ -300,6 +300,29 @@ Tier 2 depends on the Tier 1 cache, so it branches from
 `plan/background-intensity-feasibility`. Merging Tier 1 to `main` first remains
 the preferred order and is tracked by that plan, not this one.
 
+## Consumed and shipped
+
+The frontend that consumes this landed on August 19, 2026 and is live at
+<https://calvinw.github.io/product-graph-editor/>. Dragging a background input
+amount on the scaled product graph rescores every impact category locally and
+exactly, using only this payload.
+
+Written up in
+`product-graph-editor/plan/DELIVERED_2026-08-19_scenario_editing.md`, which also
+records two results measured against this engine and worth keeping:
+
+- **Foreground cumulative scores are locally solvable** from `A_FF`,
+  `direct_score / scaling_vector`, and this payload. Verified against the
+  engine's own contribution graphs on 14 node/category pairs, worst relative
+  difference `5.71e-8`.
+- **Foreground technosphere edits are also locally solvable.** They invalidate
+  the server's scaling vector, but the browser can re-solve it, since
+  `direct_char`, per-unit background amounts, and `y_B` are all invariant under
+  such an edit. Measured `3.4e-08` and `7.9e-09` on the jacket.
+
+Neither needs anything further from this engine. Emission dragging still would:
+it requires per-flow characterization factors, which no payload carries.
+
 ## Definition of done
 
 - [x] Types added and populated
