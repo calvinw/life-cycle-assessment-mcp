@@ -1,0 +1,72 @@
+name: Cotton Tote Bag (bafu-linked) — 1 unit
+goal: >
+  A four-stage foreground chain where every stage draws on the bafu background,
+  and three of them share the same grid-electricity provider. Most bundled
+  graphs are either multi-process with no background links, or single-process
+  with several; this one is both, which is what exercises the interaction
+  between foreground scaling and background demand.
+
+  Grid electricity being shared across spinning, weaving and zip production
+  means its total demand is the sum of what those three stages require, not the
+  largest of them. A scaling walk that takes the maximum gets this wrong, and
+  every background amount downstream of it with it.
+
+functional_unit:
+  description: 1 cotton tote bag with a metal zip
+  amount: 1.0
+  unit: unit
+
+products:
+  - { name: Cotton tote bag, unit: unit }
+  - { name: Cotton yarn, unit: kg }
+  - { name: Cotton fabric, unit: kg }
+  - { name: Metal zip, unit: unit }
+
+elementary_flows:
+  emissions:
+    - { name: Carbon dioxide, compartment: air, unit: kg }
+    - { name: Nitrous oxide, compartment: air, unit: kg }
+  resources:
+    - { name: Water, compartment: water, unit: L }
+
+processes:
+  - name: Yarn spinning
+    reference_output: { flow: Cotton yarn, amount: 1.0, unit: kg }
+    inputs:
+      - { flow: "Cotton fibres, ginned, at farm",                          location: CN,  database: bafu, amount: 1.12, unit: kg }
+      - { flow: "Electricity, low voltage, certified electricity, at grid", location: CH, database: bafu, amount: 2.4,  unit: kWh }
+    emissions:
+      - { flow: Carbon dioxide, amount: 0.06 }
+    resources:
+      - { flow: Water, amount: 45 }
+
+  - name: Fabric weaving
+    reference_output: { flow: Cotton fabric, amount: 1.0, unit: kg }
+    inputs:
+      - { flow: Cotton yarn, amount: 1.06, unit: kg }
+      - { flow: "Electricity, low voltage, certified electricity, at grid", location: CH, database: bafu, amount: 1.8, unit: kWh }
+    emissions:
+      - { flow: Carbon dioxide, amount: 0.04 }
+
+  - name: Zip production
+    reference_output: { flow: Metal zip, amount: 1.0, unit: unit }
+    inputs:
+      - { flow: "Zinc, primary, at regional storage",                       location: RER, database: bafu, amount: 0.014, unit: kg }
+      - { flow: "Electricity, low voltage, certified electricity, at grid", location: CH,  database: bafu, amount: 0.09,  unit: kWh }
+
+  - name: Tote bag assembly
+    reference_output: { flow: Cotton tote bag, amount: 1.0, unit: unit }
+    inputs:
+      - { flow: Cotton fabric, amount: 0.32, unit: kg }
+      - { flow: Metal zip, amount: 1.0, unit: unit }
+      - { flow: "Transport, freight, lorry, 16t-32t gross weight, fleet average", location: RER, database: bafu, amount: 0.085, unit: tkm }
+    emissions:
+      - { flow: Nitrous oxide, amount: 0.0004 }
+
+reference_process: "Tote bag assembly"
+
+lcia:
+  method_name: "EF v3.1"
+  categories:
+    - climate change
+    - acidification

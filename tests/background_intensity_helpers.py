@@ -11,6 +11,7 @@ from lca_core import engine as core_engine
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 BACKGROUND_LINKED_PATHS = (
     "bafu_examples/cotton_fiber_bafu.yaml",
+    "bafu_examples/cotton_tote_bafu.yaml",
     "bafu_examples/plastic_broom.yaml",
     "bafu_examples/polyester_tshirt_bafu.yaml",
     "bafu_examples/wool_yarn_bafu.yaml",
@@ -27,6 +28,7 @@ ALL_SPEC_PATHS = (
     "mock_examples/mock_plastic_broom_simple.yaml",
     "mock_examples/mock_storage_bin.yaml",
     "bafu_examples/cotton_fiber_bafu.yaml",
+    "bafu_examples/cotton_tote_bafu.yaml",
     "bafu_examples/plastic_broom.yaml",
     "bafu_examples/polyester_tshirt_bafu.yaml",
     "bafu_examples/wool_yarn_bafu.yaml",

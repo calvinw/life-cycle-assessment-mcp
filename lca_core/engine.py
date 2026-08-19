@@ -735,7 +735,7 @@ def _build_foreground_db(spec: dict, database_name: str) -> tuple[dict, dict, di
         activities[proc["name"]] = act
         product_to_activity[ref["flow"]] = act
 
-    for proc in spec["processes"]:
+    for proc_index, proc in enumerate(spec["processes"]):
         act = activities[proc["name"]]
         ref = proc["reference_output"]
 

@@ -10,6 +10,7 @@ from starlette.testclient import TestClient
 EXPECTED_IDS = [
     "cotton_fiber",
     "cotton_fiber_bafu_linked",
+    "cotton_tote_bafu_linked",
     "jacket",
     "mock_plastic_broom",
     "mock_plastic_broom_simple",
@@ -48,7 +49,7 @@ class ProductGraphCatalogTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["default_id"], "jacket")
-        self.assertEqual(len(response.json()["product_graphs"]), 10)
+        self.assertEqual(len(response.json()["product_graphs"]), 11)
 
 
 if __name__ == "__main__":
