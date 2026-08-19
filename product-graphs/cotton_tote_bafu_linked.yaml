@@ -11,6 +11,15 @@ goal: >
   largest of them. A scaling walk that takes the maximum gets this wrong, and
   every background amount downstream of it with it.
 
+  A third category, material resources, makes the graph show a genuine
+  trade-off rather than one ranking repeated. The zip is 14 g of zinc against
+  320 g of cotton fabric: about 3% of the climate impact, but roughly 68% of
+  the metal resource use, while cotton is 85% of climate and 97% of
+  acidification. Which input matters most depends entirely on the category
+  selected, which the other bundled graphs cannot demonstrate because their
+  materials are all fossil-energy dominated and rank the same way in every
+  category.
+
 functional_unit:
   description: 1 cotton tote bag with a metal zip
   amount: 1.0
@@ -70,3 +79,4 @@ lcia:
   categories:
     - climate change
     - acidification
+    - "material resources: metals/minerals"
