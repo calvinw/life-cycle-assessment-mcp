@@ -166,18 +166,17 @@ def _ensure_databases():
         _ensure_search_projection()
         from . import background_intensity
 
-        if background_intensity.configured_mode() != "off":
-            cache_started = time.perf_counter()
-            try:
-                requests = _startup_background_intensity_requests()
-                background_intensity.warm(bd, bc, requests)
-                print(
-                    "[lca_engine] Background intensity cache ready — "
-                    f"{len(requests)} database/category combinations in "
-                    f"{_elapsed_seconds(cache_started):.3f}s."
-                )
-            except Exception as exc:
-                background_intensity.disable(str(exc))
+        cache_started = time.perf_counter()
+        try:
+            requests = _startup_background_intensity_requests()
+            background_intensity.warm(bd, bc, requests)
+            print(
+                "[lca_engine] Background intensity cache ready — "
+                f"{len(requests)} database/category combinations in "
+                f"{_elapsed_seconds(cache_started):.3f}s."
+            )
+        except Exception as exc:
+            background_intensity.disable(str(exc))
         _startup_databases_ready = True
 
 # Index: (lowercase name, compartment) → activity key — built once on first lookup
@@ -445,7 +444,6 @@ def _cached_request_cumulative_intensities(
     spec: dict,
     activities: dict,
     method: tuple,
-    mode: str,
     transpose_lu,
 ):
     from . import background_intensity
@@ -465,8 +463,7 @@ def _cached_request_cumulative_intensities(
             " | ".join(method),
             exc,
         )
-        if mode == "on":
-            background_intensity.disable(str(exc))
+        background_intensity.disable(str(exc))
         if transpose_lu is None:
             transpose_lu = factorize_adjoint(lca)
         return None, transpose_lu
@@ -479,35 +476,6 @@ def _cached_request_cumulative_intensities(
         rel_tol=ADJOINT_SCORE_REL_TOLERANCE,
         abs_tol=ADJOINT_SCORE_ABS_TOLERANCE,
     )
-
-    if mode == "compare":
-        direct = background_intensity.direct_intensities(lca)
-        full = np.asarray(transpose_lu.solve(direct)).ravel()
-        full_norm = float(np.linalg.norm(full))
-        relative_vector_difference = float(np.linalg.norm(cached - full)) / max(
-            full_norm,
-            ADJOINT_SCORE_ABS_TOLERANCE,
-        )
-        vector_matches = (
-            relative_vector_difference <= ADJOINT_SCORE_REL_TOLERANCE
-        )
-        if not vector_matches or not score_matches:
-            max_absolute = float(np.max(np.abs(cached - full)))
-            _logger.warning(
-                "Background intensity comparison failed for %s: "
-                "vector_matches=%s score_matches=%s relative_vector_difference=%s "
-                "max_abs=%s "
-                "cached_score=%s reference_score=%s",
-                " | ".join(method),
-                vector_matches,
-                score_matches,
-                relative_vector_difference,
-                max_absolute,
-                cached_score,
-                float(lca.score),
-            )
-        return full, transpose_lu
-
     if not score_matches:
         reason = (
             "cached cumulative intensities do not reconcile with the full "
@@ -581,7 +549,7 @@ def _attach_background_link_intensities(
     """
     from . import background_intensity
 
-    if background_intensity.effective_mode() == "off":
+    if not background_intensity.enabled():
         return False
     if not rows:
         return True
@@ -1212,9 +1180,8 @@ def _run_analysis(
                 _add_phase(phases, "lci_factorization", started)
             from . import background_intensity
 
-            background_cache_mode = background_intensity.effective_mode()
             transpose_lu = None
-            if contribution_methods and background_cache_mode != "on":
+            if contribution_methods and not background_intensity.enabled():
                 started = time.perf_counter()
                 transpose_lu = factorize_adjoint(lca)
                 if phases is not None:
@@ -1317,8 +1284,7 @@ def _run_analysis(
                 )
                 if method_tuple in contribution_methods:
                     cumulative_intensities = None
-                    category_cache_mode = background_intensity.effective_mode()
-                    if category_cache_mode != "off":
+                    if background_intensity.enabled():
                         cache_started = time.perf_counter()
                         cumulative_intensities, transpose_lu = (
                             _cached_request_cumulative_intensities(
@@ -1326,7 +1292,6 @@ def _run_analysis(
                                 spec=spec,
                                 activities=activities,
                                 method=method_tuple,
-                                mode=category_cache_mode,
                                 transpose_lu=transpose_lu,
                             )
                         )
@@ -1539,10 +1504,9 @@ def _run_contribution_analysis(
                 _add_phase(phases, "lci_factorization", started)
             from . import background_intensity
 
-            background_cache_mode = background_intensity.effective_mode()
             started = time.perf_counter()
             transpose_lu = None
-            if background_cache_mode != "on":
+            if not background_intensity.enabled():
                 transpose_lu = factorize_adjoint(lca)
                 if phases is not None:
                     _add_phase(phases, "adjoint_transpose_factorization", started)
@@ -1574,8 +1538,7 @@ def _run_contribution_analysis(
                     {"category": label, "seconds": _elapsed_seconds(category_started)}
                 )
                 cumulative_intensities = None
-                category_cache_mode = background_intensity.effective_mode()
-                if category_cache_mode != "off":
+                if background_intensity.enabled():
                     cache_started = time.perf_counter()
                     cumulative_intensities, transpose_lu = (
                         _cached_request_cumulative_intensities(
@@ -1583,7 +1546,6 @@ def _run_contribution_analysis(
                             spec=spec,
                             activities=activities,
                             method=method_tuple,
-                            mode=category_cache_mode,
                             transpose_lu=transpose_lu,
                         )
                     )

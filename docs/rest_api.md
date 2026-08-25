@@ -113,11 +113,12 @@ SVGs are generated only by the dedicated SVG endpoints:
 }
 ```
 
-`background_link_intensities` is **optional**. It appears only when the server
-runs with `LCA_BACKGROUND_INTENSITY_CACHE` set to `compare` or `on`; the
-committed default is `off`, which omits the field entirely. Its absence is a
-normal fallback and never an error, so clients must feature-detect it rather
-than require it. `result_schema_version` stays `3`.
+`background_link_intensities` is **optional**. The background intensity cache
+is always on, so the field is normally present, but it is omitted whenever the
+cache cannot supply every requested category — including after a runtime
+failure disables the cache for the life of the process. Its absence is a normal
+fallback and never an error, so clients must feature-detect it rather than
+require it. `result_schema_version` stays `3`.
 
 Each entry gives the cumulative LCIA intensity of the background activity behind
 one foreground input, per calculated category. `process_index` and `input_index`

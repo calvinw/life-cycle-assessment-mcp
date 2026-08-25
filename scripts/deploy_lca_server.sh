@@ -24,8 +24,6 @@ Optional environment:
   LCA_DEPLOY_SSH_KEY    Path to a private SSH key
   LCA_DEPLOY_REPO_URL   Git repository cloned/fetched on the server
   LCA_REMOTE_REPO_DIR   Managed server checkout (default: /opt/lca-benchmark)
-  LCA_BACKGROUND_INTENSITY_CACHE
-                         off (default), compare, or on
 EOF
 }
 
@@ -61,24 +59,18 @@ volume_name=${LCA_DEPLOY_VOLUME:-lca_benchmark_brightway}
 image_name=${LCA_DEPLOY_IMAGE:-lca-benchmark}
 port_binding=${LCA_DEPLOY_PORT_BINDING:-127.0.0.1:9000:9000}
 health_url=${LCA_DEPLOY_HEALTH_URL:-http://127.0.0.1:9000/api/health}
-background_intensity_cache=${LCA_BACKGROUND_INTENSITY_CACHE:-off}
 
 if [[ ! "$deploy_port" =~ ^[0-9]+$ ]]; then
     echo "LCA_DEPLOY_PORT must be numeric." >&2
     exit 2
 fi
-if [[ ! "$background_intensity_cache" =~ ^(off|compare|on)$ ]]; then
-    echo "LCA_BACKGROUND_INTENSITY_CACHE must be off, compare, or on." >&2
-    exit 2
-fi
-
 ssh_args=(-p "$deploy_port")
 if [[ -n ${LCA_DEPLOY_SSH_KEY:-} ]]; then
     ssh_args+=(-i "$LCA_DEPLOY_SSH_KEY")
 fi
 
 printf -v remote_command \
-    'bash -s -- %q %q %q %q %q %q %q %q %q %q' \
+    'bash -s -- %q %q %q %q %q %q %q %q %q' \
     "$action" \
     "$ref" \
     "$repo_url" \
@@ -87,8 +79,7 @@ printf -v remote_command \
     "$volume_name" \
     "$image_name" \
     "$port_binding" \
-    "$health_url" \
-    "$background_intensity_cache"
+    "$health_url"
 
 echo "Target: ${deploy_user}@${LCA_DEPLOY_HOST}:${deploy_port}"
 if [[ "$action" == "deploy" ]]; then

@@ -1,5 +1,4 @@
 import math
-import os
 import pathlib
 import sqlite3
 import tempfile
@@ -24,22 +23,10 @@ class BackgroundIntensityCacheTests(unittest.TestCase):
         cls.engine.ensure_ready()
 
     def setUp(self):
-        self.original_mode = os.environ.get(
-            background_intensity.CACHE_ENV_VAR
-        )
         background_intensity.clear_cache()
 
     def tearDown(self):
         background_intensity.clear_cache()
-        if self.original_mode is None:
-            os.environ.pop(background_intensity.CACHE_ENV_VAR, None)
-        else:
-            os.environ[
-                background_intensity.CACHE_ENV_VAR
-            ] = self.original_mode
-
-    def _set_mode(self, mode: str) -> None:
-        os.environ[background_intensity.CACHE_ENV_VAR] = mode
 
     def assert_results_close(self, first, second, path="result"):
         self.assertIs(type(first), type(second), path)
@@ -63,10 +50,12 @@ class BackgroundIntensityCacheTests(unittest.TestCase):
         else:
             self.assertEqual(first, second, path)
 
-    def test_default_mode_is_off(self):
-        os.environ.pop(background_intensity.CACHE_ENV_VAR, None)
-        self.assertEqual(background_intensity.configured_mode(), "off")
-        self.assertEqual(background_intensity.effective_mode(), "off")
+    def test_cache_is_enabled_until_a_failure_disables_it(self):
+        self.assertTrue(background_intensity.enabled())
+        background_intensity.disable("forced for the test")
+        self.assertFalse(background_intensity.enabled())
+        background_intensity.clear_cache()
+        self.assertTrue(background_intensity.enabled())
 
     def test_database_identity_changes_with_available_metadata(self):
         databases = {
@@ -157,28 +146,30 @@ class BackgroundIntensityCacheTests(unittest.TestCase):
                         ("bafu",),
                     )
 
-    def test_compare_mode_uses_reference_result_without_warning(self):
+    def _reference_graphs(self, source, categories):
+        """Contribution graphs solved the direct way, with the cache disabled."""
+        background_intensity.disable("reference solve for the test")
+        try:
+            return self.engine.contribution_graphs(source, categories)
+        finally:
+            background_intensity.clear_cache()
+
+    def test_cached_result_matches_the_direct_solve_without_warning(self):
         source = (ROOT / "mock_examples/mock_storage_bin.yaml").read_text()
-        self._set_mode("off")
         base = self.engine.run_base(source)
         categories = list(base["lcia"])
-        reference = self.engine.contribution_graphs(source, categories)
+        reference = self._reference_graphs(source, categories)
 
-        background_intensity.clear_cache()
-        self._set_mode("compare")
         with self.assertNoLogs("lca_core.engine", level="WARNING"):
-            compared = self.engine.contribution_graphs(source, categories)
-        self.assertEqual(compared, reference)
+            cached = self.engine.contribution_graphs(source, categories)
+        self.assert_results_close(cached, reference)
 
-    def test_on_mode_uses_cached_adjoint_without_request_factorization(self):
+    def test_cache_avoids_the_per_request_adjoint_factorization(self):
         source = (ROOT / "mock_examples/mock_storage_bin.yaml").read_text()
-        self._set_mode("off")
         base = self.engine.run_base(source)
         categories = list(base["lcia"])
-        reference = self.engine.contribution_graphs(source, categories)
+        reference = self._reference_graphs(source, categories)
 
-        background_intensity.clear_cache()
-        self._set_mode("on")
         with mock.patch.object(
             core_engine,
             "factorize_adjoint",
@@ -187,9 +178,8 @@ class BackgroundIntensityCacheTests(unittest.TestCase):
             cached = self.engine.contribution_graphs(source, categories)
         self.assert_results_close(cached, reference)
 
-    def test_on_mode_falls_back_once_then_stays_off_for_remaining_categories(self):
+    def test_cache_falls_back_once_then_stays_off_for_remaining_categories(self):
         source = (ROOT / "mock_examples/mock_storage_bin.yaml").read_text()
-        self._set_mode("on")
         base = self.engine.run_base(source)
         categories = list(base["lcia"])
 
@@ -208,7 +198,7 @@ class BackgroundIntensityCacheTests(unittest.TestCase):
 
         self.assertEqual(len(result["contribution_graphs"]), len(categories))
         self.assertEqual(assemble.call_count, 1)
-        self.assertEqual(background_intensity.effective_mode(), "off")
+        self.assertFalse(background_intensity.enabled())
         self.assertIn("forced cache failure", engine_logs.output[0])
         self.assertIn("forced cache failure", cache_logs.output[0])
 

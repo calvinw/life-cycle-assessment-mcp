@@ -5,7 +5,7 @@ discarded warm-up call, then seven recorded calls, phase instrumentation plus an
 outer perf_counter, all values reported in milliseconds.
 
 Usage:
-    LCA_BACKGROUND_INTENSITY_CACHE=off|on python scripts/benchmark_tier2_call1.py [--cold]
+    python scripts/benchmark_tier2_call1.py [--cold]
 
 ``--cold`` clears the intensity cache before every recorded sample, so each call
 pays for a fresh background solve per category instead of a warm lookup.
@@ -101,7 +101,7 @@ def main() -> int:
         }
 
     print(json.dumps({
-        "mode": background_intensity.configured_mode(),
+        "cache_enabled": background_intensity.enabled(),
         "cold": args.cold,
         "cold_category": args.cold_category,
         "workload": WORKLOAD,

@@ -1,23 +1,24 @@
-import os
 import pathlib
 import types
 import unittest
 from unittest.mock import Mock, patch
 
 import lca_engine
+from lca_core import background_intensity
 
 
 class ProductionStartupTests(unittest.TestCase):
     def setUp(self):
         self.original_ready = lca_engine._startup_databases_ready
-        self.cache_setting = patch.dict(
-            os.environ,
-            {"LCA_BACKGROUND_INTENSITY_CACHE": "off"},
-        )
-        self.cache_setting.start()
+        # Startup always warms the background intensity cache. These tests run
+        # against a fake `bd`, so stub the warm-up rather than let it fail and
+        # latch the cache off for every test that follows.
+        self.warm_patch = patch.object(background_intensity, "warm")
+        self.warm_patch.start()
 
     def tearDown(self):
-        self.cache_setting.stop()
+        self.warm_patch.stop()
+        background_intensity.clear_cache()
         lca_engine._startup_databases_ready = self.original_ready
 
     def test_fresh_projection_is_reused(self):

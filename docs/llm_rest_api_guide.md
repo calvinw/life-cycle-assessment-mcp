@@ -419,9 +419,10 @@ Response fields include:
 Report impact values with their returned units. Never infer or replace units.
 SVGs are not included; call `POST /api/lca/svg` independently when needed.
 
-`background_link_intensities` is optional and appears only when the server runs
-with its background intensity cache enabled (`LCA_BACKGROUND_INTENSITY_CACHE`
-set to `compare` or `on`). Treat its absence as normal and feature-detect it.
+`background_link_intensities` is optional. The server's background intensity
+cache is always on, so the field is normally present, but it is omitted when the
+cache cannot supply every requested category — for example after a runtime
+failure disables it. Treat its absence as normal and feature-detect it.
 `result_schema_version` remains `3` either way. Each entry carries the
 cumulative intensity of the background activity behind one foreground input, per
 calculated category, keyed by the `process_index` and `input_index` of the

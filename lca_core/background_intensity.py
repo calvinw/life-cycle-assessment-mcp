@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 import logging
-import os
 import sqlite3
 import threading
 from types import MappingProxyType
@@ -14,8 +13,6 @@ import numpy as np
 from scipy.sparse.linalg import splu
 
 
-CACHE_ENV_VAR = "LCA_BACKGROUND_INTENSITY_CACHE"
-CACHE_MODES = {"off", "compare", "on"}
 FOREGROUND_DB_PREFIX = "foreground_request_"
 LEGACY_FOREGROUND_DB = "foreground"
 
@@ -43,22 +40,14 @@ class _BackgroundEntry:
     y_by_method: dict[tuple, Mapping[int, float]] = field(default_factory=dict)
 
 
-def configured_mode() -> str:
-    value = os.environ.get(CACHE_ENV_VAR, "off").strip().lower()
-    if value not in CACHE_MODES:
-        _logger.error(
-            "Invalid %s=%r; background intensity cache remains off",
-            CACHE_ENV_VAR,
-            value,
-        )
-        return "off"
-    return value
+def enabled() -> bool:
+    """The cache is always on unless a failure tripped :func:`disable`.
 
-
-def effective_mode() -> str:
-    if _disabled_reason is not None:
-        return "off"
-    return configured_mode()
+    There is no configuration knob. ``disable`` is the one remaining way this
+    returns ``False``: it is a runtime safety valve, not a deployment mode, and
+    it makes callers fall back to solving the adjoint system directly.
+    """
+    return _disabled_reason is None
 
 
 def disable(reason: str) -> None:
@@ -78,8 +67,7 @@ def clear_cache() -> None:
 def cache_info() -> dict[str, Any]:
     with _cache_lock:
         return {
-            "mode": configured_mode(),
-            "effective_mode": effective_mode(),
+            "enabled": _disabled_reason is None,
             "disabled_reason": _disabled_reason,
             "entries": len(_entries),
             "methods": sum(len(entry.y_by_method) for entry in _entries.values()),

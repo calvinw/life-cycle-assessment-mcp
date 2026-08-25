@@ -19,7 +19,6 @@ amounts. Measured residuals across the bundled graphs run from ``1e-8`` to
 intensities are bit-identical to a full request-matrix adjoint solve.
 """
 
-import os
 import unittest
 
 from lca_core import LCAEngine
@@ -66,7 +65,6 @@ def foreground_direct_total(result: dict, label: str) -> float:
 class Tier2ProviderIntensityTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        os.environ[background_intensity.CACHE_ENV_VAR] = "on"
         background_intensity.clear_cache()
         cls.engine = LCAEngine()
         cls.engine.ensure_ready()
@@ -152,13 +150,13 @@ class Tier2ProviderIntensityTests(unittest.TestCase):
                 result = self.engine.run_base(source)
                 self.assertEqual(result["background_link_intensities"], [])
 
-    def test_field_is_absent_when_the_cache_is_off(self):
+    def test_field_is_absent_when_a_failure_disabled_the_cache(self):
         source, _ = load_spec(BACKGROUND_LINKED_PATHS[0])
-        os.environ[background_intensity.CACHE_ENV_VAR] = "off"
+        background_intensity.disable("forced for the test")
         try:
             result = self.engine.run_base(source)
         finally:
-            os.environ[background_intensity.CACHE_ENV_VAR] = "on"
+            background_intensity.clear_cache()
         self.assertNotIn("background_link_intensities", result)
 
 

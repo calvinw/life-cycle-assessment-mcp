@@ -53,7 +53,7 @@ class PerformanceInstrumentationTests(unittest.TestCase):
         self.assertNotIn(SENSITIVE_MARKER, output.output[0])
         self.assertNotIn("product_graph", output.output[0])
 
-    def test_contribution_records_adjoint_and_per_category_timings(self):
+    def test_contribution_records_cache_and_per_category_timings(self):
         base = core_engine._run_analysis(
             self.source,
             include_contribution_graphs=False,
@@ -76,7 +76,10 @@ class PerformanceInstrumentationTests(unittest.TestCase):
         record = self._record(output)
         self.assertEqual(record["operation"], "contribution")
         phases = record["phases"]
-        self.assertIn("adjoint_transpose_factorization", phases)
+        # The cache serves the cumulative intensities, so the request never
+        # pays for its own adjoint factorization while the cache is up.
+        self.assertIn("background_intensity_cache_per_category", phases)
+        self.assertNotIn("adjoint_transpose_factorization", phases)
         self.assertEqual(
             [
                 item["category"]
