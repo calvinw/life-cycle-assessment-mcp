@@ -26,8 +26,17 @@ CORS_MIDDLEWARE = [
             "http://localhost:5173",
         ],
         allow_credentials=False,
-        allow_methods=["GET", "POST", "OPTIONS"],
-        allow_headers=["Content-Type"],
+        # DELETE lets a browser client terminate its MCP session explicitly
+        # instead of leaving it to expire.
+        allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
+        # Mcp-Session-Id is needed in both directions: expose_headers lets
+        # JavaScript read the id that `initialize` returns, allow_headers lets
+        # the preflight pass so it can be sent back on every later request.
+        # Either one alone still leaves a browser client stuck after
+        # `initialize`. Mcp-Protocol-Version is sent by clients on MCP spec
+        # 2025-06-18 and later.
+        allow_headers=["Content-Type", "Mcp-Session-Id", "Mcp-Protocol-Version"],
+        expose_headers=["Mcp-Session-Id"],
     )
 ]
 
