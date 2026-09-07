@@ -1,5 +1,10 @@
 # Searching the LCA Background Database
 
+For the complete lifecycle and relationship between Brightway background
+databases, temporary product-graph foreground databases, the searchable SQLite
+projection, and in-memory caches, see
+[LCA database types and lifecycle](database_lifecycle.md).
+
 This guide explains how a searchable background database helps us build better
 Life Cycle Assessment (LCA) product graphs.
 

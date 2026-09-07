@@ -1,5 +1,8 @@
 # Python engine and MCP separation
 
+For a consolidated description of every persistent and temporary data store,
+see [LCA database types and lifecycle](database_lifecycle.md).
+
 The calculation engine is available as the installable `lca_core` Python
 package. It has no dependency on FastMCP, Starlette, FastAPI, or Uvicorn.
 `lca_server.py` is now an adapter: its MCP tools and HTTP routes call the same
