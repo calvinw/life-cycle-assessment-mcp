@@ -1,6 +1,65 @@
 # REST API
 
-The REST API exposes the same 15 domain operations as the MCP server. Use
+## Quick start
+
+Base URL: `https://lca-mcp.mathplosion.com` (or `http://localhost:9000`
+when running `python3 sse_server.py` locally with the default port).
+The server's REST routes require no API key or MCP session. Send POST bodies
+as JSON with `Content-Type: application/json`; responses are JSON too.
+
+These shell examples require `curl` and `jq`:
+
+```bash
+BASE_URL=https://lca-mcp.mathplosion.com
+
+# Check that the response says running: true.
+curl -sS --fail-with-body "$BASE_URL/api/health" | jq
+
+# Discover operations, required arguments, and defaults.
+curl -sS --fail-with-body "$BASE_URL/api/tools" | jq
+
+# Search background activities. Results are an array; key is [database, code].
+curl -sS --fail-with-body "$BASE_URL/api/database/search" \
+  -H 'Content-Type: application/json' \
+  -d '{"query":"cotton","database":"bafu","limit":5}' | jq
+```
+
+To calculate an example, fetch the product-graph catalog and send its default
+YAML document to the compact calculation endpoint:
+
+```bash
+curl -sS --fail-with-body "$BASE_URL/api/product-graphs" -o catalog.json
+jq -e '{product_graph: (.default_id as $id | .product_graphs[] |
+  select(.id == $id) | .product_graph)}' catalog.json > request.json
+
+curl -sS --fail-with-body "$BASE_URL/api/lca/base" \
+  -H 'Content-Type: application/json' \
+  --data-binary @request.json -o result.json
+jq '{result_id, lcia}' result.json
+```
+
+For your own YAML file, replace the catalog steps with:
+
+```bash
+jq -n --rawfile graph product.yaml '{product_graph: $graph}' > request.json
+```
+
+`product_graph` must be **YAML encoded as a JSON string**, not a nested JSON
+object. `jq` handles newlines and quoting. Each `lcia` entry returns a `score`
+and `unit`; only the categories requested in the YAML are calculated.
+
+Use `/api/lca/base` for compact results, `/api/lca/run` to also calculate
+configured contribution graphs, and `/api/lca/svg` for a diagram (JSON containing
+an `svg` string). Calculations are stateless: send the complete YAML each time.
+For failed POST requests, inspect the HTTP 400 body: `{"detail":"..."}`.
+
+Browser calls are subject to CORS. The HTTP entry point currently allows
+`https://calvinw.github.io` and `http://localhost:5173`; other frontend origins
+need to be added in `sse_server.py`.
+
+## Endpoint reference
+
+The REST API exposes the same 16 domain operations as the MCP server. Use
 `GET /api/tools` to discover each operation's description, JSON input schema,
 MCP output schema, and equivalent HTTP method and path.
 
@@ -26,6 +85,7 @@ curl -s https://lca-mcp.mathplosion.com/api/tools | jq
 | `list_case_studies` | `GET /api/case-studies` |
 | `get_case_study` | `GET /api/case-studies/{name}` |
 | `list_databases` | `GET /api/databases` |
+| `list_product_graphs` | `GET /api/product-graphs` |
 | `search_database` | `POST /api/database/search` |
 | `get_lca_activity_inputs` | `POST /api/database/activity-inputs` |
 | `list_impact_methods` | `GET /api/methods` |
