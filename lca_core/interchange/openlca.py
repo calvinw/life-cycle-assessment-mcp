@@ -23,6 +23,11 @@ from .bundle import PLURAL_KEYS, prepare_export_bundle
 from .errors import InterchangeError
 
 SCHEMA_VERSION = 2
+OPENLCA_MANIFESTS = {
+    "olca-schema.json": ("version", {SCHEMA_VERSION}),
+    "openlca.json": ("schemaVersion", {5}),
+}
+OPENLCA_MANIFEST_NAMES = frozenset(OPENLCA_MANIFESTS)
 DATASET_FOLDERS = {
     "model": ("product_systems", "ProductSystem"),
     "process": ("processes", "Process"),
@@ -348,22 +353,35 @@ def _read_openlca_zip(package: bytes) -> tuple[list[dict[str, Any]], list[dict[s
     with archive:
         infos = archive.infolist()
         names = {info.filename for info in infos}
-        if "olca-schema.json" not in names:
+        manifest_name = next(
+            (name for name in OPENLCA_MANIFESTS if name in names), None
+        )
+        if manifest_name is None:
             raise InterchangeError(
                 "MISSING_OPENLCA_MANIFEST",
-                "The ZIP does not contain olca-schema.json at its root.",
+                "The ZIP does not contain olca-schema.json or openlca.json at its root.",
                 status_code=400,
             )
-        manifest = _read_json_member(archive, "olca-schema.json")
-        if manifest.get("version") != SCHEMA_VERSION:
+        manifest = _read_json_member(archive, manifest_name)
+        version_field, supported_versions = OPENLCA_MANIFESTS[manifest_name]
+        version = manifest.get(version_field)
+        if version not in supported_versions:
             raise InterchangeError(
                 "UNSUPPORTED_OPENLCA_VERSION",
-                f"Only openLCA schema package version {SCHEMA_VERSION} is supported.",
-                details={"version": manifest.get("version")},
+                f"Unsupported openLCA schema package version in {manifest_name}.",
+                details={
+                    "manifest": manifest_name,
+                    "version": version,
+                    "supported_versions": sorted(supported_versions),
+                },
                 status_code=400,
             )
         for info in infos:
-            if info.is_dir() or info.filename == "olca-schema.json" or not info.filename.endswith(".json"):
+            if (
+                info.is_dir()
+                or info.filename in OPENLCA_MANIFEST_NAMES
+                or not info.filename.endswith(".json")
+            ):
                 continue
             parts = info.filename.split("/")
             if len(parts) != 2 or parts[0] not in FOLDER_DATASETS:

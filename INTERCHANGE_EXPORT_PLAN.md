@@ -31,7 +31,7 @@ contract.
 | ILCD core serializer | Not implemented |
 | Export HTTP endpoint | Not implemented |
 | PRISM Export UI/download | Not implemented |
-| Desktop acceptance tests | Not completed for generated exports |
+| Desktop acceptance tests | Both formats passed openLCA 2.6.2 with documented factor normalization |
 
 The openLCA baseline is useful but is not yet a complete user feature. It has no
 HTTP delivery path or frontend download action, and it has not yet passed the
@@ -238,7 +238,7 @@ fixture fails before either serializer runs.
 
 ### Step E2 - Complete and harden openLCA export
 
-Status: complete for automated engine tests; Desktop acceptance remains in E6.
+Status: complete for automated engine tests and openLCA 2.6.2 acceptance.
 
 - Route the current `export_openlca()` through E1 validation.
 - Add multi-Process graph, all-seven-types, invalid-bundle, and deterministic
@@ -253,7 +253,7 @@ current one-Process fixture.
 
 Status: complete for the supported semantic subset. The lifecycle-model output
 passes the official eILCD 2.1.1 XSD; the six ILCD 1.1 dataset schemas and
-Desktop acceptance remain in E6.
+Desktop acceptance completed in E6 with documented factor normalization.
 
 - Implement the seven XML serializers in the order listed above.
 - Reconstruct ILCD lifecycle-model nested connections from PRISM's flat Model
@@ -297,12 +297,14 @@ refreshing or rebuilding the workspace.
 
 ### Step E6 - Desktop and end-to-end acceptance
 
-Status: in progress. ILCD/eILCD passed manual openLCA 2.6.2 import and
-Desktop re-export acceptance on 2026-09-15: all seven supported dataset types,
-Process exchanges, and the two-Process graph connection survived the round
-trip with no warnings or errors. openLCA normalized Process-instance
-`multiplicationFactor` values to `0.0`, as documented in the ILCD export
-contract. JSON-LD Desktop acceptance and the deployed frontend pass remain.
+Status: Desktop acceptance complete; deployed frontend pass remains.
+ILCD/eILCD and JSON-LD both passed manual openLCA 2.6.2 import and Desktop
+re-export acceptance on 2026-09-15: all seven supported dataset types, Process
+exchanges, and the two-Process graph connection survived. openLCA normalized
+Process-instance `multiplicationFactor` values to `0.0` for ILCD and `1.0` for
+JSON-LD, as documented in the interchange contracts. Desktop JSON-LD schema
+version 5 uses `openlca.json`; the importer accepts it alongside the engine's
+schema-version-2 `olca-schema.json` manifest.
 
 For each format:
 

@@ -239,6 +239,22 @@ class OpenLcaInterchangeTests(unittest.TestCase):
         preview = preview_interchange(export_openlca(self.bundle))
         self.assertEqual(preview["format"], "openlca-json-ld")
 
+    def test_dispatch_accepts_openlca_desktop_schema_five_manifest(self):
+        exported = export_openlca(self.bundle)
+        output = io.BytesIO()
+        with zipfile.ZipFile(io.BytesIO(exported)) as source, zipfile.ZipFile(
+            output, "w"
+        ) as target:
+            target.writestr("openlca.json", '{"schemaVersion":5}')
+            for info in source.infolist():
+                if info.filename != "olca-schema.json":
+                    target.writestr(info, source.read(info.filename))
+
+        preview = preview_interchange(output.getvalue())
+
+        self.assertEqual(preview["format"], "openlca-json-ld")
+        self.assertEqual(preview["summary"]["model"], 1)
+
     def test_export_rejects_missing_reference_closure(self):
         self.bundle["flow_properties"] = []
         with self.assertRaises(InterchangeError) as raised:
