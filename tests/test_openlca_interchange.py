@@ -4,7 +4,12 @@ import unittest
 import uuid
 import zipfile
 
-from lca_core.interchange import InterchangeError, export_openlca, preview_openlca
+from lca_core.interchange import (
+    InterchangeError,
+    export_openlca,
+    preview_interchange,
+    preview_openlca,
+)
 
 
 def _id() -> str:
@@ -229,6 +234,10 @@ class OpenLcaInterchangeTests(unittest.TestCase):
         for plural in self.bundle.values():
             for original in plural:
                 self.assertEqual(imported[original["id"]]["payload"], original["payload"])
+
+    def test_dispatch_detects_openlca_json_ld(self):
+        preview = preview_interchange(export_openlca(self.bundle))
+        self.assertEqual(preview["format"], "openlca-json-ld")
 
     def test_export_rejects_missing_reference_closure(self):
         self.bundle["flow_properties"] = []

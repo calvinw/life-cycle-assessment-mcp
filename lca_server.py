@@ -53,8 +53,8 @@ from starlette.responses import JSONResponse, Response
 from fastmcp import FastMCP
 
 from lca_core import ContributionBatchResult, LCAEngine, LcaCoreResult
-from lca_core.interchange import InterchangeError, preview_openlca
-from lca_core.interchange.openlca import MAX_PACKAGE_BYTES
+from lca_core.interchange import InterchangeError, preview_interchange
+from lca_core.interchange.archive import MAX_PACKAGE_BYTES
 
 mcp = FastMCP("Life Cycle Assessment MCP")
 engine = LCAEngine()
@@ -615,22 +615,43 @@ async def api_get_unit_process_svg(request: Request) -> Response:
 
 @mcp.custom_route("/api/interchange/import/openlca", methods=["POST"])
 async def api_import_openlca(request: Request) -> Response:
-    """Raw ZIP bytes in, PRISM preview JSON out.
+    """Raw openLCA JSON-LD or ILCD ZIP bytes in, PRISM preview JSON out.
 
     Rejects an oversized upload by its declared Content-Length before
-    reading the body, so a large upload cannot be buffered into memory just
-    to be rejected. This still accepts the raw request body instead of
-    multipart/form-data until concurrency limits and timeouts are added.
+    reading the body and also enforces the limit while streaming when that
+    header is absent or inaccurate. This still accepts the raw request body
+    instead of multipart/form-data until concurrency limits and timeouts are
+    added.
     """
     content_length = request.headers.get("content-length")
-    if content_length is not None and int(content_length) > MAX_PACKAGE_BYTES:
+    try:
+        declared_length = int(content_length) if content_length is not None else None
+    except ValueError:
+        return JSONResponse(
+            InterchangeError(
+                "INVALID_CONTENT_LENGTH",
+                "Content-Length must be a non-negative integer.",
+                status_code=400,
+            ).response_body(),
+            status_code=400,
+        )
+    if declared_length is not None and declared_length < 0:
+        return JSONResponse(
+            InterchangeError(
+                "INVALID_CONTENT_LENGTH",
+                "Content-Length must be a non-negative integer.",
+                status_code=400,
+            ).response_body(),
+            status_code=400,
+        )
+    if declared_length is not None and declared_length > MAX_PACKAGE_BYTES:
         return JSONResponse(
             {
                 "error": {
                     "code": "PACKAGE_TOO_LARGE",
                     "message": "The compressed package exceeds the 25 MB limit.",
                     "details": {
-                        "compressed_bytes": int(content_length),
+                        "compressed_bytes": declared_length,
                         "limit_bytes": MAX_PACKAGE_BYTES,
                     },
                 }
@@ -638,12 +659,32 @@ async def api_import_openlca(request: Request) -> Response:
             status_code=413,
         )
     try:
-        package = await request.body()
-        return JSONResponse(preview_openlca(package))
+        package = bytearray()
+        async for chunk in request.stream():
+            package.extend(chunk)
+            if len(package) > MAX_PACKAGE_BYTES:
+                raise InterchangeError(
+                    "PACKAGE_TOO_LARGE",
+                    "The compressed package exceeds the 25 MB limit.",
+                    details={
+                        "compressed_bytes": len(package),
+                        "limit_bytes": MAX_PACKAGE_BYTES,
+                    },
+                    status_code=413,
+                )
+        return JSONResponse(preview_interchange(bytes(package)))
     except InterchangeError as exc:
         return JSONResponse(exc.response_body(), status_code=exc.status_code)
-    except Exception as exc:
-        return JSONResponse({"detail": str(exc)}, status_code=400)
+    except Exception:
+        logging.exception("Unexpected interchange import failure")
+        return JSONResponse(
+            InterchangeError(
+                "IMPORT_FAILED",
+                "The package could not be imported.",
+                status_code=400,
+            ).response_body(),
+            status_code=400,
+        )
 
 
 # ── Entry point (stdio) ───────────────────────────────────────────────────────
