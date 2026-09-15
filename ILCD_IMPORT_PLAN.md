@@ -8,8 +8,8 @@ Last updated: 2026-09-15
 
 ## Status
 
-Batch A is complete. Batches B–D are not started; no converter code exists
-yet.
+Batches A–D are implemented and verified locally. Production deployment is
+still pending alongside the original openLCA JSON-LD route deployment.
 
 A real sample package (`tests/fixtures/ilcd_plastic_broom.zip`, an
 openLCA-Desktop ILCD export of a mock product system, originally provided as
@@ -21,9 +21,9 @@ that real file, not speculation.
 | Batch | Scope | Depends on | Status |
 | --- | --- | --- | --- |
 | A | Format detection, field mapping, contract doc | Nothing new | Complete |
-| B | Core ILCD XML → PRISM converter | A | Not started |
-| C | Wire into the existing HTTP route (no new route) | B | Not started |
-| D | Real-world hardening (missing folders, warnings, tests) | C | Not started |
+| B | Core ILCD XML → PRISM converter | A | Complete |
+| C | Wire into the existing HTTP route (no new route) | B | Complete locally; production pending |
+| D | Real-world hardening (missing folders, warnings, tests) | C | Complete for the current contract |
 
 ### Work completed (Batch A)
 
@@ -33,8 +33,27 @@ that real file, not speculation.
   required-vs-warning reference boundary (deliberately narrower than the
   openLCA JSON-LD contract's, justified by a gap found in the real sample),
   and the Model/graph flattening rule.
-- No code yet — Batch B starts the actual `lca_core/interchange/ilcd.py`
-  module.
+- At the completion of Batch A there was no converter code; implementation
+  began in Batch B.
+
+### Work completed (Batches B–D)
+
+- Added `lca_core/interchange/ilcd.py` for all seven PRISM dataset types.
+- Added shared archive validation in `lca_core/interchange/archive.py`; both
+  import formats use the same size, entry-count, traversal, and symlink checks.
+- Added format detection and dispatch while retaining the existing
+  `/api/interchange/import/openlca` route and flat response shape.
+- Added explicit support for manifestless hybrid openLCA exports containing
+  both `ILCD/*.xml` and openLCA-shaped JSON folders; the ILCD representation is
+  imported with a stable warning.
+- Converted the real fixture at its expected counts and flattened all four
+  lifecycle-model connections.
+- Added focused tests for malformed/unsafe XML, missing and invalid UUIDs,
+  duplicates, unsupported layouts, missing optional folders, hard Model
+  reference failures, warning-only secondary references, and the three dataset
+  types absent from the real fixture.
+- Added HTTP tests for ILCD import, early `413`, malformed `Content-Length`,
+  stable errors, and non-leaking unexpected failures.
 
 Rough estimate: comparable to the openLCA JSON-LD core converter itself
 (6–14 hours per that plan's estimate for Batches 1–2), not to the small
@@ -190,7 +209,7 @@ draws.
   | `source` | `sources/` | `sourceDataSet` |
   | `contact` | `contacts/` | `contactDataSet` |
 
-### Batch B: core converter
+### Batch B: core converter — complete
 
 - Add `lca_core/interchange/ilcd.py` (new module, mirrors `openlca.py`'s shape: a `preview_ilcd(package: bytes) -> dict` returning the exact same response shape `preview_openlca` returns).
 - XML parsing: namespace-aware (`xml.etree.ElementTree` with an explicit namespace map, or `lxml` if already a dependency — check before adding a new one).
@@ -200,12 +219,12 @@ draws.
 - Model/graph conversion last — flatten `lifecyclemodels`' nested `processInstance/connections/outputExchange/downstreamProcess` into PRISM's flat connection list.
 - Tests against `tests/fixtures/ilcd_plastic_broom.zip`: expected counts (6 flows, 4 processes, 4 unit groups, 1 model, 0 flow properties/sources/contacts, 2 ignored `lciamethods` with warnings).
 
-### Batch C: dispatch, no new route
+### Batch C: dispatch, no new route — complete locally
 
 - In the existing `/api/interchange/import/openlca` handler (or a shared helper both formats call), sniff the ZIP and call `preview_openlca` or `preview_ilcd` accordingly.
 - Confirm the frontend needs no changes by testing `tests/fixtures/ilcd_plastic_broom.zip` through the real running route and the real deployed frontend (once Batch A/B of this plan and the pending openLCA deploy are both live).
 
-### Batch D: hardening
+### Batch D: hardening — complete for the current contract
 
 - Warnings for `lciamethods/` and any other unmapped ILCD dataset type, matching the openLCA plan's treatment of Impact Methods/Currencies/etc.
 - Tests for a package missing optional folders entirely (already true of the real sample — make sure this doesn't regress).

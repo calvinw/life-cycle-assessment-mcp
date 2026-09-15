@@ -1,4 +1,4 @@
-# PRISM Frontend: openLCA Import — Handoff Plan
+# PRISM Frontend: openLCA and ILCD Import — Handoff Plan
 
 For whoever picks up the PRISM webapp side of the openLCA import feature.
 The backend (this repo, `calvinw/life-cycle-assessment-mcp`) already has a
@@ -10,9 +10,11 @@ Last updated: 2026-09-15
 
 ## What already works today
 
-A user's openLCA JSON-LD ZIP can be uploaded to the engine and converted into
-PRISM-shaped datasets. This has been verified against a running local server:
-CORS, the size limit, and the conversion itself all behave correctly.
+A user's openLCA JSON-LD or ILCD/eILCD ZIP can be uploaded to the engine and
+converted into PRISM-shaped datasets through the same endpoint. This has been
+verified against a running local server: CORS, the size limit, format dispatch,
+and conversion all behave correctly. ILCD has also been verified against a real
+openLCA Desktop export.
 
 **PRISM's production origin (`https://catiehe.github.io`) and local dev
 (`http://localhost:5173`) are already on the engine's CORS allowlist.** You
@@ -26,8 +28,10 @@ POST /api/interchange/import/openlca
 ```
 
 - Local dev: `http://localhost:9000/api/interchange/import/openlca` (default
-  port for `sse_server.py`; ask the backend owner for the current deployed
-  URL, e.g. `https://lca-mcp.mathplosion.com/...`, for a staging/production test).
+  port for `sse_server.py`). The verified deployed host is currently
+  `https://lca.mathplosion.com`; the older documented
+  `https://lca-mcp.mathplosion.com` entry still points at the previous server
+  version and should not be used until its reverse proxy is updated.
 - **Body: the raw ZIP file bytes.** Not `multipart/form-data` yet — that's
   planned but not built. Send the file directly as the request body:
 
@@ -81,8 +85,9 @@ POST /api/interchange/import/openlca
 2. **No multipart yet.** If the backend later switches to
    `multipart/form-data`, you'll change the `fetch` body from raw bytes to a
    `FormData` with a `file` field. Same isolation advice applies.
-2. **No real openLCA Desktop package has been tested yet**, only
-   engine-generated ones. Don't be surprised if a real Desktop export
+2. **No real openLCA Desktop JSON-LD package has been tested yet**, only
+   engine-generated JSON-LD packages. A real Desktop ILCD package is covered by
+   backend tests. Don't be surprised if another Desktop export
    surfaces a new warning/error code the backend hasn't seen before — treat
    the `warnings`/`errors` arrays as things you must render, not edge cases
    you can ignore.

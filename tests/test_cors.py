@@ -7,6 +7,7 @@ from starlette.testclient import TestClient
 
 
 APPROVED_ORIGIN = "https://calvinw.github.io"
+PRISM_ORIGIN = "https://catiehe.github.io"
 UNAPPROVED_ORIGIN = "https://example.com"
 PREFLIGHT_HEADERS = {
     "Origin": APPROVED_ORIGIN,
@@ -46,6 +47,18 @@ class CorsTests(unittest.TestCase):
         self.assertIn(
             "content-type",
             response.headers.get("access-control-allow-headers", "").lower(),
+        )
+
+    def test_prism_preflight_is_allowed_on_import_route(self):
+        headers = {**PREFLIGHT_HEADERS, "Origin": PRISM_ORIGIN}
+        with TestClient(self.app) as client:
+            response = client.options(
+                "/api/interchange/import/openlca", headers=headers
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.headers.get("access-control-allow-origin"), PRISM_ORIGIN
         )
 
     def test_mcp_session_id_preflight_is_allowed(self):

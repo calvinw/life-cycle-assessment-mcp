@@ -24,6 +24,11 @@ a top-level "ILCD/" directory            → ILCD reader
 neither                                  → UNSUPPORTED_PACKAGE_FORMAT (400)
 ```
 
+Some openLCA exports are hybrid archives: they contain both `ILCD/*.xml` and
+openLCA-shaped JSON entity folders, but no root `olca-schema.json`. These are
+handled as ILCD packages and produce a `HYBRID_ILCD_OPENLCA_PACKAGE` warning.
+The explicit manifest continues to take precedence when it is present.
+
 Both readers return the exact same response shape. The route name stays
 `.../openlca` for backward compatibility with the already-deployed frontend
 call; it is not renamed even though it now accepts a second format.
