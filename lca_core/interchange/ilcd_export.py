@@ -149,7 +149,7 @@ def _source(
     data = _sub(information, ns, "dataSetInformation")
     _value(data, COMMON_NS, "UUID", row["id"])
     info = _dig(payload, "sourceInformation", "dataSetInformation") or {}
-    _lang(data, ns, "shortName", info.get("shortName") or row["name"])
+    _lang(data, COMMON_NS, "shortName", info.get("shortName") or row["name"])
     _classification(data, ns, payload, "sourceInformation")
     _value(data, ns, "sourceCitation", info.get("sourceCitation"))
     _value(data, ns, "publicationType", info.get("publicationType"))
@@ -167,8 +167,8 @@ def _contact(
     data = _sub(information, ns, "dataSetInformation")
     _value(data, COMMON_NS, "UUID", row["id"])
     info = _dig(payload, "contactInformation", "dataSetInformation") or {}
-    _lang(data, ns, "shortName", info.get("shortName") or row["name"])
-    _lang(data, ns, "name", info.get("name") or row["name"])
+    _lang(data, COMMON_NS, "shortName", info.get("shortName") or row["name"])
+    _lang(data, COMMON_NS, "name", info.get("name") or row["name"])
     _classification(data, ns, payload, "contactInformation")
     for source, target in (
         ("email", "email"),
@@ -179,7 +179,12 @@ def _contact(
     ):
         _value(data, ns, target, info.get(source))
     _comments(data, ns, "centralContactPoint", info.get("centralContactPoint"))
-    _comments(data, COMMON_NS, "generalComment", info.get("generalComment") or row.get("description"))
+    _comments(
+        data,
+        ns,
+        "contactDescriptionOrComment",
+        info.get("generalComment") or row.get("description"),
+    )
     _admin(root, ns, payload)
 
 
