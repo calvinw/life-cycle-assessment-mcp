@@ -22,8 +22,8 @@ has yet manually curled a running server or opened a generated file in
 openLCA Desktop. Treat this as "engine logic is solid" rather than "this has
 shipped to a real user."
 
-**This export work is not merged to `main` yet and is not deployed anywhere**
-(it's uncommitted on the `catie-import-feature` branch as of this writing).
+**This export work is committed on `catie-import-feature`, but is not merged
+to `main` yet and is not deployed anywhere.**
 Don't point any frontend build at a production URL for this feature until the
 backend owner confirms it's merged and deployed — check with them first, the
 same way the import feature was gated on Calvin's approval.

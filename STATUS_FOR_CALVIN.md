@@ -1,4 +1,4 @@
-# openLCA JSON-LD and ILCD Import — Status & Approval Request
+# openLCA/ILCD Import and Export — Status & Approval Request
 
 ## Goal
 Let a PRISM user upload an openLCA JSON-LD or ILCD/eILCD ZIP and see it loaded
@@ -32,10 +32,10 @@ branch.
 - No request timeout or concurrency limit on the import route yet.
 - Frontend doesn't wire into a calculation flow (this webapp has no calculation engine to call yet — separate future feature).
 
-## The blocker: production deployment
-The first openLCA JSON-LD release is on `main` and is deployed successfully at
-`https://lca.mathplosion.com`: the route, CORS, and a real import request all
-pass. The ILCD extension remains on `catie-import-feature` pending review.
+## The blocker: export review and production deployment
+The openLCA JSON-LD and ILCD/hybrid import work is now on `main`. The
+dual-format export endpoint remains on `catie-import-feature` pending review
+and has not been deployed.
 
 **The documented frontend API host (`https://lca-mcp.mathplosion.com`) is still
 running the old code**, while the deployment script targets
@@ -47,8 +47,10 @@ CORS preflight from catiehe.github.io →  rejected, no allow-origin header
 ```
 
 ## Ask
-1. Review and approve the ILCD commit on `catie-import-feature`.
-2. Merge and deploy it using the existing deployment script.
+1. Review and approve the dual-format export commit on
+   `catie-import-feature`.
+2. Merge and deploy it using the existing deployment script after openLCA
+   Desktop acceptance testing.
 3. Point the PRISM frontend at `https://lca.mathplosion.com`, or update the
    `lca-mcp.mathplosion.com` reverse proxy to serve the same deployment.
 
