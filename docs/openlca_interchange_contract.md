@@ -27,8 +27,10 @@ Each batch is independently reviewable and keeps conversion rules under
 | `source` | `Source` | `sources/` |
 | `contact` | `Actor` | `actors/` |
 
-The ZIP root contains `olca-schema.json` with `{"version": 2}`. Every dataset
-file is named `<uuid>.json` and contains a matching `@id`.
+The exporter writes `olca-schema.json` with `{"version": 2}` at the ZIP root.
+Import also accepts the `openlca.json` manifest with `{"schemaVersion": 5}`
+written by openLCA Desktop 2.6.2. Every dataset file is named `<uuid>.json`
+and contains a matching `@id`.
 
 ## Export request
 
@@ -65,6 +67,14 @@ payload and a hash of the standard openLCA fields. A package that returns
 unchanged can recover the full PRISM representation. If an openLCA user edits
 the standard fields, import ignores the stale extension and rebuilds the PRISM
 payload from those edited fields.
+
+Manual openLCA 2.6.2 round-trip acceptance confirmed that Desktop preserves
+the supported Product System graph and all seven dataset types. Desktop
+normalizes arbitrary Process-instance multiplication factors (observed from
+`1`/`2` to `1`/`1` in JSON-LD), so exact factor preservation is not promised
+after Desktop rewrites a package. A Desktop rewrite also invalidates the
+private extension hash; import reports `STALE_PRISM_EXTENSION` and safely
+rebuilds the payload from the standard openLCA fields.
 
 ## Import preview
 

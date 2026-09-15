@@ -20,9 +20,10 @@ formats, multi-Process graphs, and atomic validation failures. Both formats
 have also passed a real local HTTP export followed by HTTP re-import with all
 seven dataset types, no warnings, and no errors. The ILCD/eILCD package passed
 manual openLCA 2.6.2 import and Desktop re-export acceptance with all seven
-supported dataset types and the Process graph connection intact. openLCA
-normalized Process-instance multiplication factors to `0.0`, which is recorded
-in `docs/ilcd_export_contract.md`. JSON-LD Desktop acceptance is still pending.
+supported dataset types and the Process graph connection intact. JSON-LD also
+passed openLCA 2.6.2 import and Desktop re-export acceptance. openLCA normalized
+Process-instance multiplication factors to `0.0` in ILCD and `1.0` in JSON-LD;
+these target-format limitations are recorded in the interchange contracts.
 
 **This export work is committed on `catie-import-feature`, but is not merged
 to `main` yet and is not deployed anywhere.**
