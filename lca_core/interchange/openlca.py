@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import copy
 import hashlib
-import io
 import json
 import math
 import posixpath
@@ -19,12 +18,8 @@ import zipfile
 from collections.abc import Iterable
 from typing import Any
 
-from .archive import (
-    MAX_ENTRIES,
-    MAX_EXPANDED_BYTES,
-    MAX_PACKAGE_BYTES,
-    open_safe_zip,
-)
+from .archive import open_safe_zip, write_deterministic_zip
+from .bundle import PLURAL_KEYS, prepare_export_bundle
 from .errors import InterchangeError
 
 SCHEMA_VERSION = 2
@@ -39,16 +34,6 @@ DATASET_FOLDERS = {
 }
 FOLDER_DATASETS = {folder: kind for kind, (folder, _) in DATASET_FOLDERS.items()}
 TYPE_DATASETS = {olca_type: kind for kind, (_, olca_type) in DATASET_FOLDERS.items()}
-PLURAL_KEYS = {
-    "model": "models",
-    "process": "processes",
-    "flow": "flows",
-    "flow_property": "flow_properties",
-    "unit_group": "unit_groups",
-    "source": "sources",
-    "contact": "contacts",
-}
-
 _PRISM_EXTENSION = "prismInterchange"
 _UNIT_NAMESPACE = uuid.UUID("52b65d41-e0dd-4e16-bd40-ed572ea24547")
 _UUID_RE = re.compile(
@@ -57,10 +42,10 @@ _UUID_RE = re.compile(
 )
 
 
-def export_openlca(bundle: dict[str, Any]) -> bytes:
+def export_openlca(bundle: dict[str, Any], model_id: str | None = None) -> bytes:
     """Convert a complete PRISM dataset bundle to an openLCA JSON-LD ZIP."""
-    records = _read_bundle(bundle)
-    _validate_prism_references(records)
+    prepared = prepare_export_bundle(bundle, model_id)
+    records = [row for plural in PLURAL_KEYS.values() for row in prepared[plural]]
     by_id = {row["id"]: row for row in records}
 
     entries: dict[str, bytes] = {
@@ -77,7 +62,7 @@ def export_openlca(bundle: dict[str, Any]) -> bytes:
         folder = DATASET_FOLDERS[row["type"]][0]
         entries[f"{folder}/{row['id']}.json"] = _json_bytes(entity)
 
-    return _write_zip(entries)
+    return write_deterministic_zip(entries)
 
 
 def preview_openlca(
@@ -121,123 +106,6 @@ def preview_openlca(
         "warnings": warnings,
         "errors": [],
     }
-
-
-def _read_bundle(bundle: dict[str, Any]) -> list[dict[str, Any]]:
-    if not isinstance(bundle, dict):
-        raise InterchangeError(
-            "MALFORMED_BUNDLE", "The export request must be a JSON object.", status_code=400
-        )
-    records: list[dict[str, Any]] = []
-    seen: set[str] = set()
-    for kind, plural in PLURAL_KEYS.items():
-        values = bundle.get(plural, [])
-        if not isinstance(values, list):
-            raise InterchangeError(
-                "MALFORMED_BUNDLE",
-                f"'{plural}' must be an array.",
-                details={"field": plural},
-                status_code=400,
-            )
-        for index, raw in enumerate(values):
-            if not isinstance(raw, dict):
-                raise InterchangeError(
-                    "MALFORMED_DATASET",
-                    f"{plural}[{index}] must be an object.",
-                    status_code=400,
-                )
-            row = copy.deepcopy(raw)
-            row_id = row.get("id")
-            if not isinstance(row_id, str) or not _UUID_RE.match(row_id):
-                raise InterchangeError(
-                    "INVALID_DATASET_ID",
-                    f"{plural}[{index}] must have a UUID id.",
-                    details={"field": f"{plural}[{index}].id"},
-                )
-            if row_id in seen:
-                raise InterchangeError(
-                    "DUPLICATE_DATASET_ID",
-                    f"Dataset id '{row_id}' occurs more than once.",
-                    details={"dataset_id": row_id},
-                )
-            seen.add(row_id)
-            if row.get("type", kind) != kind:
-                raise InterchangeError(
-                    "DATASET_TYPE_MISMATCH",
-                    f"Dataset '{row_id}' is in '{plural}' but has type '{row.get('type')}'.",
-                    details={"dataset_id": row_id, "expected_type": kind},
-                )
-            if not isinstance(row.get("name"), str) or not row["name"].strip():
-                raise InterchangeError(
-                    "MISSING_DATASET_NAME",
-                    f"Dataset '{row_id}' must have a name.",
-                    details={"dataset_id": row_id},
-                )
-            if not isinstance(row.get("payload", {}), dict):
-                raise InterchangeError(
-                    "INVALID_DATASET_PAYLOAD",
-                    f"Dataset '{row_id}' payload must be an object.",
-                    details={"dataset_id": row_id},
-                )
-            row["type"] = kind
-            row.setdefault("description", None)
-            row.setdefault("payload", {})
-            records.append(row)
-    if not records:
-        raise InterchangeError("EMPTY_BUNDLE", "The export bundle contains no datasets.")
-    return records
-
-
-def _validate_prism_references(records: list[dict[str, Any]]) -> None:
-    by_id = {row["id"]: row for row in records}
-
-    def require(reference: Any, expected: str, owner: str, path: str) -> None:
-        if not isinstance(reference, dict):
-            return
-        target_id = reference.get("refObjectId")
-        if target_id is None:
-            return
-        target = by_id.get(target_id)
-        if target is None or target["type"] != expected:
-            raise InterchangeError(
-                "UNRESOLVED_DATASET_REFERENCE",
-                f"Dataset '{owner}' has an unresolved {expected} reference.",
-                details={"dataset_id": owner, "reference_id": target_id, "path": path},
-            )
-
-    for row in records:
-        payload = row["payload"]
-        if row["type"] == "process":
-            for index, exchange in enumerate(payload.get("exchanges", [])):
-                require(
-                    exchange.get("referenceToFlowDataSet"),
-                    "flow",
-                    row["id"],
-                    f"exchanges[{index}].referenceToFlowDataSet",
-                )
-        elif row["type"] == "flow":
-            for index, factor in enumerate(payload.get("flowProperties", [])):
-                require(
-                    factor.get("referenceToFlowPropertyDataSet"),
-                    "flow_property",
-                    row["id"],
-                    f"flowProperties[{index}].referenceToFlowPropertyDataSet",
-                )
-        elif row["type"] == "flow_property":
-            require(
-                _dig(payload, "flowPropertiesInformation", "quantitativeReference", "referenceToReferenceUnitGroup"),
-                "unit_group",
-                row["id"],
-                "flowPropertiesInformation.quantitativeReference.referenceToReferenceUnitGroup",
-            )
-        elif row["type"] == "model":
-            for index, instance in enumerate(payload.get("processInstances", [])):
-                require(
-                    instance.get("referenceToProcess"),
-                    "process",
-                    row["id"],
-                    f"processInstances[{index}].referenceToProcess",
-                )
 
 
 def _to_openlca(row: dict[str, Any], by_id: dict[str, dict[str, Any]]) -> dict[str, Any]:
@@ -792,17 +660,6 @@ def _read_json_member(archive: zipfile.ZipFile, name: str) -> dict[str, Any]:
     if not isinstance(value, dict):
         raise InterchangeError("INVALID_OPENLCA_JSON", f"'{name}' must contain a JSON object.", details={"path": name}, status_code=400)
     return value
-
-
-def _write_zip(entries: dict[str, bytes]) -> bytes:
-    output = io.BytesIO()
-    with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
-        for name in sorted(entries):
-            info = zipfile.ZipInfo(name, date_time=(1980, 1, 1, 0, 0, 0))
-            info.compress_type = zipfile.ZIP_DEFLATED
-            info.external_attr = 0o100644 << 16
-            archive.writestr(info, entries[name])
-    return output.getvalue()
 
 
 def _json_bytes(value: dict[str, Any]) -> bytes:

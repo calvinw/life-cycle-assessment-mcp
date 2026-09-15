@@ -4,8 +4,9 @@
 
 Base URL: `https://lca-mcp.mathplosion.com` (or `http://localhost:9000`
 when running `python3 sse_server.py` locally with the default port).
-The server's REST routes require no API key or MCP session. Send POST bodies
-as JSON with `Content-Type: application/json`; responses are JSON too.
+The server's REST routes require no API key or MCP session. Most POST bodies
+and responses are JSON. Interchange import accepts ZIP bytes and export returns
+ZIP bytes as documented below.
 
 These shell examples require `curl` and `jq`:
 
@@ -54,8 +55,36 @@ an `svg` string). Calculations are stateless: send the complete YAML each time.
 For failed POST requests, inspect the HTTP 400 body: `{"detail":"..."}`.
 
 Browser calls are subject to CORS. The HTTP entry point currently allows
-`https://calvinw.github.io` and `http://localhost:5173`; other frontend origins
-need to be added in `sse_server.py`.
+`https://calvinw.github.io`, `https://catiehe.github.io`, and
+`http://localhost:5173`; other frontend origins need to be added in
+`sse_server.py`.
+
+## Interchange export
+
+`POST /api/interchange/export` accepts a PRISM workspace bundle and returns a
+downloadable openLCA JSON-LD or ILCD/eILCD ZIP. The request is:
+
+```json
+{
+  "format": "openlca-json-ld",
+  "model_id": "optional-model-uuid",
+  "datasets": {
+    "models": [],
+    "processes": [],
+    "flows": [],
+    "flow_properties": [],
+    "unit_groups": [],
+    "sources": [],
+    "contacts": []
+  }
+}
+```
+
+Set `format` to `openlca-json-ld` or `ilcd-xml`. When `model_id` is present,
+the server exports only that Model and its complete transitive dependencies.
+A successful response has `Content-Type: application/zip` and a
+`Content-Disposition` download filename. Validation failures use the stable
+`{"error":{"code","message","details"}}` interchange error envelope.
 
 ## Endpoint reference
 

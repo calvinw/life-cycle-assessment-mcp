@@ -34,6 +34,7 @@ REST API (via @mcp.custom_route):
     POST /api/lca/svg/bafu
     POST /api/lca/svg/unit-process
     POST /api/interchange/import/openlca
+    POST /api/interchange/export
 
 Run via HTTP (for Claude.ai / cloudflared):
     python3 sse_server.py
@@ -48,12 +49,16 @@ import pathlib
 import time
 
 import yaml
+from fastmcp import FastMCP
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
-from fastmcp import FastMCP
 
-from lca_core import ContributionBatchResult, LCAEngine, LcaCoreResult
-from lca_core.interchange import InterchangeError, preview_interchange
+from lca_core import ContributionBatchResult, LcaCoreResult, LCAEngine
+from lca_core.interchange import (
+    InterchangeError,
+    export_interchange,
+    preview_interchange,
+)
 from lca_core.interchange.archive import MAX_PACKAGE_BYTES
 
 mcp = FastMCP("Life Cycle Assessment MCP")
@@ -681,6 +686,90 @@ async def api_import_openlca(request: Request) -> Response:
             InterchangeError(
                 "IMPORT_FAILED",
                 "The package could not be imported.",
+                status_code=400,
+            ).response_body(),
+            status_code=400,
+        )
+
+
+@mcp.custom_route("/api/interchange/export", methods=["POST"])
+async def api_export_interchange(request: Request) -> Response:
+    """PRISM workspace JSON in, openLCA JSON-LD or ILCD ZIP out."""
+    content_length = request.headers.get("content-length")
+    try:
+        declared_length = int(content_length) if content_length is not None else None
+    except ValueError:
+        return JSONResponse(
+            InterchangeError(
+                "INVALID_CONTENT_LENGTH",
+                "Content-Length must be a non-negative integer.",
+                status_code=400,
+            ).response_body(),
+            status_code=400,
+        )
+    if declared_length is not None and declared_length < 0:
+        return JSONResponse(
+            InterchangeError(
+                "INVALID_CONTENT_LENGTH",
+                "Content-Length must be a non-negative integer.",
+                status_code=400,
+            ).response_body(),
+            status_code=400,
+        )
+    if declared_length is not None and declared_length > MAX_PACKAGE_BYTES:
+        return JSONResponse(
+            InterchangeError(
+                "EXPORT_REQUEST_TOO_LARGE",
+                "The export request exceeds the 25 MB limit.",
+                details={"request_bytes": declared_length, "limit_bytes": MAX_PACKAGE_BYTES},
+                status_code=413,
+            ).response_body(),
+            status_code=413,
+        )
+    try:
+        raw = bytearray()
+        async for chunk in request.stream():
+            raw.extend(chunk)
+            if len(raw) > MAX_PACKAGE_BYTES:
+                raise InterchangeError(
+                    "EXPORT_REQUEST_TOO_LARGE",
+                    "The export request exceeds the 25 MB limit.",
+                    details={"request_bytes": len(raw), "limit_bytes": MAX_PACKAGE_BYTES},
+                    status_code=413,
+                )
+        try:
+            body = json.loads(raw)
+        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+            raise InterchangeError(
+                "MALFORMED_EXPORT_REQUEST",
+                "The export request must be valid UTF-8 JSON.",
+                status_code=400,
+            ) from exc
+        if not isinstance(body, dict):
+            raise InterchangeError(
+                "MALFORMED_EXPORT_REQUEST",
+                "The export request must be a JSON object.",
+                status_code=400,
+            )
+        package = export_interchange(
+            body.get("format"), body.get("datasets"), body.get("model_id")
+        )
+        suffix = "openlca" if body.get("format") == "openlca-json-ld" else "ilcd"
+        return Response(
+            package,
+            media_type="application/zip",
+            headers={
+                "Content-Disposition": f'attachment; filename="prism-export.{suffix}.zip"'
+            },
+        )
+    except InterchangeError as exc:
+        return JSONResponse(exc.response_body(), status_code=exc.status_code)
+    except Exception:
+        logging.exception("Unexpected interchange export failure")
+        return JSONResponse(
+            InterchangeError(
+                "EXPORT_FAILED",
+                "The workspace could not be exported.",
                 status_code=400,
             ).response_body(),
             status_code=400,

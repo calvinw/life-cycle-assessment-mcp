@@ -14,6 +14,20 @@ MAX_EXPANDED_BYTES = 250 * 1024 * 1024
 MAX_ENTRIES = 5_000
 
 
+def write_deterministic_zip(entries: dict[str, bytes]) -> bytes:
+    """Return a ZIP whose bytes are stable for the same named entries."""
+    output = io.BytesIO()
+    with zipfile.ZipFile(
+        output, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9
+    ) as archive:
+        for name in sorted(entries):
+            info = zipfile.ZipInfo(name, date_time=(1980, 1, 1, 0, 0, 0))
+            info.compress_type = zipfile.ZIP_DEFLATED
+            info.external_attr = 0o100644 << 16
+            archive.writestr(info, entries[name])
+    return output.getvalue()
+
+
 def open_safe_zip(package: bytes) -> zipfile.ZipFile:
     """Open *package* after applying the format-independent ZIP limits."""
     if len(package) > MAX_PACKAGE_BYTES:
