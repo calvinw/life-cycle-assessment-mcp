@@ -14,8 +14,8 @@ required for this release.
 | Batch | Scope | Status | Codex-assisted active work |
 | --- | --- | --- | --- |
 | 1 | Import contract, field mapping, representative fixtures | Complete | Complete |
-| 2 | openLCA JSON-LD to usable PRISM workspace bundle | Started; conversion baseline works, response refactor required | 2–4 hours |
-| 3 | Stateless import HTTP route, CORS, limits, cleanup | Not started | 2–4 hours |
+| 2 | openLCA JSON-LD to usable PRISM workspace bundle | Started; conversion baseline works, response refactor still required | 2–4 hours |
+| 3 | Stateless import HTTP route, CORS, limits, cleanup | Started; minimal route, PRISM CORS origin, and an early Content-Length size guard are live locally. Multipart upload, timeouts, concurrency limits, and cleanup are still open | 1–3 hours |
 | 4 | Load imported bundles into the PRISM webapp workspace | Not started; belongs in the PRISM repository | 2–6 hours |
 
 Estimated remaining implementation time with Codex GPT-5.6 Sol is approximately
@@ -41,6 +41,10 @@ model completion-time guarantee.
   - 4 Unit Groups
   - 10 Sources
 - Verified that a real-data JSON-LD package can be read by the official `olca-schema` Python reader.
+- Added `POST /api/interchange/import/openlca` to `lca_server.py`, calling the importer directly and returning its JSON as-is.
+- Added `https://catiehe.github.io` (PRISM production origin) to the CORS allowlist in `sse_server.py`.
+- Added an early `Content-Length` check on the import route so an oversized upload is rejected with `413` before its body is read into memory.
+- Verified locally end to end: a generated openLCA ZIP round-trips through the running HTTP server, an unapproved origin's CORS preflight is rejected, and an oversized request is rejected without buffering.
 
 An export baseline and its lossless PRISM extension also exist in the repository,
 but they are adjacent work and are not part of the first import release or its
@@ -57,6 +61,8 @@ lca_core/interchange/
 
 docs/openlca_interchange_contract.md
 tests/test_openlca_interchange.py
+lca_server.py     # POST /api/interchange/import/openlca
+sse_server.py     # CORS allowlist includes the PRISM production origin
 ```
 
 ### Remaining work in the current core batches
@@ -389,13 +395,15 @@ Status: started; baseline entity conversion works.
 
 ### Batch 3: engine HTTP integration
 
-Status: not started.
+Status: started.
 
-- Add the PRISM production CORS origin and required headers.
-- Add multipart upload support.
-- Add the stateless import route.
-- Add upload streaming limits, concurrency limits, timeout, and cleanup.
-- Add HTTP and security tests.
+- [x] Add the stateless import route (`POST /api/interchange/import/openlca`).
+- [x] Add the PRISM production CORS origin.
+- [x] Reject an oversized upload by its declared `Content-Length` before reading the body.
+- [ ] Add multipart upload support (`multipart/form-data`, `file=<zip>`) to match the documented contract; the route currently accepts the raw request body instead.
+- [ ] Add a conversion timeout and a concurrency limit.
+- [ ] Add temporary-file cleanup once the converter starts writing to disk instead of operating entirely in memory.
+- [ ] Add HTTP and security tests (CORS preflight, size limits, cleanup) to the automated test suite — the current verification was done manually against a local server.
 
 ### Batch 4: PRISM temporary-workspace integration
 

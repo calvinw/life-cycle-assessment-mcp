@@ -33,6 +33,7 @@ REST API (via @mcp.custom_route):
     POST /api/lca/svg
     POST /api/lca/svg/bafu
     POST /api/lca/svg/unit-process
+    POST /api/interchange/import/openlca
 
 Run via HTTP (for Claude.ai / cloudflared):
     python3 sse_server.py
@@ -52,6 +53,8 @@ from starlette.responses import JSONResponse, Response
 from fastmcp import FastMCP
 
 from lca_core import ContributionBatchResult, LCAEngine, LcaCoreResult
+from lca_core.interchange import InterchangeError, preview_openlca
+from lca_core.interchange.openlca import MAX_PACKAGE_BYTES
 
 mcp = FastMCP("Life Cycle Assessment MCP")
 engine = LCAEngine()
@@ -606,6 +609,39 @@ async def api_get_unit_process_svg(request: Request) -> Response:
                 body["product_graph"], body["process_name"]
             )
         })
+    except Exception as exc:
+        return JSONResponse({"detail": str(exc)}, status_code=400)
+
+
+@mcp.custom_route("/api/interchange/import/openlca", methods=["POST"])
+async def api_import_openlca(request: Request) -> Response:
+    """Raw ZIP bytes in, PRISM preview JSON out.
+
+    Rejects an oversized upload by its declared Content-Length before
+    reading the body, so a large upload cannot be buffered into memory just
+    to be rejected. This still accepts the raw request body instead of
+    multipart/form-data until concurrency limits and timeouts are added.
+    """
+    content_length = request.headers.get("content-length")
+    if content_length is not None and int(content_length) > MAX_PACKAGE_BYTES:
+        return JSONResponse(
+            {
+                "error": {
+                    "code": "PACKAGE_TOO_LARGE",
+                    "message": "The compressed package exceeds the 25 MB limit.",
+                    "details": {
+                        "compressed_bytes": int(content_length),
+                        "limit_bytes": MAX_PACKAGE_BYTES,
+                    },
+                }
+            },
+            status_code=413,
+        )
+    try:
+        package = await request.body()
+        return JSONResponse(preview_openlca(package))
+    except InterchangeError as exc:
+        return JSONResponse(exc.response_body(), status_code=exc.status_code)
     except Exception as exc:
         return JSONResponse({"detail": str(exc)}, status_code=400)
 
