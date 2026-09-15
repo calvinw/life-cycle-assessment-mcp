@@ -15,12 +15,12 @@ Last updated: 2026-09-15
 A PRISM workspace bundle (Model + Processes + Flows + Flow Properties + Unit
 Groups + Sources + Contacts, the same seven types you already handle on
 import) can be sent to the engine as JSON and converted into a downloadable
-openLCA JSON-LD or ILCD/eILCD ZIP. This is **verified only by the backend's
-automated test suite** (21 passing tests covering both formats, multi-Process
-graphs, and atomic validation failures) — unlike the import endpoint, nobody
-has yet manually curled a running server or opened a generated file in
-openLCA Desktop. Treat this as "engine logic is solid" rather than "this has
-shipped to a real user."
+openLCA JSON-LD or ILCD/eILCD ZIP. The backend's automated suite covers both
+formats, multi-Process graphs, and atomic validation failures. Both formats
+have also passed a real local HTTP export followed by HTTP re-import with all
+seven dataset types, no warnings, and no errors. The generated files have not
+yet been opened in openLCA Desktop, so treat this as "engine and HTTP path are
+solid" rather than "Desktop interoperability is accepted."
 
 **This export work is committed on `catie-import-feature`, but is not merged
 to `main` yet and is not deployed anywhere.**
