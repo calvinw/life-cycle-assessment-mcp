@@ -297,7 +297,12 @@ refreshing or rebuilding the workspace.
 
 ### Step E6 - Desktop and end-to-end acceptance
 
-Status: not started.
+Status: in progress. ILCD/eILCD passed manual openLCA 2.6.2 import and
+Desktop re-export acceptance on 2026-09-15: all seven supported dataset types,
+Process exchanges, and the two-Process graph connection survived the round
+trip with no warnings or errors. openLCA normalized Process-instance
+`multiplicationFactor` values to `0.0`, as documented in the ILCD export
+contract. JSON-LD Desktop acceptance and the deployed frontend pass remain.
 
 For each format:
 

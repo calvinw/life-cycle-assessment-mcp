@@ -18,9 +18,11 @@ import) can be sent to the engine as JSON and converted into a downloadable
 openLCA JSON-LD or ILCD/eILCD ZIP. The backend's automated suite covers both
 formats, multi-Process graphs, and atomic validation failures. Both formats
 have also passed a real local HTTP export followed by HTTP re-import with all
-seven dataset types, no warnings, and no errors. The generated files have not
-yet been opened in openLCA Desktop, so treat this as "engine and HTTP path are
-solid" rather than "Desktop interoperability is accepted."
+seven dataset types, no warnings, and no errors. The ILCD/eILCD package passed
+manual openLCA 2.6.2 import and Desktop re-export acceptance with all seven
+supported dataset types and the Process graph connection intact. openLCA
+normalized Process-instance multiplication factors to `0.0`, which is recorded
+in `docs/ilcd_export_contract.md`. JSON-LD Desktop acceptance is still pending.
 
 **This export work is not merged to `main` yet and is not deployed anywhere**
 (it's uncommitted on the `catie-import-feature` branch as of this writing).
