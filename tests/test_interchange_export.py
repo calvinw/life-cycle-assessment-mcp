@@ -166,6 +166,16 @@ class InterchangeExportTests(unittest.TestCase):
 
         with zipfile.ZipFile(io.BytesIO(first)) as archive:
             self.assertNotIn(f"ILCD/processes/{unrelated_id}.xml", archive.namelist())
+            source_xml = archive.read(
+                "ILCD/sources/10000000-0000-4000-8000-000000000002.xml"
+            ).decode("utf-8")
+            contact_xml = archive.read(
+                "ILCD/contacts/10000000-0000-4000-8000-000000000001.xml"
+            ).decode("utf-8")
+        self.assertIn("<common:shortName", source_xml)
+        self.assertIn("<common:shortName", contact_xml)
+        self.assertIn("<common:name", contact_xml)
+        self.assertIn("<c:contactDescriptionOrComment", contact_xml)
 
         preview = preview_ilcd(first)
         self.assertEqual(preview["summary"], {

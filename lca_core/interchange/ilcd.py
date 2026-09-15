@@ -395,6 +395,7 @@ def _payload(
     if kind == "contact":
         short_name = _field_lang(data_info, "shortName")
         full_name = _field_lang(data_info, "name")
+        contact_comment = _lang_elements(data_info, "contactDescriptionOrComment")
         return {
             "contactInformation": {"dataSetInformation": {
                 "shortName": short_name, "name": full_name or short_name,
@@ -405,7 +406,7 @@ def _payload(
                 "contactAddress": _text(_child(data_info, "contactAddress")),
                 "telephone": _text(_child(data_info, "telephone")),
                 "telefax": _text(_child(data_info, "telefax")),
-                "generalComment": general_comment,
+                "generalComment": contact_comment or general_comment,
                 "referenceToContact": [],
             }},
             "administrativeInformation": admin,

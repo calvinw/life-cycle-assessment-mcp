@@ -76,3 +76,7 @@ package is also not expected.
   allocation, and external binary sources are outside the first release.
 - Connection Flow metadata is reconstructed from Process exchanges by target
   applications; the PRISM graph itself preserves only Process instance edges.
+- openLCA stores an imported eILCD lifecycle model as a Product System and does
+  not preserve arbitrary per-instance `multiplicationFactor` values. Desktop
+  re-export can therefore normalize these values (observed as `0.0`) even when
+  the Process graph and reference Process are retained.
