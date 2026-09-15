@@ -49,7 +49,9 @@ model completion-time guarantee.
 An export baseline and its lossless PRISM extension also exist in the repository,
 but they are adjacent work and are not part of the first import release or its
 completion criteria. The importer may continue to recognize that extension for
-backward compatibility.
+backward compatibility. The follow-on dual-format export work is specified in
+`INTERCHANGE_EXPORT_PLAN.md`; it delivers openLCA JSON-LD and ILCD/eILCD export
+together behind one API and one frontend flow.
 
 ### Current files
 
@@ -463,8 +465,7 @@ The first release is complete when:
 
 The following work is intentionally outside the first release:
 
-- PRISM-to-openLCA export UI and HTTP delivery
-- Export acceptance testing in openLCA Desktop
+- Dual-format export implementation described in `INTERCHANGE_EXPORT_PLAN.md`
 - Supabase or IndexedDB persistence
 - Merging imported records with saved datasets
 - Import conflict decisions and atomic database writes
