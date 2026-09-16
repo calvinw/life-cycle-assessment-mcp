@@ -1,150 +1,108 @@
-"""ILCD/eILCD XML ZIP to PRISM workspace conversion."""
+"""Tiangong TIDAS JSON ZIP to PRISM workspace conversion.
+
+TIDAS JSON encodes the same ILCD schema `ilcd.py` already imports, using a
+Badgerfish-style JSON convention instead of XML: an XML attribute becomes a
+JSON key prefixed with `@` (e.g. `@refObjectId`), element text becomes
+`#text` (or a bare scalar when the element has no attributes/children), and
+XML namespace prefixes are kept as literal key prefixes (`common:UUID`).
+
+This module mirrors `ilcd.py`'s field-mapping logic field-for-field. Only the
+navigation primitives at the bottom differ (dict/list traversal instead of
+`xml.etree.ElementTree`); `_convert`/`_payload`/`_validate_references` are
+intentionally structured the same way as their `ilcd.py` counterparts so the
+two stay easy to compare.
+
+Grounded in a real Tiangong Task Center export
+(`tests/fixtures/tidas_tiangong_export.zip`), not just the official schema
+samples — see `TIDAS_IMPORT_EXPORT_PLAN.md` for what was verified and how.
+"""
 
 from __future__ import annotations
 
+import json
 import re
 import zipfile
 from typing import Any
-from xml.etree import ElementTree as ET
 
 from .archive import open_safe_zip
 from .errors import InterchangeError
+from .ilcd import DATASET_FOLDERS, FOLDER_DATASETS
 
-_XML_LANG = "{http://www.w3.org/XML/1998/namespace}lang"
 _UUID_RE = re.compile(
     r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-"
     r"[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
 )
-
-DATASET_FOLDERS = {
-    "model": ("lifecyclemodels", "lifeCycleModelDataSet"),
-    "process": ("processes", "processDataSet"),
-    "flow": ("flows", "flowDataSet"),
-    "flow_property": ("flowproperties", "flowPropertyDataSet"),
-    "unit_group": ("unitgroups", "unitGroupDataSet"),
-    "source": ("sources", "sourceDataSet"),
-    "contact": ("contacts", "contactDataSet"),
-}
-FOLDER_DATASETS = {folder: kind for kind, (folder, _) in DATASET_FOLDERS.items()}
-ROOT_NAMESPACES = {
-    "model": "http://eplca.jrc.ec.europa.eu/ILCD/LifeCycleModel/2017",
-    "process": "http://lca.jrc.it/ILCD/Process",
-    "flow": "http://lca.jrc.it/ILCD/Flow",
-    "flow_property": "http://lca.jrc.it/ILCD/FlowProperty",
-    "unit_group": "http://lca.jrc.it/ILCD/UnitGroup",
-    "source": "http://lca.jrc.it/ILCD/Source",
-    "contact": "http://lca.jrc.it/ILCD/Contact",
-}
-_KNOWN_NAMESPACES = {
-    "",
-    "http://lca.jrc.it/ILCD/Common",
-    *ROOT_NAMESPACES.values(),
-}
-_OPENLCA_JSON_FOLDERS = {
-    "actors",
-    "flows",
-    "flow_properties",
-    "processes",
-    "product_systems",
-    "sources",
-    "unit_groups",
-}
+TIDAS_MANIFEST_FORMAT = "tiangong-tidas-package"
+TIDAS_MANIFEST_NAME = "manifest.json"
 
 
-def has_root_level_ilcd_layout(names: set[str]) -> bool:
-    """Does this ZIP look like ILCD XML packaged flat at the root, with no
-    top-level "ILCD/" wrapper folder?
+def is_tidas_package(package: bytes, names: set[str]) -> bool:
+    """Format-detection check: does this ZIP look like a TIDAS package?
 
-    openLCA Desktop and the ILCD standard both nest contents under "ILCD/"
-    (what `preview_ilcd` originally required exclusively). Some platforms
-    instead expect dataset folders directly at the ZIP root — Tiangong's
-    documented web-upload convention for TIDAS packages states this, and
-    while Tiangong's own "TIDAS Import" flow turned out not to accept ILCD
-    XML at all regardless of layout (see TIDAS_IMPORT_EXPORT_PLAN.md), a
-    root-of-zip ILCD layout may still matter for other tools. This only
-    checks for the layout signal (a known dataset folder at root containing
-    an .xml file); it does not by itself distinguish from a TIDAS JSON
-    package (those use .json, not .xml, and are detected separately via
-    manifest.json — see `tidas.is_tidas_package`).
+    Primary signal is `manifest.json` whose `format` field is the Tiangong
+    literal `"tiangong-tidas-package"` (confirmed from a real export) — the
+    filename alone isn't enough, since some other tool's export could also
+    happen to ship a `manifest.json`. Falls back to a root-level TIDAS
+    folder layout (a known dataset folder holding a `.json` member) for
+    manifest-less exports, mirroring `ilcd.has_root_level_ilcd_layout`.
     """
+    if _peek_manifest_format(package, names) == TIDAS_MANIFEST_FORMAT:
+        return True
+    return _has_root_level_tidas_layout(names)
+
+
+def _peek_manifest_format(package: bytes, names: set[str]) -> str | None:
+    """Best-effort read of manifest.json's `format` field for detection only.
+
+    Must not raise on a malformed manifest.json belonging to some other
+    tool — `_read_manifest` is what raises, once we've committed to parsing
+    this package as TIDAS.
+    """
+    if TIDAS_MANIFEST_NAME not in names:
+        return None
+    try:
+        archive = open_safe_zip(package)
+        with archive:
+            data = json.loads(archive.read(TIDAS_MANIFEST_NAME))
+    except Exception:
+        return None
+    return data.get("format") if isinstance(data, dict) else None
+
+
+def _has_root_level_tidas_layout(names: set[str]) -> bool:
     return any(
-        name.endswith(".xml") and name.count("/") == 1 and name.split("/", 1)[0] in FOLDER_DATASETS
+        name.endswith(".json") and name.count("/") == 1 and name.split("/", 1)[0] in FOLDER_DATASETS
         for name in names
     )
 
 
-def preview_ilcd(package: bytes) -> dict[str, Any]:
-    """Read an ILCD/eILCD package and return normalized PRISM preview rows.
-
-    Accepts two ZIP layouts: the openLCA Desktop/ILCD-standard convention
-    (dataset folders nested under a top-level "ILCD/" wrapper) and a
-    root-of-zip layout (dataset folders directly at the ZIP root, no
-    wrapper) — see `has_root_level_ilcd_layout`'s docstring for why the
-    second one exists. Whichever layout is present is used consistently;
-    files that don't match are ignored with a warning rather than causing a
-    mixed-layout package to partially succeed in confusing ways.
-    """
+def preview_tidas(package: bytes) -> dict[str, Any]:
+    """Read a Tiangong TIDAS JSON package and return normalized PRISM preview rows."""
     archive = open_safe_zip(package)
     warnings: list[dict[str, Any]] = []
-    parsed: list[tuple[str, ET.Element, str]] = []
+    parsed: list[tuple[str, Any, str]] = []
     with archive:
         names = {info.filename for info in archive.infolist()}
-        wrapped = any(name.startswith("ILCD/") for name in names)
-        if not wrapped and not has_root_level_ilcd_layout(names):
-            raise InterchangeError(
-                "MISSING_ILCD_DIRECTORY",
-                "The ZIP does not contain a top-level ILCD directory or recognizable dataset folders at its root.",
-                status_code=400,
-            )
-        if any(
-            name.endswith(".json")
-            and name.split("/", 1)[0] in _OPENLCA_JSON_FOLDERS
-            for name in names
-        ):
-            warnings.append(
-                _warning(
-                    "HYBRID_ILCD_OPENLCA_PACKAGE",
-                    "The package contains both ILCD XML and openLCA JSON; imported its ILCD representation.",
-                )
-            )
-        for info in archive.infolist():
-            if info.is_dir() or not info.filename.endswith(".xml"):
-                continue
-            parts = info.filename.split("/")
-            if wrapped:
-                if len(parts) != 3 or parts[0] != "ILCD":
-                    warnings.append(_warning("UNSUPPORTED_PACKAGE_ENTRY", f"Ignored '{info.filename}'.", path=info.filename))
-                    continue
-                folder = parts[1]
-            else:
-                if len(parts) != 2:
-                    warnings.append(_warning("UNSUPPORTED_PACKAGE_ENTRY", f"Ignored '{info.filename}'.", path=info.filename))
-                    continue
-                folder = parts[0]
-            kind = FOLDER_DATASETS.get(folder)
+        manifest = _read_manifest(archive, names)
+        if manifest is not None:
+            entries = _entries_from_manifest(manifest)
+        else:
+            entries = _entries_from_folder_scan(names, warnings)
+        for table, file_path in entries:
+            kind = FOLDER_DATASETS.get(table)
             if kind is None:
-                warnings.append(_warning("UNSUPPORTED_PACKAGE_ENTRY", f"Ignored '{info.filename}'.", path=info.filename))
-                continue
-            root = _read_xml_member(archive, info.filename)
-            expected_root = DATASET_FOLDERS[kind][1]
-            root_namespace = _namespace(root.tag)
-            if _local(root.tag) != expected_root or root_namespace not in {
-                "",
-                ROOT_NAMESPACES[kind],
-            }:
-                raise InterchangeError(
-                    "ILCD_TYPE_MISMATCH",
-                    f"'{info.filename}' does not contain a {expected_root}.",
-                    details={
-                        "path": info.filename,
-                        "actual_type": _local(root.tag),
-                        "actual_namespace": root_namespace,
-                    },
+                warnings.append(
+                    _warning("UNSUPPORTED_PACKAGE_ENTRY", f"Ignored '{file_path}'.", path=file_path)
                 )
-            parsed.append((kind, root, info.filename))
+                continue
+            expected_root = DATASET_FOLDERS[kind][1]
+            root = _read_json_member(archive, file_path, expected_root)
+            parsed.append((kind, root, file_path))
 
     if not parsed:
-        raise InterchangeError("EMPTY_ILCD_PACKAGE", "The package contains no supported datasets.")
+        raise InterchangeError(
+            "EMPTY_TIDAS_PACKAGE", "The package contains no supported TIDAS datasets."
+        )
 
     rows: list[dict[str, Any]] = []
     source_ids: set[str] = set()
@@ -152,19 +110,11 @@ def preview_ilcd(package: bytes) -> dict[str, Any]:
         source_id = _required_uuid(root, path)
         if source_id in source_ids:
             raise InterchangeError(
-                "DUPLICATE_ILCD_ID",
+                "DUPLICATE_TIDAS_ID",
                 f"The package contains duplicate dataset id '{source_id}'.",
                 details={"dataset_id": source_id},
             )
         source_ids.add(source_id)
-        if path.rsplit("/", 1)[-1] != f"{source_id}.xml":
-            warnings.append(
-                _warning(
-                    "ILCD_FILENAME_ID_MISMATCH",
-                    f"The filename for '{source_id}' does not match its UUID.",
-                    path=path,
-                )
-            )
         rows.append(_convert(root, kind, source_id))
 
     _validate_references(rows, warnings)
@@ -173,7 +123,7 @@ def preview_ilcd(package: bytes) -> dict[str, Any]:
     for row in rows:
         summary[row["type"]] += 1
     return {
-        "format": "ilcd-xml",
+        "format": "tidas-json",
         "valid": True,
         "summary": summary,
         "datasets": rows,
@@ -183,41 +133,103 @@ def preview_ilcd(package: bytes) -> dict[str, Any]:
     }
 
 
-def _read_xml_member(archive: zipfile.ZipFile, path: str) -> ET.Element:
+def _read_manifest(archive: zipfile.ZipFile, names: set[str]) -> dict[str, Any] | None:
+    if TIDAS_MANIFEST_NAME not in names:
+        return None
+    try:
+        raw = archive.read(TIDAS_MANIFEST_NAME)
+        data = json.loads(raw)
+    except (KeyError, UnicodeError, ValueError) as exc:
+        raise InterchangeError(
+            "INVALID_TIDAS_MANIFEST", "manifest.json is not valid JSON.", status_code=400
+        ) from exc
+    if not isinstance(data, dict) or data.get("format") != TIDAS_MANIFEST_FORMAT:
+        return None
+    return data
+
+
+def _entries_from_manifest(manifest: dict[str, Any]) -> list[tuple[str, str]]:
+    entries = manifest.get("entries")
+    if not isinstance(entries, list):
+        raise InterchangeError(
+            "INVALID_TIDAS_MANIFEST", "manifest.json has no 'entries' array.", status_code=400
+        )
+    result: list[tuple[str, str]] = []
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        table = entry.get("table")
+        file_path = entry.get("file_path")
+        if isinstance(table, str) and isinstance(file_path, str):
+            result.append((table, file_path))
+    return result
+
+
+def _entries_from_folder_scan(
+    names: set[str], warnings: list[dict[str, Any]]
+) -> list[tuple[str, str]]:
+    warnings.append(
+        _warning(
+            "TIDAS_MISSING_MANIFEST",
+            "No manifest.json found; falling back to folder-name detection.",
+        )
+    )
+    result: list[tuple[str, str]] = []
+    for name in sorted(names):
+        if name.endswith("/") or not name.endswith(".json") or name == TIDAS_MANIFEST_NAME:
+            continue
+        parts = name.split("/")
+        if len(parts) != 2:
+            warnings.append(_warning("UNSUPPORTED_PACKAGE_ENTRY", f"Ignored '{name}'.", path=name))
+            continue
+        result.append((parts[0], name))
+    return result
+
+
+def _read_json_member(archive: zipfile.ZipFile, path: str, expected_root: str) -> Any:
+    """Parse a TIDAS JSON member and return the payload under `expected_root`.
+
+    A real Tiangong export can carry an extra top-level sibling key next to
+    the dataset root (confirmed: `{"json_tg": {}, "lifeCycleModelDataSet":
+    {...}}` in a real downloaded package) — look the dataset root up by
+    name instead of assuming it's the file's only top-level key.
+    """
     try:
         raw = archive.read(path)
-        upper = raw.upper()
-        if b"<!DOCTYPE" in upper or b"<!ENTITY" in upper:
-            raise ValueError("DTD and entity declarations are not allowed")
-        return ET.fromstring(raw)
-    except (KeyError, ET.ParseError, UnicodeError, ValueError) as exc:
+        data = json.loads(raw)
+    except (KeyError, UnicodeError, ValueError) as exc:
         raise InterchangeError(
-            "INVALID_ILCD_XML",
-            f"'{path}' is not safe, well-formed ILCD XML.",
+            "INVALID_TIDAS_JSON",
+            f"'{path}' is not valid TIDAS JSON.",
             details={"path": path},
             status_code=400,
         ) from exc
+    if not isinstance(data, dict) or expected_root not in data:
+        raise InterchangeError(
+            "TIDAS_TYPE_MISMATCH",
+            f"'{path}' does not contain a {expected_root}.",
+            details={"path": path, "actual_keys": list(data) if isinstance(data, dict) else None},
+        )
+    return data[expected_root]
 
 
-def _required_uuid(root: ET.Element, path: str) -> str:
-    element = _first_descendant(root, "UUID")
-    value = _text(element)
+def _required_uuid(root: Any, path: str) -> str:
+    node = _first_descendant(root, "UUID")
+    value = _text(node)
     if not value:
         raise InterchangeError(
-            "MISSING_ILCD_UUID",
-            f"'{path}' has no UUID.",
-            details={"path": path},
+            "MISSING_TIDAS_UUID", f"'{path}' has no UUID.", details={"path": path}
         )
     if not _UUID_RE.match(value):
         raise InterchangeError(
-            "INVALID_ILCD_UUID",
+            "INVALID_TIDAS_UUID",
             f"'{path}' has an invalid UUID.",
             details={"path": path, "uuid": value},
         )
     return value
 
 
-def _convert(root: ET.Element, kind: str, source_id: str) -> dict[str, Any]:
+def _convert(root: Any, kind: str, source_id: str) -> dict[str, Any]:
     info_root = {
         "model": "lifeCycleModelInformation",
         "process": "processInformation",
@@ -230,9 +242,7 @@ def _convert(root: ET.Element, kind: str, source_id: str) -> dict[str, Any]:
     information = _child(root, info_root)
     data_info = _child(information, "dataSetInformation")
     name = _dataset_name(data_info, source_id)
-    description_field = (
-        "sourceDescriptionOrComment" if kind == "source" else "generalComment"
-    )
+    description_field = "sourceDescriptionOrComment" if kind == "source" else "generalComment"
     description = _join_texts(_lang_elements(data_info, description_field))
     payload = _payload(root, kind, information, data_info)
     return {
@@ -248,10 +258,10 @@ def _convert(root: ET.Element, kind: str, source_id: str) -> dict[str, Any]:
 
 
 def _payload(
-    root: ET.Element,
+    root: Any,
     kind: str,
-    information: ET.Element | None,
-    data_info: ET.Element | None,
+    information: Any,
+    data_info: Any,
 ) -> dict[str, Any]:
     classification = _classification(data_info)
     general_comment = _lang_elements(data_info, "generalComment")
@@ -268,14 +278,16 @@ def _payload(
                     "generalComment": general_comment,
                 },
                 "quantitativeReference": {
-                    "referenceToReferenceUnit": _integer(_text(_child(quantitative, "referenceToReferenceUnit")))
+                    "referenceToReferenceUnit": _integer(
+                        _text(_child(quantitative, "referenceToReferenceUnit"))
+                    )
                 },
             },
             "modellingAndValidation": {"complianceDeclarations": []},
             "administrativeInformation": admin,
             "units": [
                 {
-                    "dataSetInternalID": _integer(unit.get("dataSetInternalID")),
+                    "dataSetInternalID": _integer(_attr(unit, "dataSetInternalID")),
                     "name": _text(_child(unit, "name")),
                     "meanValue": _float(_text(_child(unit, "meanValue")), 1.0),
                     "generalComment": _lang_elements(unit, "generalComment"),
@@ -316,14 +328,20 @@ def _payload(
         return {
             "flowInformation": {
                 "dataSetInformation": {
-                    "name": {"baseName": _name_lang(data_info), "treatmentStandardsRoutes": [], "mixAndLocationTypes": []},
+                    "name": {
+                        "baseName": _name_lang(data_info),
+                        "treatmentStandardsRoutes": [],
+                        "mixAndLocationTypes": [],
+                    },
                     "classification": classification,
                     "casNumber": _text(_child(data_info, "CASNumber")),
                     "sumFormula": _text(_child(data_info, "sumFormula")),
                     "generalComment": general_comment,
                 },
                 "quantitativeReference": {
-                    "referenceToReferenceFlowProperty": _integer(_text(_child(quantitative, "referenceToReferenceFlowProperty")))
+                    "referenceToReferenceFlowProperty": _integer(
+                        _text(_child(quantitative, "referenceToReferenceFlowProperty"))
+                    )
                 },
             },
             "modellingAndValidation": {
@@ -333,8 +351,10 @@ def _payload(
             "administrativeInformation": admin,
             "flowProperties": [
                 {
-                    "dataSetInternalID": _integer(item.get("dataSetInternalID")),
-                    "referenceToFlowPropertyDataSet": _reference(_child(item, "referenceToFlowPropertyDataSet"), "flow_property"),
+                    "dataSetInternalID": _integer(_attr(item, "dataSetInternalID")),
+                    "referenceToFlowPropertyDataSet": _reference(
+                        _child(item, "referenceToFlowPropertyDataSet"), "flow_property"
+                    ),
                     "meanValue": _float(_text(_child(item, "meanValue")), 1.0),
                     "generalComment": _lang_elements(item, "generalComment"),
                 }
@@ -352,15 +372,25 @@ def _payload(
         return {
             "processInformation": {
                 "dataSetInformation": {
-                    "name": {"baseName": _name_lang(data_info), "treatmentStandardsRoutes": [], "mixAndLocationTypes": []},
+                    "name": {
+                        "baseName": _name_lang(data_info),
+                        "treatmentStandardsRoutes": [],
+                        "mixAndLocationTypes": [],
+                    },
                     "classification": classification,
                     "generalComment": general_comment,
                 },
                 "quantitativeReference": {
-                    "referenceToReferenceFlow": _integer(_text(_child(quantitative, "referenceToReferenceFlow")))
+                    "referenceToReferenceFlow": _integer(
+                        _text(_child(quantitative, "referenceToReferenceFlow"))
+                    )
                 },
-                "time": {"referenceYear": _integer(_text(_first_descendant(_child(information, "time"), "referenceYear")))},
-                "geography": {"location": location.get("location", "") if location is not None else ""},
+                "time": {
+                    "referenceYear": _integer(
+                        _text(_first_descendant(_child(information, "time"), "referenceYear"))
+                    )
+                },
+                "geography": {"location": (_attr(location, "location") or "") if location is not None else ""},
             },
             "modellingAndValidation": {
                 "typeOfDataSet": _text(_child(method, "typeOfDataSet")),
@@ -372,11 +402,15 @@ def _payload(
             "administrativeInformation": _extended_admin(root, admin),
             "exchanges": [
                 {
-                    "dataSetInternalID": _integer(item.get("dataSetInternalID")),
+                    "dataSetInternalID": _integer(_attr(item, "dataSetInternalID")),
                     "referenceToFlowDataSet": _reference(_child(item, "referenceToFlowDataSet"), "flow"),
                     "exchangeDirection": _text(_child(item, "exchangeDirection")),
-                    "meanAmount": _float(_text(_child(item, "meanAmount")), _float(item.get("amount"), 0.0)),
-                    "resultingAmount": _float(_text(_child(item, "resultingAmount")), _float(item.get("amount"), 0.0)),
+                    "meanAmount": _float(
+                        _text(_child(item, "meanAmount")), _float(_attr(item, "amount"), 0.0)
+                    ),
+                    "resultingAmount": _float(
+                        _text(_child(item, "resultingAmount")), _float(_attr(item, "amount"), 0.0)
+                    ),
                     "generalComment": _lang_elements(item, "generalComment"),
                 }
                 for item in _children(exchanges, "exchange")
@@ -389,29 +423,35 @@ def _payload(
         instances = _children(processes, "processInstance")
         connections = []
         for instance in instances:
-            upstream = _integer(instance.get("dataSetInternalID"))
+            upstream = _integer(_attr(instance, "dataSetInternalID"))
             for downstream in _descendants(instance, "downstreamProcess"):
                 connections.append(
-                    {"fromInstanceId": upstream, "toInstanceId": _integer(downstream.get("id"))}
+                    {"fromInstanceId": upstream, "toInstanceId": _integer(_attr(downstream, "id"))}
                 )
         return {
             "modelInformation": {
                 "dataSetInformation": {
-                    "name": {"baseName": _name_lang(data_info), "treatmentStandardsRoutes": [], "mixAndLocationTypes": []},
+                    "name": {
+                        "baseName": _name_lang(data_info),
+                        "treatmentStandardsRoutes": [],
+                        "mixAndLocationTypes": [],
+                    },
                     "classification": classification,
                     "generalComment": general_comment,
                 },
                 "quantitativeReference": {
-                    "referenceToReferenceProcess": _integer(_text(_child(quantitative, "referenceToReferenceProcess")))
+                    "referenceToReferenceProcess": _integer(
+                        _text(_child(quantitative, "referenceToReferenceProcess"))
+                    )
                 },
             },
             "modellingAndValidation": {"complianceDeclarations": []},
             "administrativeInformation": _extended_admin(root, admin),
             "processInstances": [
                 {
-                    "dataSetInternalID": _integer(item.get("dataSetInternalID")),
+                    "dataSetInternalID": _integer(_attr(item, "dataSetInternalID")),
                     "referenceToProcess": _reference(_child(item, "referenceToProcess"), "process"),
-                    "multiplicationFactor": _float(item.get("multiplicationFactor"), 1.0),
+                    "multiplicationFactor": _float(_attr(item, "multiplicationFactor"), 1.0),
                 }
                 for item in instances
             ],
@@ -421,13 +461,16 @@ def _payload(
     if kind == "source":
         source_comment = _lang_elements(data_info, "sourceDescriptionOrComment")
         return {
-            "sourceInformation": {"dataSetInformation": {
-                "shortName": _field_lang(data_info, "shortName"), "classification": classification,
-                "sourceCitation": _text(_child(data_info, "sourceCitation")),
-                "publicationType": _text(_child(data_info, "publicationType")),
-                "sourceDescriptionOrComment": source_comment,
-                "referenceToContact": _reference(_child(data_info, "referenceToContact"), "contact"),
-            }},
+            "sourceInformation": {
+                "dataSetInformation": {
+                    "shortName": _field_lang(data_info, "shortName"),
+                    "classification": classification,
+                    "sourceCitation": _text(_child(data_info, "sourceCitation")),
+                    "publicationType": _text(_child(data_info, "publicationType")),
+                    "sourceDescriptionOrComment": source_comment,
+                    "referenceToContact": _reference(_child(data_info, "referenceToContact"), "contact"),
+                }
+            },
             "administrativeInformation": admin,
         }
 
@@ -436,18 +479,21 @@ def _payload(
         full_name = _field_lang(data_info, "name")
         contact_comment = _lang_elements(data_info, "contactDescriptionOrComment")
         return {
-            "contactInformation": {"dataSetInformation": {
-                "shortName": short_name, "name": full_name or short_name,
-                "classification": classification,
-                "email": _text(_child(data_info, "email")),
-                "wwwAddress": _text(_child(data_info, "WWWAddress")),
-                "centralContactPoint": _lang_elements(data_info, "centralContactPoint"),
-                "contactAddress": _text(_child(data_info, "contactAddress")),
-                "telephone": _text(_child(data_info, "telephone")),
-                "telefax": _text(_child(data_info, "telefax")),
-                "generalComment": contact_comment or general_comment,
-                "referenceToContact": [],
-            }},
+            "contactInformation": {
+                "dataSetInformation": {
+                    "shortName": short_name,
+                    "name": full_name or short_name,
+                    "classification": classification,
+                    "email": _text(_child(data_info, "email")),
+                    "wwwAddress": _text(_child(data_info, "WWWAddress")),
+                    "centralContactPoint": _lang_elements(data_info, "centralContactPoint"),
+                    "contactAddress": _text(_child(data_info, "contactAddress")),
+                    "telephone": _text(_child(data_info, "telephone")),
+                    "telefax": _text(_child(data_info, "telefax")),
+                    "generalComment": contact_comment or general_comment,
+                    "referenceToContact": [],
+                }
+            },
             "administrativeInformation": admin,
         }
     raise AssertionError(kind)
@@ -464,7 +510,7 @@ def _validate_references(rows: list[dict[str, Any]], warnings: list[dict[str, An
                 set(instance_ids)
             ):
                 raise InterchangeError(
-                    "INVALID_ILCD_PROCESS_INSTANCE_ID",
+                    "INVALID_TIDAS_PROCESS_INSTANCE_ID",
                     f"Model '{row['name']}' has missing or duplicate process instance IDs.",
                     details={"dataset_id": row["id"], "instance_ids": instance_ids},
                 )
@@ -515,7 +561,7 @@ def _warn_missing(row: dict[str, Any], reference: dict[str, Any], expected_type:
         warnings.append(_warning("UNRESOLVED_DATASET_REFERENCE", f"'{row['name']}' references a dataset outside this package.", dataset_id=row["id"], reference_id=target, path=path))
 
 
-def _administrative_information(root: ET.Element) -> dict[str, Any]:
+def _administrative_information(root: Any) -> dict[str, Any]:
     ownership = _first_descendant(root, "referenceToOwnershipOfDataSet")
     return {
         "referenceToOwnershipOfDataSet": _reference(ownership, "contact"),
@@ -525,9 +571,7 @@ def _administrative_information(root: ET.Element) -> dict[str, Any]:
     }
 
 
-def _extended_admin(
-    root: ET.Element, admin: dict[str, Any]
-) -> dict[str, Any]:
+def _extended_admin(root: Any, admin: dict[str, Any]) -> dict[str, Any]:
     goal = _first_descendant(root, "commissionerAndGoal")
     return {
         **admin,
@@ -536,25 +580,21 @@ def _extended_admin(
         ),
         "intendedApplications": _lang_elements(goal, "intendedApplications"),
         "referenceToPersonOrEntityGeneratingTheDataSet": _reference(
-            _first_descendant(
-                root, "referenceToPersonOrEntityGeneratingTheDataSet"
-            ),
+            _first_descendant(root, "referenceToPersonOrEntityGeneratingTheDataSet"),
             "contact",
         ),
-        "copyright": _boolean(
-            _text(_first_descendant(root, "copyright")), False
-        ),
+        "copyright": _boolean(_text(_first_descendant(root, "copyright")), False),
         "licenseType": _text(_first_descendant(root, "licenseType")),
     }
 
 
-def _reference(element: ET.Element | None, kind: str) -> dict[str, Any]:
-    if element is None:
+def _reference(node: Any, kind: str) -> dict[str, Any]:
+    if node is None:
         return _empty_ref(kind)
     return {
         "type": kind,
-        "refObjectId": element.get("refObjectId"),
-        "shortDescription": _join_texts(_lang_elements(element, "shortDescription")),
+        "refObjectId": _attr(node, "refObjectId"),
+        "shortDescription": _join_texts(_lang_elements(node, "shortDescription")),
     }
 
 
@@ -562,7 +602,7 @@ def _empty_ref(kind: str) -> dict[str, Any]:
     return {"type": kind, "refObjectId": None, "shortDescription": ""}
 
 
-def _dataset_name(data_info: ET.Element | None, fallback: str) -> str:
+def _dataset_name(data_info: Any, fallback: str) -> str:
     values = _name_lang(data_info)
     for language in ("en", "zh"):
         for item in values:
@@ -571,7 +611,7 @@ def _dataset_name(data_info: ET.Element | None, fallback: str) -> str:
     return values[0]["text"] if values else fallback
 
 
-def _name_lang(data_info: ET.Element | None) -> list[dict[str, str]]:
+def _name_lang(data_info: Any) -> list[dict[str, str]]:
     name = _child(data_info, "name")
     if name is None:
         name = _child(data_info, "shortName")
@@ -581,88 +621,151 @@ def _name_lang(data_info: ET.Element | None) -> list[dict[str, str]]:
     return base_names or _element_lang(name)
 
 
-def _field_lang(
-    data_info: ET.Element | None, field: str
-) -> list[dict[str, str]]:
-    element = _child(data_info, field)
-    return _element_lang(element) if element is not None else []
+def _field_lang(data_info: Any, field: str) -> list[dict[str, str]]:
+    node = _child(data_info, field)
+    return _element_lang(node) if node is not None else []
 
 
-def _classification(data_info: ET.Element | None) -> list[str]:
+def _classification(data_info: Any) -> list[str]:
     if data_info is None:
         return []
     container = _child(data_info, "classificationInformation")
     if container is None:
         return []
     return [
-        _text(item)
-        for item in container.iter()
-        if (_matches(item, "class") or _matches(item, "category")) and _text(item)
+        _text(value)
+        for local, value in _iter_named(container)
+        if local in ("class", "category") and _text(value)
     ]
 
 
-def _lang_elements(parent: ET.Element | None, name: str) -> list[dict[str, str]]:
+def _lang_elements(parent: Any, name: str) -> list[dict[str, str]]:
     if parent is None:
         return []
-    return [item for element in _children(parent, name) for item in _element_lang(element)]
+    return [item for node in _children(parent, name) for item in _element_lang(node)]
 
 
-def _element_lang(element: ET.Element) -> list[dict[str, str]]:
-    value = _text(element)
-    return [{"lang": element.get(_XML_LANG, "en"), "text": value}] if value else []
+def _element_lang(node: Any) -> list[dict[str, str]]:
+    value = _text(node)
+    return [{"lang": _attr(node, "xml:lang") or "en", "text": value}] if value else []
 
 
 def _join_texts(values: list[dict[str, str]]) -> str:
     return "\n".join(item["text"] for item in values if item["text"])
 
 
-def _local(tag: str) -> str:
-    return tag.rsplit("}", 1)[-1]
+def _warning(code: str, message: str, **details: Any) -> dict[str, Any]:
+    return {"code": code, "message": message, "details": details}
 
 
-def _namespace(tag: str) -> str:
-    return tag[1:].split("}", 1)[0] if tag.startswith("{") else ""
+# --- Badgerfish JSON navigation primitives -----------------------------
+#
+# These mirror the ElementTree-based primitives in ilcd.py (_child,
+# _children, _text, _first_descendant, _descendants, _path) closely enough
+# that the field-mapping logic above reads almost identically to ilcd.py's.
+# `_attr` has no ElementTree equivalent by name; it replaces `element.get(...)`
+# calls (an XML attribute read).
 
 
-def _matches(element: ET.Element, name: str) -> bool:
-    return _local(element.tag) == name and _namespace(element.tag) in _KNOWN_NAMESPACES
+def _is_attr_or_text(key: str) -> bool:
+    return key.startswith("@") or key == "#text"
 
 
-def _child(parent: ET.Element | None, name: str) -> ET.Element | None:
-    if parent is None:
+def _local(key: str) -> str:
+    """Strip an XML namespace prefix from a Badgerfish key: 'common:UUID' -> 'UUID'."""
+    return key.split(":", 1)[-1]
+
+
+def _child(parent: Any, name: str) -> Any:
+    """First child node matching `name` (bare object, or first item of an array)."""
+    if not isinstance(parent, dict):
         return None
-    return next((item for item in parent if _matches(item, name)), None)
+    for key, value in parent.items():
+        if _is_attr_or_text(key):
+            continue
+        if _local(key) == name:
+            if isinstance(value, list):
+                return value[0] if value else None
+            return value
+    return None
 
 
-def _children(parent: ET.Element | None, name: str) -> list[ET.Element]:
-    if parent is None:
+def _children(parent: Any, name: str) -> list[Any]:
+    """All child nodes matching `name`, normalizing bare-object-vs-array to a list."""
+    if not isinstance(parent, dict):
         return []
-    return [item for item in parent if _matches(item, name)]
+    for key, value in parent.items():
+        if _is_attr_or_text(key):
+            continue
+        if _local(key) == name:
+            if isinstance(value, list):
+                return [item for item in value if item is not None]
+            return [value] if value is not None else []
+    return []
 
 
-def _path(parent: ET.Element | None, *names: str) -> ET.Element | None:
+def _path(parent: Any, *names: str) -> Any:
     for name in names:
         parent = _child(parent, name)
     return parent
 
 
-def _first_descendant(parent: ET.Element | None, name: str) -> ET.Element | None:
-    if parent is None:
-        return None
-    return next((item for item in parent.iter() if _matches(item, name)), None)
+def _iter_named(node: Any):
+    """Depth-first (local_name, value_node) pairs for every node in the tree,
+    in document order — mirrors `ET.Element.iter()` combined with tag matching.
+    """
+    if isinstance(node, dict):
+        for key, value in node.items():
+            if _is_attr_or_text(key):
+                continue
+            local = _local(key)
+            items = value if isinstance(value, list) else [value]
+            for item in items:
+                if item is None:
+                    continue
+                yield local, item
+                yield from _iter_named(item)
 
 
-def _descendants(parent: ET.Element | None, name: str) -> list[ET.Element]:
-    if parent is None:
-        return []
-    return [item for item in parent.iter() if _matches(item, name)]
+def _descendants(parent: Any, name: str) -> list[Any]:
+    return [value for local, value in _iter_named(parent) if local == name]
 
 
-def _text(element: ET.Element | None) -> str:
-    return (element.text or "").strip() if element is not None else ""
+def _first_descendant(parent: Any, name: str) -> Any:
+    for local, value in _iter_named(parent):
+        if local == name:
+            return value
+    return None
+
+
+def _text(node: Any) -> str:
+    """Text content of a Badgerfish node: dict with #text, or a bare scalar."""
+    if node is None:
+        return ""
+    if isinstance(node, dict):
+        if "#text" in node:
+            return str(node["#text"]).strip()
+        return ""
+    if isinstance(node, bool):
+        return ""
+    if isinstance(node, (str, int, float)):
+        return str(node).strip()
+    return ""
+
+
+def _attr(node: Any, name: str) -> Any:
+    if isinstance(node, dict):
+        return node.get(f"@{name}")
+    return None
 
 
 def _integer(value: Any) -> int | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float):
+        return int(value) if value.is_integer() else None
     try:
         return int(value) if value not in (None, "") else None
     except (TypeError, ValueError):
@@ -670,6 +773,10 @@ def _integer(value: Any) -> int | None:
 
 
 def _float(value: Any, default: float) -> float:
+    if isinstance(value, bool):
+        return default
+    if isinstance(value, (int, float)):
+        return float(value)
     try:
         return float(value)
     except (TypeError, ValueError):
@@ -684,7 +791,3 @@ def _boolean(value: Any, default: bool) -> bool:
         if normalized == "false":
             return False
     return default
-
-
-def _warning(code: str, message: str, **details: Any) -> dict[str, Any]:
-    return {"code": code, "message": message, "details": details}

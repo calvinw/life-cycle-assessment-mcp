@@ -8,10 +8,12 @@ from .archive import MAX_PACKAGE_BYTES
 from .errors import InterchangeError
 from .ilcd_export import export_ilcd
 from .openlca import export_openlca
+from .tidas_export import export_tidas
 
 EXPORT_FORMATS = {
     "openlca-json-ld": export_openlca,
     "ilcd-xml": export_ilcd,
+    "tidas-json": export_tidas,
 }
 
 
@@ -25,7 +27,7 @@ def export_interchange(
     if serializer is None:
         raise InterchangeError(
             "UNSUPPORTED_EXPORT_FORMAT",
-            "Export format must be 'openlca-json-ld' or 'ilcd-xml'.",
+            "Export format must be 'openlca-json-ld', 'ilcd-xml', or 'tidas-json'.",
             details={"format": format_name},
             status_code=400,
         )
