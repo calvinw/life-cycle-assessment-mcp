@@ -85,6 +85,38 @@ class InterchangeRouteTests(unittest.TestCase):
         )
         self.assertEqual(preview_interchange(response.content)["format"], "tidas-json")
 
+    def test_ecospold2_export_returns_downloadable_zip(self):
+        bundle, model_id = _two_process_model_bundle()
+        with TestClient(self.app) as client:
+            response = client.post(
+                "/api/interchange/export",
+                json={"format": "ecospold2", "model_id": model_id, "datasets": bundle},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.headers["content-type"], "application/zip")
+        self.assertEqual(
+            response.headers["content-disposition"],
+            'attachment; filename="prism-export.ecospold2.zip"',
+        )
+        self.assertEqual(preview_interchange(response.content)["format"], "ecospold2")
+
+    def test_simapro_export_returns_downloadable_csv(self):
+        bundle, model_id = _two_process_model_bundle()
+        with TestClient(self.app) as client:
+            response = client.post(
+                "/api/interchange/export",
+                json={"format": "simapro-csv", "model_id": model_id, "datasets": bundle},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.headers["content-type"].startswith("text/csv"))
+        self.assertEqual(
+            response.headers["content-disposition"],
+            'attachment; filename="prism-export.simapro.csv"',
+        )
+        self.assertEqual(preview_interchange(response.content)["format"], "simapro-csv")
+
     def test_tidas_package_imports_through_existing_route(self):
         with TestClient(self.app) as client:
             response = client.post(

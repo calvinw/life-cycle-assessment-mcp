@@ -62,7 +62,9 @@ Browser calls are subject to CORS. The HTTP entry point currently allows
 ## Interchange export
 
 `POST /api/interchange/export` accepts a PRISM workspace bundle and returns a
-downloadable openLCA JSON-LD or ILCD/eILCD ZIP. The request is:
+downloadable openLCA JSON-LD, ILCD/eILCD, TIDAS JSON, EcoSpold2 ZIP, or
+SimaPro process CSV. The
+request is:
 
 ```json
 {
@@ -80,11 +82,28 @@ downloadable openLCA JSON-LD or ILCD/eILCD ZIP. The request is:
 }
 ```
 
-Set `format` to `openlca-json-ld` or `ilcd-xml`. When `model_id` is present,
+Set `format` to `openlca-json-ld`, `ilcd-xml`, `tidas-json`, `ecospold2`, or
+`simapro-csv`.
+When `model_id` is present,
 the server exports only that Model and its complete transitive dependencies.
-A successful response has `Content-Type: application/zip` and a
-`Content-Disposition` download filename. Validation failures use the stable
+A successful ZIP response has `Content-Type: application/zip`; SimaPro uses
+`text/csv`. All exports include a `Content-Disposition` download filename.
+Validation failures use the stable
 `{"error":{"code","message","details"}}` interchange error envelope.
+
+EcoSpold2 exports contain one schema-valid `.spold` Activity document per
+Process. Process links use `intermediateExchange.activityLinkId`. Because
+EcoSpold2 has no product-system document, import reconstructs one PRISM Model
+from those links and reports `ECOSPOLD2_MODEL_RECONSTRUCTED`. Source and Contact
+records are not represented by this subset. EcoSpold2 import accepts either a
+ZIP of `.spold`/`.xml` documents or one raw `.spold`/`.xml` document.
+
+SimaPro support targets process-inventory CSV exports and accepts semicolon,
+comma, or tab separators declared in the file header. Processes, product and
+elementary flows, amounts, units, locations, and product-name links are
+converted. Because process CSV has no product-system object, import reconstructs
+one PRISM Model. LCIA methods, product stages, and parameter definitions are not
+represented by this subset and are rejected or reported as warnings.
 
 ## Endpoint reference
 
