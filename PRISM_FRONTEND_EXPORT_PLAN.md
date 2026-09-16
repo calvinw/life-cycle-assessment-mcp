@@ -25,8 +25,8 @@ passed openLCA 2.6.2 import and Desktop re-export acceptance. openLCA normalized
 Process-instance multiplication factors to `0.0` in ILCD and `1.0` in JSON-LD;
 these target-format limitations are recorded in the interchange contracts.
 
-**This export work is committed on `catie-import-feature`, but is not merged
-to `main` yet and is not deployed anywhere.**
+**This export work is not merged to `main` yet and is not deployed anywhere**
+(it's uncommitted on the `catie-import-feature` branch as of this writing).
 Don't point any frontend build at a production URL for this feature until the
 backend owner confirms it's merged and deployed — check with them first, the
 same way the import feature was gated on Calvin's approval.

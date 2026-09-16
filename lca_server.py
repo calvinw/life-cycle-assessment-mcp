@@ -620,7 +620,7 @@ async def api_get_unit_process_svg(request: Request) -> Response:
 
 @mcp.custom_route("/api/interchange/import/openlca", methods=["POST"])
 async def api_import_openlca(request: Request) -> Response:
-    """Raw openLCA JSON-LD or ILCD ZIP bytes in, PRISM preview JSON out.
+    """Raw openLCA, ILCD, TIDAS ZIP or EcoSpold2 ZIP/XML in, PRISM preview JSON out.
 
     Rejects an oversized upload by its declared Content-Length before
     reading the body and also enforces the limit while streaming when that
@@ -694,7 +694,7 @@ async def api_import_openlca(request: Request) -> Response:
 
 @mcp.custom_route("/api/interchange/export", methods=["POST"])
 async def api_export_interchange(request: Request) -> Response:
-    """PRISM workspace JSON in, openLCA JSON-LD or ILCD ZIP out."""
+    """PRISM workspace JSON in; supported LCA interchange file out."""
     content_length = request.headers.get("content-length")
     try:
         declared_length = int(content_length) if content_length is not None else None
@@ -754,12 +754,18 @@ async def api_export_interchange(request: Request) -> Response:
         package = export_interchange(
             body.get("format"), body.get("datasets"), body.get("model_id")
         )
-        suffix = "openlca" if body.get("format") == "openlca-json-ld" else "ilcd"
+        suffix = {"openlca-json-ld": "openlca", "ilcd-xml": "ilcd", "tidas-json": "tidas", "ecospold2": "ecospold2"}.get(
+            body.get("format"), "ilcd"
+        )
+        is_simapro = body.get("format") == "simapro-csv"
         return Response(
             package,
-            media_type="application/zip",
+            media_type="text/csv" if is_simapro else "application/zip",
             headers={
-                "Content-Disposition": f'attachment; filename="prism-export.{suffix}.zip"'
+                "Content-Disposition": (
+                    'attachment; filename="prism-export.simapro.csv"'
+                    if is_simapro else f'attachment; filename="prism-export.{suffix}.zip"'
+                )
             },
         )
     except InterchangeError as exc:

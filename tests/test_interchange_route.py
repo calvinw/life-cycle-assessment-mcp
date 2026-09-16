@@ -11,9 +11,11 @@ from starlette.testclient import TestClient
 from lca_core.interchange import preview_interchange
 from lca_core.interchange.archive import MAX_PACKAGE_BYTES
 from tests.test_interchange_export import _multi_process_bundle
+from tests.test_tidas_interchange import _two_process_model_bundle
 
 
 FIXTURE = Path(__file__).parent / "fixtures" / "ilcd_plastic_broom.zip"
+TIDAS_FIXTURE = Path(__file__).parent / "fixtures" / "tidas_tiangong_export.zip"
 
 
 class InterchangeRouteTests(unittest.TestCase):
@@ -66,6 +68,65 @@ class InterchangeRouteTests(unittest.TestCase):
             'attachment; filename="prism-export.ilcd.zip"',
         )
         self.assertEqual(preview_interchange(response.content)["format"], "ilcd-xml")
+
+    def test_tidas_export_returns_downloadable_zip(self):
+        bundle, model_id = _two_process_model_bundle()
+        with TestClient(self.app) as client:
+            response = client.post(
+                "/api/interchange/export",
+                json={"format": "tidas-json", "model_id": model_id, "datasets": bundle},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.headers["content-type"], "application/zip")
+        self.assertEqual(
+            response.headers["content-disposition"],
+            'attachment; filename="prism-export.tidas.zip"',
+        )
+        self.assertEqual(preview_interchange(response.content)["format"], "tidas-json")
+
+    def test_ecospold2_export_returns_downloadable_zip(self):
+        bundle, model_id = _two_process_model_bundle()
+        with TestClient(self.app) as client:
+            response = client.post(
+                "/api/interchange/export",
+                json={"format": "ecospold2", "model_id": model_id, "datasets": bundle},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.headers["content-type"], "application/zip")
+        self.assertEqual(
+            response.headers["content-disposition"],
+            'attachment; filename="prism-export.ecospold2.zip"',
+        )
+        self.assertEqual(preview_interchange(response.content)["format"], "ecospold2")
+
+    def test_simapro_export_returns_downloadable_csv(self):
+        bundle, model_id = _two_process_model_bundle()
+        with TestClient(self.app) as client:
+            response = client.post(
+                "/api/interchange/export",
+                json={"format": "simapro-csv", "model_id": model_id, "datasets": bundle},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.headers["content-type"].startswith("text/csv"))
+        self.assertEqual(
+            response.headers["content-disposition"],
+            'attachment; filename="prism-export.simapro.csv"',
+        )
+        self.assertEqual(preview_interchange(response.content)["format"], "simapro-csv")
+
+    def test_tidas_package_imports_through_existing_route(self):
+        with TestClient(self.app) as client:
+            response = client.post(
+                "/api/interchange/import/openlca",
+                content=TIDAS_FIXTURE.read_bytes(),
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["format"], "tidas-json")
+        self.assertEqual(response.json()["summary"]["process"], 18)
 
     def test_unknown_export_format_has_stable_error(self):
         bundle, _, _ = _multi_process_bundle()

@@ -93,6 +93,28 @@ class IlcdInterchangeTests(unittest.TestCase):
             {warning["code"] for warning in preview["warnings"]},
         )
 
+    def test_root_of_zip_layout_without_ilcd_wrapper_is_accepted(self):
+        """Some platforms (e.g. Tiangong's documented ZIP upload convention)
+        expect dataset folders directly at the ZIP root, no "ILCD/" wrapper
+        — see `has_root_level_ilcd_layout`'s docstring.
+        """
+        flow_id = str(uuid.uuid4())
+        output = io.BytesIO()
+        with zipfile.ZipFile(output, "w") as archive:
+            archive.writestr(
+                f"flows/{flow_id}.xml",
+                f"""<flowDataSet>
+                    <flowInformation><dataSetInformation><UUID>{flow_id}</UUID>
+                    <name><baseName>Root-of-zip flow</baseName></name>
+                    </dataSetInformation></flowInformation></flowDataSet>""",
+            )
+
+        preview = preview_interchange(output.getvalue())
+
+        self.assertEqual(preview["format"], "ilcd-xml")
+        self.assertEqual(preview["summary"]["flow"], 1)
+        self.assertEqual(preview["datasets"][0]["name"], "Root-of-zip flow")
+
     def test_dispatch_rejects_unknown_zip_layout(self):
         output = io.BytesIO()
         with zipfile.ZipFile(output, "w") as archive:
